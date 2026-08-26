@@ -580,18 +580,25 @@ var Data = {
    Local is always the source of truth; the Sheet is a backup/mirror.
    ================================================================ */
 /* Authenticated call to the backend (adds the access key) */
-function readJson_(r){
-  return r.text().then(function(t){
-    try{ return JSON.parse(t); }
-    catch(e){ throw new Error('The workspace returned a web page, not data. Open the HOSTED link (not the local file) and make sure the URL ends in /exec.'); }
-  });
+/* POST JSON to the backend, retrying automatically if Google hands back
+   an HTML redirect page instead of JSON (a known Apps Script quirk). */
+function postJson(url, payload, _try){
+  _try = _try || 0;
+  return fetch(url, { method:'POST', redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) })
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      try{ return JSON.parse(t); }
+      catch(e){
+        if(_try < 3){ return new Promise(function(res){ setTimeout(res, 600*(_try+1)); }).then(function(){ return postJson(url, payload, _try+1); }); }
+        throw new Error('The workspace returned a web page, not data. Check the URL ends in /exec and the deployment access is "Anyone".');
+      }
+    });
 }
 function apiCall(action, extra){
   var payload = { action:action, key: App.auth ? App.auth.key : '' };
   if(extra){ for(var k in extra){ if(extra.hasOwnProperty(k)) payload[k]=extra[k]; } }
-  return fetch(App.auth.url, { method:'POST', redirect:'follow',
-    headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload) })
-    .then(readJson_);
+  return postJson(App.auth.url, payload);
 }
 
 var Sync = {
@@ -688,8 +695,7 @@ function doLogin(){
   if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec\/?$/.test(url)){ errEl.textContent='Enter a valid workspace link (ends in /exec).'; errEl.style.display='block'; return; }
   if(!key){ errEl.textContent='Enter your access key.'; errEl.style.display='block'; return; }
   var btn=document.getElementById('login-btn'); btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span> Logging in…';
-  fetch(url,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'login',key:key})})
-    .then(readJson_)
+  postJson(url, {action:'login', key:key})
     .then(function(res){
       if(!res||!res.ok||!res.user) throw new Error(res&&res.error?res.error:'Login failed.');
       App.auth={ url:url, key:key, userId:res.user.userId, name:res.user.name, role:res.user.role };
