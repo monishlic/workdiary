@@ -265,6 +265,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .rem-msg{font-size:.88rem;color:var(--text);line-height:1.5}
 .assign-banner{background:var(--accent-soft);color:var(--accent);font-size:.8rem;font-weight:600;padding:9px 12px;border-radius:9px;margin-bottom:14px}
 .assign-tag{font-size:.66rem;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
+.ip-tag{font-size:.66rem;font-weight:600;color:var(--warning-dark);background:var(--warning-bg);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
+.due{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap}
+.due-over{background:var(--danger-bg);color:var(--danger-dark)}
+.due-today{background:var(--warning-bg);color:var(--warning-dark)}
+.due-up{background:var(--accent-soft);color:var(--accent)}
+.d-status.ip{background:var(--warning-bg);color:var(--warning-dark)}
 .comments-list{margin-bottom:10px;max-height:210px;overflow-y:auto}
 .c-muted{color:var(--text-muted);font-size:.82rem;padding:4px 0}
 .comment{padding:9px 11px;background:var(--bg);border:1px solid var(--border);border-radius:9px;margin-bottom:8px}
@@ -352,6 +358,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       </div>
       <label class="f-label">Client Name <span class="req">*</span></label>
       <input type="text" id="add-client" class="f-input" placeholder="e.g. Raul Shah" maxlength="120" autocomplete="off">
+      <div class="row2">
+        <div><label class="f-label">Due Date <span class="opt">(optional)</span></label><input type="date" id="add-due" class="f-input"></div>
+        <div><label class="f-label">Follow-up <span class="opt">(optional)</span></label><input type="date" id="add-followup" class="f-input"></div>
+      </div>
       <label class="f-label">Details <span class="opt">(optional)</span></label>
       <textarea id="add-details" class="f-area" placeholder="What needs to be done?" rows="3" maxlength="2000"></textarea>
     </div>
@@ -510,6 +520,16 @@ function fmtDate(iso){ if(!iso)return''; try{ return new Date(iso).toLocaleDateS
 function fmtTime(iso){ if(!iso)return''; try{ return new Date(iso).toLocaleTimeString('en-US',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}); }catch(e){ return ''; } }
 function fmtDateTime(iso){ if(!iso)return''; return fmtDate(iso)+', '+fmtTime(iso); }
 function daysSince(iso){ if(!iso)return 0; return Math.floor((Date.now()-new Date(iso).getTime())/86400000); }
+function isActive(t){ return t.status!=='Completed'; }
+function todayYMD(){ try{ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }catch(e){ return new Date().toISOString().slice(0,10); } }
+function fmtShort(ymd){ if(!ymd) return ''; try{ return new Date(ymd+'T00:00:00').toLocaleDateString('en-GB',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short'}); }catch(e){ return ymd; } }
+function dueInfo(t){
+  if(!t.dueDate || t.status==='Completed') return null;
+  var today=todayYMD();
+  if(t.dueDate < today) return {label:'Overdue', cls:'due-over'};
+  if(t.dueDate===today) return {label:'Due today', cls:'due-today'};
+  return {label:'Due '+fmtShort(t.dueDate), cls:'due-up'};
+}
 function initials(name){ return String(name||'').trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase()||'?'; }
 function genUid(){ return 'U-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); }
 function uniqI(arr){ var seen={},out=[]; arr.forEach(function(x){ var k=String(x).toLowerCase(); if(!seen[k]){seen[k]=1;out.push(x);} }); return out; }
@@ -534,7 +554,8 @@ var Data = {
       var ts=nowISO();
       var task={ uid:genUid(), taskId:taskId, employeeId:App.identity.employeeId, employeeName:App.identity.employeeName,
         department:d.department, category:d.category, clientName:d.clientName, details:d.details||'',
-        status:'Pending', createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
+        status:'Pending', dueDate:d.dueDate||'', followUpDate:d.followUpDate||'',
+        createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
       return Store.put('tasks',taskId,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending',d.clientName+' → '+d.category); Sync.afterChange(); return task; });
     });
@@ -549,9 +570,19 @@ var Data = {
     var moved=(t.department!==f.department || t.category!==f.category);
     var renamed=(t.clientName!==f.clientName);
     t.clientName=f.clientName; t.department=f.department; t.category=f.category; t.details=f.details;
+    if(f.dueDate!==undefined) t.dueDate=f.dueDate;
+    if(f.followUpDate!==undefined) t.followUpDate=f.followUpDate;
     t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
     var note=moved?('Moved to '+f.department+' › '+f.category):(renamed?'Renamed & edited':'Edited');
     return Store.put('tasks',taskId,t).then(function(){ Data.log(taskId,'EDITED',t.status,t.status,note); Sync.afterChange(); });
+  },
+  setStatus:function(taskId,status){
+    var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
+    t.status=status;
+    if(status==='Completed'){ t.completedTimestamp=nowISO(); t.completedBy=App.identity.employeeName; }
+    else { t.completedTimestamp=''; t.completedBy=''; }
+    t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
+    return Store.put('tasks',taskId,t).then(function(){ Data.log(taskId,'STATUS',t.status,status,status); Sync.afterChange(); });
   },
   complete:function(taskId){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
@@ -672,13 +703,15 @@ var Sync = {
 document.addEventListener('DOMContentLoaded', init);
 function init(){
   Store.ready().then(function(){
-    return Promise.all([ Store.get('kv','auth'), Store.get('kv','departments'), Store.get('kv','prefs'), Store.get('kv','categoryMaster'), Sync.load() ]);
+    return Promise.all([ Store.get('kv','auth'), Store.get('kv','departments'), Store.get('kv','prefs'), Store.get('kv','categoryMaster'), Sync.load(), Store.get('kv','notifSeen') ]);
   }).then(function(r){
     App.auth=r[0]||null;
     App.departments=r[1]||DEFAULT_DEPARTMENTS.map(function(d){return {department:d.department,categories:d.categories.slice()};});
     App.prefs=r[2]||{theme:'light',collapsed:{}};
     if(!App.prefs.collapsed) App.prefs.collapsed={};
+    if(!App.prefs.expanded) App.prefs.expanded={};
     App.categoryMaster=r[3]||CATEGORY_MASTER.slice();
+    App._notifSeen = r[5] || {}; App._notifSeeded = !!r[5];
     applyTheme();
     if(!App.auth){ showLogin(); }
     else { App.identity={employeeId:App.auth.userId, employeeName:App.auth.name, role:App.auth.role}; return Data.loadAll().then(bootApp); }
@@ -720,16 +753,20 @@ function bootApp(){
   Sync.updatePill();
   requestNotifPermission();
   if(Sync.online()){ Sync.full(); loadReminders(); loadTeamMembers(); }
-  window.addEventListener('online', function(){ Sync.full(); loadReminders(); loadTeamMembers(); });
-  window.addEventListener('offline', function(){ Sync.updatePill(); });
-  setInterval(function(){ if(Sync.online()){ Sync.full(); loadReminders(); } }, 60000);
+  // Set up background timers/listeners exactly once (prevents stacking on re-login)
+  if(!App._booted){
+    App._booted = true;
+    window.addEventListener('online', function(){ Sync.full(); loadReminders(); loadTeamMembers(); });
+    window.addEventListener('offline', function(){ Sync.updatePill(); });
+    setInterval(function(){ if(Sync.online()){ Sync.full(); loadReminders(); } }, 60000);
+  }
 }
 
 /* ================================================================
    COUNTS + ICONS
    ================================================================ */
-function pendingCount(dept,cat){ return App.tasks.filter(function(t){ return t.status==='Pending'&&t.department===dept&&t.category===cat; }).length; }
-function deptPending(dept){ return App.tasks.filter(function(t){ return t.status==='Pending'&&t.department===dept; }).length; }
+function pendingCount(dept,cat){ return App.tasks.filter(function(t){ return isActive(t)&&t.department===dept&&t.category===cat; }).length; }
+function deptPending(dept){ return App.tasks.filter(function(t){ return isActive(t)&&t.department===dept; }).length; }
 function ico(name){
   var m={
     dash:'<path d="M3 12l9-9 9 9"/><path d="M9 21V9h6v12"/>',
@@ -752,7 +789,7 @@ function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   App.departments.forEach(function(d){
-    var collapsed=!!App.prefs.collapsed[d.department];
+    var collapsed=!App.prefs.expanded[d.department];
     var dp=deptPending(d.department);
     h+='<div class="dept-group">';
     h+='<button class="dept-header'+(collapsed?' collapsed':'')+'" data-action="toggle-dept" data-dept="'+esc(d.department)+'">';
@@ -781,13 +818,14 @@ function buildSidebar(){
   h+='</div>';
   document.getElementById('sb-nav').innerHTML=h;
 }
-function toggleDept(dept){ App.prefs.collapsed[dept]=!App.prefs.collapsed[dept]; Data.savePrefs(); buildSidebar(); }
+function toggleDept(dept){ App.prefs.expanded[dept]=!App.prefs.expanded[dept]; Data.savePrefs(); buildSidebar(); }
 
 /* ================================================================
    NAVIGATION
    ================================================================ */
 function navigate(view,dept,cat){
   App.view=view; App.dept=dept||null; App.cat=cat||null; App.tab='pending';
+  if(view==='category' && dept){ App.prefs.expanded[dept]=true; Data.savePrefs(); }  // auto-open the dept you enter
   closeSidebar(); buildSidebar();
   if(view==='dashboard') renderDashboard();
   else if(view==='category') renderCategory();
@@ -804,7 +842,7 @@ function showList(filter){ App.view='list'; App.listFilter=filter; closeSidebar(
    ================================================================ */
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function doneTodayCount(){ var today=fmtDate(nowISO()); return App.tasks.filter(function(t){ return t.status==='Completed' && fmtDate(t.completedTimestamp)===today; }).length; }
-function nudgeQueue(){ return App.tasks.filter(function(t){ return t.status==='Pending'; }).sort(function(a,b){ return new Date(a.createdTimestamp)-new Date(b.createdTimestamp); }); }
+function nudgeQueue(){ return App.tasks.filter(function(t){ return isActive(t); }).sort(function(a,b){ return new Date(a.createdTimestamp)-new Date(b.createdTimestamp); }); }
 
 /* Fixed taunt when the diary is empty */
 function fixedEmptyNudge(done){
@@ -876,7 +914,7 @@ function startNudgeCycle(){
 }
 function stopNudgeCycle(){ if(App.nudgeTimer){ clearInterval(App.nudgeTimer); App.nudgeTimer=null; } }
 function renderDashboard(){
-  var pending=App.tasks.filter(function(t){return t.status==='Pending';});
+  var pending=App.tasks.filter(function(t){return isActive(t);});
   var completed=App.tasks.filter(function(t){return t.status==='Completed';});
   var today=fmtDate(nowISO());
   var addedToday=App.tasks.filter(function(t){return fmtDate(t.createdTimestamp)===today;}).length;
@@ -927,7 +965,10 @@ function stat(v,l,c,filter){ return '<div class="stat '+c+'" data-action="show-l
 function taskCard(t,isDone,showCat){
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
   var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
-  h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+(byOther?' <span class="assign-tag">&#128204; by '+esc(t.assignedByName||'')+'</span>':'')+'</div>';
+  var tags='';
+  if(byOther) tags+=' <span class="assign-tag">&#128204; by '+esc(t.assignedByName||'')+'</span>';
+  if(t.status==='In Progress') tags+=' <span class="ip-tag">&#9881; In progress</span>';
+  h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+tags+'</div>';
   var meta='Added '+fmtDate(t.createdTimestamp);
   if(showCat) meta+=' · '+esc(t.department)+' › '+esc(t.category);
   if(isDone&&t.completedTimestamp) meta+=' → Completed '+fmtDate(t.completedTimestamp);
@@ -936,10 +977,14 @@ function taskCard(t,isDone,showCat){
   h+='</div>';
   if(isDone){ h+='<div class="card-right"><span class="done-badge">'+ico('check')+' Completed</span></div>'; }
   else{
+    var di=dueInfo(t);
     var d=daysSince(t.createdTimestamp);
     var cls=d<=2?'days-ok':d<=5?'days-warn':'days-urgent';
     var lbl=d===0?'Today':d===1?'1 day':d+' days';
-    h+='<div class="card-right"><span class="days '+cls+'">'+lbl+'</span><button class="complete-btn" data-action="complete-task" data-id="'+esc(t.taskId)+'">'+ico('check')+' Complete</button></div>';
+    h+='<div class="card-right">';
+    if(di) h+='<span class="due '+di.cls+'">'+di.label+'</span>';
+    h+='<span class="days '+cls+'">'+lbl+'</span>';
+    h+='<button class="complete-btn" data-action="complete-task" data-id="'+esc(t.taskId)+'">'+ico('check')+' Complete</button></div>';
   }
   h+='</div>'; return h;
 }
@@ -949,7 +994,7 @@ function taskCard(t,isDone,showCat){
    ================================================================ */
 function renderCategory(){
   var all=App.tasks.filter(function(t){return t.department===App.dept&&t.category===App.cat;});
-  var pend=all.filter(function(t){return t.status==='Pending';}).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
+  var pend=all.filter(function(t){return isActive(t);}).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
   var done=all.filter(function(t){return t.status==='Completed';}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);});
 
   var h='<div class="cat-head"><div class="crumb">'+esc(App.dept)+'</div><div class="cat-title">'+esc(App.cat)+'</div>';
@@ -978,7 +1023,7 @@ function switchTab(tab){ App.tab=tab; renderCategory(); }
    ================================================================ */
 function renderList(){
   var f=App.listFilter, title='', desc='', list=[];
-  var pending=App.tasks.filter(function(t){return t.status==='Pending';});
+  var pending=App.tasks.filter(function(t){return isActive(t);});
   if(f==='pending'){ title='Pending Work'; list=pending.slice().sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);}); desc=list.length+' pending item'+(list.length!==1?'s':''); }
   else if(f==='today-added'){ title='Added Today'; list=App.tasks.filter(function(t){return fmtDate(t.createdTimestamp)===fmtDate(nowISO());}).sort(function(a,b){return new Date(b.createdTimestamp)-new Date(a.createdTimestamp);}); desc=list.length+' added today'; }
   else if(f==='today-done'){ title='Cleared Today'; list=App.tasks.filter(function(t){return t.status==='Completed'&&fmtDate(t.completedTimestamp)===fmtDate(nowISO());}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);}); desc=list.length+' cleared today'; }
@@ -1003,7 +1048,7 @@ function renderSearch(q){
   var h='<div class="cat-head"><div class="cat-title">Search</div><div class="cat-sub">Search across all your work — pending and completed.</div></div>';
   if(!q){ document.getElementById('content').innerHTML=h+'<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">Start typing to search</div><div class="empty-s">Client name, details, category or Task ID.</div></div>'; var s=document.getElementById('search'); if(s)s.focus(); return; }
   var res=App.tasks.filter(function(t){ return [t.clientName,t.department,t.category,t.details,t.taskId].join(' ').toLowerCase().indexOf(q)!==-1; })
-    .sort(function(a,b){ if(a.status!==b.status) return a.status==='Pending'?-1:1; return new Date(b.createdTimestamp)-new Date(a.createdTimestamp); });
+    .sort(function(a,b){ if(a.status!==b.status) return a.status!=='Completed'?-1:1; return new Date(b.createdTimestamp)-new Date(a.createdTimestamp); });
   h+='<div class="sub" style="margin-bottom:14px">'+res.length+' result'+(res.length!==1?'s':'')+' for "'+esc(q)+'"</div><div class="task-list">';
   if(res.length===0) h+='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">No work found</div><div class="empty-s">Nothing matches "'+esc(q)+'".</div></div>';
   else res.forEach(function(t){ h+=taskCard(t,t.status==='Completed',true); });
@@ -1019,6 +1064,8 @@ function openAdd(dept,cat){
   document.getElementById('add-cat').value=cat||App.cat||'';
   document.getElementById('add-client').value='';
   document.getElementById('add-details').value='';
+  document.getElementById('add-due').value='';
+  document.getElementById('add-followup').value='';
   hideSuggs();
   var b=document.getElementById('add-submit'); b.disabled=false; b.textContent='Add Client';
   openModal('add-modal');
@@ -1067,19 +1114,24 @@ function ensureDeptCat(dept,cat){
   return Promise.all(jobs).then(function(){ return {dept:dept,cat:cat}; });
 }
 function submitAdd(){
+  if(App._addBusy) return;
   var client=(document.getElementById('add-client').value||'').trim();
   var details=(document.getElementById('add-details').value||'').trim();
   var dept=(document.getElementById('add-dept').value||'').trim();
   var cat=(document.getElementById('add-cat').value||'').trim();
+  var due=document.getElementById('add-due').value||'';
+  var followup=document.getElementById('add-followup').value||'';
   if(!dept){ toast('Choose or type a department.','error'); document.getElementById('add-dept').focus(); return; }
   if(!cat){ toast('Choose or type a category.','error'); document.getElementById('add-cat').focus(); return; }
   if(!client){ toast('Client name is required.','error'); document.getElementById('add-client').focus(); return; }
+  App._addBusy=true;
   var b=document.getElementById('add-submit'); b.disabled=true; b.innerHTML='<span class="mini-spin"></span> Saving…';
   ensureDeptCat(dept,cat).then(function(n){
-    return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details}).then(function(){ return n; });
+    return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,followUpDate:followup}).then(function(){ return n; });
   }).then(function(n){
+    App._addBusy=false;
     closeModal('add-modal'); toast('✓ '+client+' added to '+n.cat,'success'); buildSidebar(); navigate('category',n.dept,n.cat);
-  }).catch(function(e){ b.disabled=false; b.textContent='Add Client'; toast('Could not save. '+(e.message||''),'error'); });
+  }).catch(function(e){ App._addBusy=false; b.disabled=false; b.textContent='Add Client'; toast('Could not save. '+(e.message||''),'error'); });
 }
 
 /* ================================================================
@@ -1088,13 +1140,14 @@ function submitAdd(){
 function openTask(taskId){
   var t=App.tasks.find(function(x){return x.taskId===taskId;});
   if(!t){ toast('Task not found.','error'); return; }
-  var pending=t.status==='Pending';
+  var pending=isActive(t);
   var shared = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
   document.getElementById('det-title').textContent=pending?'Edit Task':t.clientName;
   var h='';
   if(shared) h+='<div class="assign-banner">&#128204; Assigned by '+esc(t.assignedByName||'a teammate')+'</div>';
   if(pending){
     // Fully editable — name, department, category (move), details
+    h+='<div style="margin-bottom:12px"><span class="d-status '+(t.status==='In Progress'?'ip':'pending')+'">'+(t.status==='In Progress'?'&#9881; In Progress':'&#9679; Pending')+'</span></div>';
     h+='<label class="f-label">Client Name <span class="req">*</span></label>';
     h+='<input type="text" id="det-client" class="f-input" maxlength="120" value="'+esc(t.clientName)+'">';
     h+='<div class="row2" style="margin-top:2px">';
@@ -1103,6 +1156,7 @@ function openTask(taskId){
     h+='</div>';
     h+='<label class="f-label">Details <span class="opt">(optional)</span></label>';
     h+='<textarea class="f-area" id="det-details" rows="4">'+esc(t.details||'')+'</textarea>';
+    h+='<div class="row2" style="margin-top:2px"><div><label class="f-label">Due Date <span class="opt">(optional)</span></label><input type="date" id="det-due" class="f-input" value="'+esc(t.dueDate||'')+'"></div><div><label class="f-label">Follow-up <span class="opt">(optional)</span></label><input type="date" id="det-followup" class="f-input" value="'+esc(t.followUpDate||'')+'"></div></div>';
     h+='<div class="d-grid" style="margin-top:16px"><div class="d-row"><div class="d-lbl">Created</div><div class="d-val">'+esc(fmtDateTime(t.createdTimestamp))+'</div></div>';
     h+='<div class="d-row"><div class="d-lbl">Ageing</div><div class="d-val">'+daysSince(t.createdTimestamp)+' day(s) pending</div></div></div>';
     h+='<div class="d-row"><div class="d-lbl">Task ID</div><div class="d-val" style="font-size:.8rem;color:var(--text-muted)">'+esc(t.taskId)+'</div></div>';
@@ -1121,6 +1175,8 @@ function openTask(taskId){
   if(pending){
     f+='<button class="btn btn-ghost" data-action="close-modal" data-modal="detail-modal">Cancel</button>';
     f+='<button class="btn btn-primary" data-action="save-task" data-id="'+esc(t.taskId)+'">Save Changes</button>';
+    if(t.status==='In Progress') f+='<button class="btn btn-ghost" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="Pending">Set Pending</button>';
+    else f+='<button class="btn btn-ghost" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="In Progress">&#9881; In Progress</button>';
     f+='<button class="btn btn-success" data-action="complete-from-detail" data-id="'+esc(t.taskId)+'">'+ico('check')+' Complete</button>';
   } else {
     if(App.identity.role==='Admin') f+='<button class="btn btn-ghost" data-action="reopen-task" data-id="'+esc(t.taskId)+'">Reopen</button>';
@@ -1135,14 +1191,23 @@ function saveTask(taskId,btn){
   var dept=(document.getElementById('det-dept').value||'').trim();
   var cat=(document.getElementById('det-cat').value||'').trim();
   var details=(document.getElementById('det-details').value||'').trim();
+  var due=(document.getElementById('det-due')||{}).value||'';
+  var followup=(document.getElementById('det-followup')||{}).value||'';
   if(!client){ toast('Client name is required.','error'); return; }
   if(!dept){ toast('Department is required.','error'); return; }
   if(!cat){ toast('Category is required.','error'); return; }
+  if(App._saveBusy) return; App._saveBusy=true;
   btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span> Saving…';
   ensureDeptCat(dept,cat).then(function(n){
-    return Data.updateTask(taskId,{clientName:client,department:n.dept,category:n.cat,details:details});
-  }).then(function(){ toast('✓ Changes saved','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
-  .catch(function(e){ btn.disabled=false; btn.textContent='Save Changes'; toast('Could not save. '+(e.message||''),'error'); });
+    return Data.updateTask(taskId,{clientName:client,department:n.dept,category:n.cat,details:details,dueDate:due,followUpDate:followup});
+  }).then(function(){ App._saveBusy=false; toast('✓ Changes saved','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
+  .catch(function(e){ App._saveBusy=false; btn.disabled=false; btn.textContent='Save Changes'; toast('Could not save. '+(e.message||''),'error'); });
+}
+function setStatusUI(taskId,status,btn){
+  if(App._ssBusy) return; App._ssBusy=true;
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
+  Data.setStatus(taskId,status).then(function(){ App._ssBusy=false; toast(status==='In Progress'?'⚙ Marked In Progress':'Set to Pending','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
+  .catch(function(e){ App._ssBusy=false; if(btn)btn.disabled=false; toast(e.message||'Could not update.','error'); });
 }
 function completeTask(taskId,btn){
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
@@ -1219,7 +1284,7 @@ function openStaff(staffId,name){
   apiCall('adminStaffTasks',{staffId:staffId}).then(function(res){
     if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load.'); return; }
     var tasks=res.tasks||[];
-    var pend=tasks.filter(function(t){return t.status==='Pending';}).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
+    var pend=tasks.filter(function(t){return isActive(t);}).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
     var done=tasks.filter(function(t){return t.status==='Completed';}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);});
     var h='<div class="cat-head"><div class="crumb"><span data-action="nav" data-view="team" style="cursor:pointer;color:var(--accent);font-weight:600">← Team</span></div>';
     h+='<div class="cat-title">'+esc(name)+'</div><div class="cat-sub">'+pend.length+' pending · '+done.length+' completed</div>';
@@ -1248,29 +1313,43 @@ function taskCardStatic(t,isDone){
   h+='</div>'; return h;
 }
 function submitReminder(staffId){
+  if(App._rBusy) return;
   var msg=(document.getElementById('rem-msg').value||'').trim();
   if(!msg){ toast('Type a reminder message.','error'); return; }
+  var btn=document.querySelector('[data-action="raise-reminder"]');
+  App._rBusy=true; if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span> Sending…'; }
+  var done=function(){ App._rBusy=false; if(btn){ btn.disabled=false; btn.textContent='Send Reminder'; } };
   apiCall('raiseReminder',{forUserId:staffId, message:msg}).then(function(res){
+    done();
     if(!res||!res.ok){ toast(res&&res.error?res.error:'Could not send.','error'); return; }
     toast('🔔 Reminder sent','success');
     var f=document.getElementById('rem-form'); if(f)f.style.display='none';
     var m=document.getElementById('rem-msg'); if(m)m.value='';
-  }).catch(function(e){ toast(e.message||'Could not send.','error'); });
+  }).catch(function(e){ done(); toast(e.message||'Could not send.','error'); });
 }
 
 /* ================================================================
    IN-APP REMINDERS (recipient)
    ================================================================ */
 function loadReminders(){
-  if(!Sync.online()) return Promise.resolve();
+  if(!Sync.online() || App._remBusy) return Promise.resolve();
+  App._remBusy = true;
   return apiCall('getReminders',{}).then(function(res){
+    App._remBusy = false;
     if(!res||!res.ok) return;
-    var list=res.reminders||[];
-    if(App._notifInit){ list.forEach(function(r){ if(!r.read && !App._notifSeen[r.reminderId]) fireDesktopNotif(r); }); }
-    var seen={}; list.forEach(function(r){ seen[r.reminderId]=true; });
-    App._notifSeen=seen; App._notifInit=true;
-    App.reminders=list; updateBell();
-  }).catch(function(){});
+    var list = res.reminders||[];
+    var seen = App._notifSeen || {};
+    if(!App._notifSeeded){
+      // First time on this device: remember existing ones silently (no backlog blast)
+      list.forEach(function(r){ seen[r.reminderId]=true; });
+    } else {
+      // Fire a desktop pop-up only for genuinely new, unread notifications
+      list.forEach(function(r){ if(!r.read && !seen[r.reminderId]){ fireDesktopNotif(r); seen[r.reminderId]=true; } });
+    }
+    App._notifSeen = seen; App._notifSeeded = true;
+    Store.put('kv','notifSeen', seen);
+    App.reminders = list; updateBell();
+  }).catch(function(){ App._remBusy = false; });
 }
 function updateBell(){
   var badge=document.getElementById('bell-badge'); if(!badge) return;
@@ -1318,6 +1397,7 @@ function openAssign(){
   if(App.members.length) go(); else loadTeamMembers().then(go);
 }
 function submitAssign(){
+  if(App._asBusy) return;
   var to=document.getElementById('assign-to').value;
   var dept=(document.getElementById('assign-dept').value||'').trim();
   var cat=(document.getElementById('assign-cat').value||'').trim();
@@ -1326,16 +1406,18 @@ function submitAssign(){
   if(!to){ toast('Pick who to assign to.','error'); return; }
   if(!dept||!cat){ toast('Choose a department and category.','error'); return; }
   if(!client){ toast('Client name is required.','error'); return; }
+  App._asBusy=true;
   var b=document.getElementById('assign-submit'); b.disabled=true; b.innerHTML='<span class="mini-spin"></span> Assigning…';
   ensureDeptCat(dept,cat).then(function(n){
     return apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details });
   }).then(function(res){
+    App._asBusy=false;
     if(!res||!res.ok) throw new Error(res&&res.error?res.error:'Assign failed');
     closeModal('assign-modal');
     var who=(App.members.find(function(m){return m.userId===to;})||{}).name||'teammate';
     toast('✓ Assigned '+client+' to '+who,'success');
     if(App.view==='assigned') renderAssignedByMe();
-  }).catch(function(e){ b.disabled=false; b.textContent='Assign'; toast('Could not assign. '+(e.message||''),'error'); });
+  }).catch(function(e){ App._asBusy=false; b.disabled=false; b.textContent='Assign'; toast('Could not assign. '+(e.message||''),'error'); });
 }
 
 function renderAssignedByMe(){
@@ -1397,14 +1479,18 @@ function loadCommentsInto(uid){
   }).catch(function(){});
 }
 function addCommentUI(uid){
+  if(App._cBusy) return;
   var input=document.getElementById('comment-input'); if(!input) return;
   var text=(input.value||'').trim(); if(!text) return;
-  input.disabled=true;
+  var btn=document.querySelector('[data-action="add-comment"]');
+  App._cBusy=true; input.disabled=true;
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
+  var done=function(){ App._cBusy=false; input.disabled=false; if(btn){ btn.disabled=false; btn.textContent='Send'; } };
   apiCall('addComment',{taskUid:uid, text:text}).then(function(res){
-    input.disabled=false;
+    done();
     if(!res||!res.ok){ toast(res&&res.error?res.error:'Could not comment.','error'); return; }
-    input.value=''; loadCommentsInto(uid);
-  }).catch(function(e){ input.disabled=false; toast(e.message||'Could not comment.','error'); });
+    input.value=''; input.focus(); loadCommentsInto(uid);
+  }).catch(function(e){ done(); toast(e.message||'Could not comment.','error'); });
 }
 
 /* Admin acting on a staffer's task */
@@ -1421,12 +1507,15 @@ function taskCardAdmin(t){
   else h+='<button class="complete-btn" data-action="admin-act" data-uid="'+esc(t.uid)+'" data-status="Completed">'+ico('check')+' Complete</button>';
   h+='</div></div>'; return h;
 }
-function adminAct(uid,status){
+function adminAct(uid,status,btn){
+  if(App._aaBusy) return; App._aaBusy=true;
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
   apiCall('updateSharedTask',{uid:uid, status:status}).then(function(res){
-    if(!res||!res.ok){ toast(res&&res.error?res.error:'Could not update.','error'); return; }
+    App._aaBusy=false;
+    if(!res||!res.ok){ if(btn){btn.disabled=false;} toast(res&&res.error?res.error:'Could not update.','error'); return; }
     toast(status==='Completed'?'✓ Completed (as Admin)':'Reopened','success');
-    if(App._staffView) openStaff(App._staffView.id, App._staffView.name);
-  }).catch(function(e){ toast(e.message||'Could not update.','error'); });
+    if(App.view==='staff' && App._staffView) openStaff(App._staffView.id, App._staffView.name);  // only if still there
+  }).catch(function(e){ App._aaBusy=false; if(btn){btn.disabled=false;} toast(e.message||'Could not update.','error'); });
 }
 
 /* Desktop notifications */
@@ -1490,7 +1579,7 @@ document.addEventListener('click', function(e){
     case 'submit-assign': submitAssign(); break;
     case 'open-shared': openShared(el.getAttribute('data-uid')); break;
     case 'add-comment': addCommentUI(el.getAttribute('data-uid')); break;
-    case 'admin-act': adminAct(el.getAttribute('data-uid'), el.getAttribute('data-status')); break;
+    case 'admin-act': adminAct(el.getAttribute('data-uid'), el.getAttribute('data-status'), el); break;
     case 'notif-open': closeModal('reminders-modal'); openFromNotif(el.getAttribute('data-uid')); break;
     case 'toggle-sidebar': toggleSidebar(); break;
     case 'toggle-dept': toggleDept(el.getAttribute('data-dept')); break;
@@ -1503,6 +1592,7 @@ document.addEventListener('click', function(e){
     case 'complete-task': completeTask(el.getAttribute('data-id'), el); break;
     case 'switch-tab': switchTab(el.getAttribute('data-tab')); break;
     case 'save-task': saveTask(el.getAttribute('data-id'), el); break;
+    case 'set-status': setStatusUI(el.getAttribute('data-id'), el.getAttribute('data-status'), el); break;
     case 'complete-from-detail': completeTask(el.getAttribute('data-id'), el); break;
     case 'reopen-task': reopenTask(el.getAttribute('data-id')); break;
     case 'pick': pickSugg(el.getAttribute('data-input'), parseInt(el.getAttribute('data-idx'),10)); break;
