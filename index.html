@@ -502,6 +502,14 @@ body[data-theme="dark"] .skel::after{ background:linear-gradient(90deg,transpare
 .toast .toast-action{ margin-left:10px; background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:3px 11px; font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; }
 .toast .toast-action:hover{ background:rgba(255,255,255,.34); }
 
+/* Confirm modal */
+.confirm-box{ max-width:424px; text-align:center; padding:28px 26px; }
+.confirm-ico{ font-size:2.5rem; margin-bottom:10px; line-height:1; }
+.confirm-box h3{ font-size:1.18rem; font-weight:800; letter-spacing:-.01em; margin-bottom:9px; color:var(--text); }
+.confirm-body{ font-size:.9rem; color:var(--text-sec); line-height:1.55; margin-bottom:22px; }
+.confirm-foot{ display:flex; gap:10px; justify-content:center; }
+.confirm-foot .btn{ min-width:128px; justify-content:center; }
+
 /* Header ⌘K button */
 .kbtn{ display:inline-flex; align-items:center; gap:3px; background:var(--bg); border:1px solid var(--border); color:var(--text-muted); border-radius:9px; padding:6px 9px; cursor:pointer; font:inherit; font-size:.78rem; font-weight:600; transition:all .16s; }
 .kbtn:hover{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
@@ -633,6 +641,19 @@ body[data-theme="dark"] .skel::after{ background:linear-gradient(90deg,transpare
     <div class="modal-h"><h3 id="member-title">Add Member</h3><button class="modal-x" data-action="close-modal" data-modal="member-modal">&times;</button></div>
     <div class="modal-b" id="member-body"></div>
     <div class="modal-f" id="member-foot"></div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirm-modal" class="overlay hidden">
+  <div class="modal confirm-box">
+    <div class="confirm-ico" id="confirm-ico">⚠️</div>
+    <h3 id="confirm-title">Are you sure?</h3>
+    <div class="confirm-body" id="confirm-body"></div>
+    <div class="confirm-foot">
+      <button class="btn btn-ghost" data-action="close-modal" data-modal="confirm-modal">Cancel</button>
+      <button class="btn btn-primary" id="confirm-ok" data-action="confirm-ok">Confirm</button>
+    </div>
   </div>
 </div>
 
@@ -999,15 +1020,25 @@ function doLogin(){
       if(!res||!res.ok||!res.user) throw new Error(res&&res.error?res.error:'Login failed.');
       App.auth={ url:url, key:key, userId:res.user.userId, name:res.user.name, role:res.user.role, allowedDepartments:res.user.allowedDepartments||null };
       App.identity={ employeeId:res.user.userId, employeeName:res.user.name, role:res.user.role };
-      return Store.put('kv','auth',App.auth).then(function(){ return Data.loadAll(); }).then(bootApp);
+      return Store.get('kv','lastUserId').then(function(last){
+        var prep = (last && last!==res.user.userId) ? Promise.all([Store.clear('tasks'),Store.clear('activityLog'),Store.clear('syncQueue')]) : Promise.resolve();
+        return prep
+          .then(function(){ return Store.put('kv','lastUserId',res.user.userId); })
+          .then(function(){ return Store.put('kv','auth',App.auth); })
+          .then(function(){ return Data.loadAll(); })
+          .then(bootApp);
+      });
     })
     .catch(function(e){ btn.disabled=false; btn.textContent='Log In'; errEl.textContent=(e.message||'Login failed')+' — check the link, key, and your internet.'; errEl.style.display='block'; });
 }
 function logout(){
-  if(!confirm('Log out on this device? Synced work stays safe in the cloud.')) return;
-  Sync.flush().then(function(){ return Promise.all([ Store.clear('tasks'), Store.clear('activityLog'), Store.put('kv','auth',null) ]); })
-    .then(function(){ location.reload(); })
-    .catch(function(){ Promise.all([ Store.clear('tasks'), Store.put('kv','auth',null) ]).then(function(){ location.reload(); }); });
+  openConfirm({
+    icon:'👋',
+    title:'Log out',
+    body:'You’ll return to the login screen for another login. All your tasks stay saved — nothing is deleted, and you can log back in anytime to pick up where you left off.',
+    okLabel:'Log out', okClass:'btn-primary',
+    onOk:function(){ Store.put('kv','auth',null).then(function(){ location.reload(); }, function(){ location.reload(); }); }
+  });
 }
 function bootApp(){
   document.getElementById('loading').style.display='none';
@@ -1681,11 +1712,11 @@ function renderSettings(){
   h+='<div class="set-field"><div><div class="set-k">Signed in as '+esc(App.identity.employeeName)+'</div><div class="set-sub">'+esc(App.identity.role)+' · ID '+esc(App.identity.employeeId)+'</div></div><span class="locked-tag">'+ico('check')+' 🔒 Key login</span></div>';
   h+='<div class="set-field"><div><div class="set-k">Sync status</div><div class="set-sub">'+st+'</div></div><button class="btn btn-ghost btn-sm" data-action="sync-now">Sync Now</button></div>';
   h+='<div class="set-field"><div><div class="set-k">Last synced</div><div class="set-sub">'+(Sync.lastSyncedAt?esc(fmtDateTime(Sync.lastSyncedAt)):'—')+'</div></div></div>';
-  h+='<div class="set-field"><div><div class="set-k">Log out</div><div class="set-sub">Sign out on this device.</div></div><button class="btn btn-ghost" data-action="log-out">Log out</button></div></div>';
+  h+='<div class="set-field"><div><div class="set-k">Log out</div><div class="set-sub">End your session and return to login for another account. Your tasks stay saved.</div></div><button class="btn btn-ghost" data-action="log-out">Log out</button></div></div>';
   h+='<div class="set-sec"><h3>🛠️ Admin</h3><div class="set-desc">Data & categories.</div>';
   h+='<div class="set-field"><div><div class="set-k">Categories & departments</div><div class="set-sub">'+App.departments.length+' departments · '+App.categoryMaster.length+' categories in library. New ones you type while adding a client are saved automatically.</div></div></div>';
   h+='<div class="set-field"><div><div class="set-k">Export backup</div><div class="set-sub">Download all your tasks as a JSON file.</div></div><button class="btn btn-ghost" data-action="export-data">Export</button></div>';
-  h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset diary</div><div class="set-sub">Permanently erases this device\'s diary and identity.</div></div><button class="btn btn-danger" data-action="reset-diary">Reset</button></div></div>';
+  h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset my tasks &amp; activity</div><div class="set-sub">Clears all your own tasks and activity (here and in the cloud) and starts fresh. You stay logged in. Cannot be undone.</div></div><button class="btn btn-danger" data-action="reset-diary">Reset</button></div></div>';
   document.getElementById('content').innerHTML=h;
 }
 function toggleTheme(){ App.prefs.theme=(App.prefs.theme==='dark')?'light':'dark'; applyTheme(); Data.savePrefs(); }
@@ -2262,13 +2293,22 @@ function openFromNotif(uid){
   navigate('dashboard'); toast('Open your diary to see it.','info');
 }
 function resetDiary(){
+  openConfirm({
+    icon:'🗑️',
+    title:'Reset my tasks & activity',
+    body:'This permanently clears ALL of your own tasks and your activity — on this device and in the cloud. Tasks other people assigned to you are kept, and you stay logged in.\n\nThis cannot be undone.',
+    okLabel:'Reset everything', okClass:'btn-danger',
+    onOk:doReset_
+  });
+}
+function doReset_(){
   if(!App.auth || !navigator.onLine){ toast('Reset needs an internet connection so it can clear your cloud data too.','warn'); return; }
-  if(!confirm('This permanently deletes ALL your own tasks — on this device AND in the cloud. Tasks others assigned to you are kept. This cannot be undone.\n\nAre you sure?')) return;
-  if(!confirm('Final confirmation: delete your tasks and start fresh?')) return;
   toast('Resetting…','info');
-  var wipeLocal=function(){ return Promise.all([Store.clear('tasks'),Store.clear('activityLog'),Store.clear('kv'),Store.clear('syncQueue')]); };
   apiCall('deleteMyTasks',{}).then(function(res){
-    return wipeLocal().then(function(){ toast('✓ Reset — '+((res&&res.deleted)||0)+' task(s) deleted','info'); setTimeout(function(){ location.reload(); },700); });
+    return Promise.all([Store.clear('tasks'),Store.clear('activityLog'),Store.clear('syncQueue')]).then(function(){
+      toast('✓ Reset — '+((res&&res.deleted)||0)+' task(s) cleared','success');
+      setTimeout(function(){ location.reload(); },700);
+    });
   }).catch(function(e){ toast('Could not reset. '+(e.message||''),'error'); });
 }
 function exportData(){
@@ -2283,6 +2323,17 @@ function exportData(){
 /* ================================================================
    MODAL / SIDEBAR HELPERS
    ================================================================ */
+function openConfirm(o){
+  o=o||{};
+  App._confirmFn = (typeof o.onOk==='function') ? o.onOk : function(){};
+  document.getElementById('confirm-ico').textContent = o.icon||'⚠️';
+  document.getElementById('confirm-title').textContent = o.title||'Are you sure?';
+  document.getElementById('confirm-body').innerHTML = esc(o.body||'').replace(/\n/g,'<br>');
+  var ok=document.getElementById('confirm-ok');
+  ok.textContent = o.okLabel||'Confirm';
+  ok.className = 'btn '+(o.okClass||'btn-primary');
+  openModal('confirm-modal');
+}
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id){ document.getElementById(id).classList.add('hidden'); if(id==='add-modal') hideSuggs(); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-ov').classList.remove('open'); }
@@ -2309,6 +2360,7 @@ document.addEventListener('click', function(e){
     case 'cancel-reminder': var rf2=document.getElementById('rem-form'); if(rf2)rf2.style.display='none'; break;
     case 'raise-reminder': submitReminder(el.getAttribute('data-id')); break;
     case 'open-assign': openAssign(el.getAttribute('data-dept'), el.getAttribute('data-cat')); break;
+    case 'confirm-ok': var _cf=App._confirmFn; closeModal('confirm-modal'); if(_cf) setTimeout(_cf,10); break;
     case 'open-cmdk': openCmdk(); break;
     case 'cmdk-exec': cmdkExec(parseInt(el.getAttribute('data-idx'),10)); break;
     case 'use-template': applyTemplate(el.getAttribute('data-id')); break;
@@ -2373,7 +2425,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
