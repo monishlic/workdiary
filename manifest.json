@@ -1,6 +1,6 @@
 {
-  "name": "WorkDiary",
-  "short_name": "WorkDiary",
+  "name": "E-Diary",
+  "short_name": "E-Diary",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
