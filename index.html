@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>E-Diary — Private Work Diary</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=3">
+<link rel="apple-touch-icon" href="icon-192.png?v=3">
 <meta name="theme-color" content="#2f6bf3">
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 <style>
@@ -17,15 +17,15 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --primary:#0b1220;--primary-light:#1b2536;
-  --accent:#2f6bf3;--accent-hover:#1d54d8;--accent-soft:#eef3ff;
+  --accent:#7166f0;--accent-hover:#5a4de6;--accent-soft:#efedfe;
   --bg:#f4f6fb;--bg-card:#ffffff;--bg-completed:#f1f4f9;
   --text:#0b1220;--text-sec:#5b6675;--text-muted:#98a2b3;--text-completed:#98a2b3;
   --border:#e7ebf2;--border-completed:#d4dbe6;
   --success:#0fb47f;--success-bg:#e9fbf4;--success-dark:#047857;
   --warning:#f59e0b;--warning-bg:#fff8ec;--warning-dark:#92400e;
   --danger:#ef4444;--danger-bg:#fef2f2;--danger-dark:#991b1b;
-  --shadow:0 1px 2px rgba(11,18,32,.04),0 2px 8px rgba(11,18,32,.05);--shadow-md:0 8px 24px -6px rgba(11,18,32,.12),0 2px 8px -2px rgba(11,18,32,.06);
-  --radius:16px;--radius-sm:11px;
+  --shadow:0 1px 2px rgba(80,72,150,.05),0 10px 26px -10px rgba(80,72,150,.16);--shadow-md:0 20px 46px -14px rgba(80,72,150,.28),0 6px 16px -6px rgba(80,72,150,.16);
+  --radius:20px;--radius-sm:13px;
   --sb-width:274px;--header-h:62px;
   --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Inter',system-ui,'Segoe UI',Roboto,sans-serif;
 }
@@ -525,6 +525,95 @@ body[data-theme="dark"] .skel::after{ background:linear-gradient(90deg,transpare
 
 /* View transitions */
 ::view-transition-old(root),::view-transition-new(root){ animation-duration:.26s; }
+
+/* ================================================================
+   VISION GLASS THEME — visual only (frosted panels, pastel canvas)
+   ================================================================ */
+:root{ --glass:rgba(255,255,255,.58); --glass-2:rgba(255,255,255,.70); --glass-strong:rgba(255,255,255,.80); --glass-brd:rgba(255,255,255,.75); --glass-line:rgba(90,80,150,.12); }
+
+/* Soft pastel gradient canvas */
+body{ background:
+  radial-gradient(1100px 720px at 8% -10%, #ffdcef 0%, rgba(255,220,239,0) 55%),
+  radial-gradient(1100px 720px at 110% 0%, #cfe0ff 0%, rgba(207,224,255,0) 52%),
+  radial-gradient(1000px 820px at 55% 120%, #d5f6ec 0%, rgba(213,246,236,0) 55%),
+  linear-gradient(160deg,#f4f1fc 0%,#eef2fd 45%,#f8eefb 100%) fixed; }
+body[data-theme="dark"]{ background:
+  radial-gradient(1000px 640px at 8% -8%, #3a2a5e 0%, transparent 55%),
+  radial-gradient(1000px 640px at 112% 0%, #1d3a60 0%, transparent 55%),
+  linear-gradient(160deg,#0b1020,#0e1428) fixed; color:var(--text); }
+
+/* Login screen glass */
+#welcome{ background:
+  radial-gradient(900px 600px at 12% 0%, #ffdcef, transparent 55%),
+  radial-gradient(900px 600px at 112% 8%, #cfe0ff, transparent 52%),
+  linear-gradient(160deg,#f4f1fc,#f8eefb) !important; }
+.welcome-card{ background:var(--glass-strong) !important; -webkit-backdrop-filter:blur(26px) saturate(180%); backdrop-filter:blur(26px) saturate(180%); border:1px solid var(--glass-brd); box-shadow:0 30px 70px -22px rgba(80,72,150,.4); }
+.welcome-btn{ background:linear-gradient(135deg,#8e7bff,#f0a6cf) !important; }
+
+/* ---- Sidebar: dark -> light frosted glass ---- */
+#sidebar{ background:var(--glass-strong); -webkit-backdrop-filter:blur(30px) saturate(180%); backdrop-filter:blur(30px) saturate(180%); color:var(--text); border-right:1px solid var(--glass-brd); box-shadow:0 20px 50px -24px rgba(80,72,150,.25); }
+.sb-head{ border-bottom:1px solid var(--glass-line); }
+.sb-brand{ color:var(--text); }
+.nav-link{ color:var(--text-sec); }
+.nav-link:hover{ background:rgba(255,255,255,.6); color:var(--text); }
+.nav-link.active{ background:rgba(255,255,255,.9); color:var(--accent); box-shadow:inset 2px 0 0 var(--accent); }
+.dept-header{ background:rgba(255,255,255,.42); color:var(--text); }
+.dept-header:hover{ background:rgba(255,255,255,.66); }
+.dept-header .chev{ color:var(--text-muted); }
+#sb-nav::-webkit-scrollbar-thumb{ background:rgba(110,100,160,.28); }
+
+/* ---- Header: stronger frost ---- */
+#header{ background:var(--glass-2) !important; -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%); border-bottom:1px solid var(--glass-brd); }
+#searchbar{ background:rgba(255,255,255,.55); border:1px solid var(--glass-brd); }
+
+/* ---- Big/few panels: real frosted glass (blur) ---- */
+.modal,.cmdk-box,.board-col,.set-sec{ background:var(--glass-strong) !important; -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%); border:1px solid var(--glass-brd); }
+
+/* ---- Many repeated cards: translucent frost WITHOUT per-item blur (keeps lists fast) ---- */
+.card,.dept-card,.stat,.priority-card,.insight,.board-card,.tpl-empty{ background:var(--glass) !important; border:1px solid var(--glass-brd) !important; box-shadow:var(--shadow); }
+.card.done,.card .done,.done{ }
+.f-input,.f-area,select,.combo-input{ background:rgba(255,255,255,.6) !important; border:1px solid var(--glass-brd) !important; }
+
+/* ---- Pastel gradient accents ---- */
+.btn-primary,.add-btn{ background:linear-gradient(135deg,#8e7bff 0%,#6aa8ff 100%) !important; border:none !important; color:#fff !important; box-shadow:0 10px 22px -10px rgba(124,108,246,.8) !important; }
+.btn-primary:hover:not(:disabled),.add-btn:hover:not(:disabled){ background:linear-gradient(135deg,#7d6bff 0%,#5a9cff 100%) !important; }
+.btn-success{ background:linear-gradient(135deg,#34d3a6,#12b48b) !important; border:none !important; color:#fff !important; }
+.filter-chip{ background:var(--glass) !important; border:1px solid var(--glass-brd) !important; }
+.filter-chip.on{ background:linear-gradient(135deg,#8e7bff,#6aa8ff) !important; border:none !important; color:#fff !important; }
+.tpl-chip{ background:rgba(255,255,255,.6) !important; }
+.pill-stat.pend{ background:rgba(142,123,255,.16); color:#6a5be6; }
+
+/* Dashboard hero — soft multi-pastel */
+.dash-hero{ background:linear-gradient(120deg,#8e7bff 0%,#6f9dff 45%,#f19ac6 100%) !important; box-shadow:0 22px 52px -18px rgba(126,110,235,.6) !important; }
+/* Roast banner — glassy accent */
+.nudge{ background:linear-gradient(135deg, rgba(142,123,255,.92), rgba(106,168,255,.92)) !important; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+
+/* Overlays: soft frosted dim */
+.overlay{ background:rgba(70,64,120,.28) !important; -webkit-backdrop-filter:blur(10px) saturate(120%); backdrop-filter:blur(10px) saturate(120%); }
+
+/* Kanban columns a touch more see-through */
+.board-col{ background:rgba(255,255,255,.5) !important; }
+
+/* ---- Slate (sticky notes) ---- */
+.slate-board{ position:relative; min-height:calc(100vh - 190px); border-radius:26px; background:rgba(255,255,255,.32); border:1.5px dashed rgba(120,110,175,.3); overflow:auto; cursor:crosshair; -webkit-backdrop-filter:blur(8px) saturate(160%); backdrop-filter:blur(8px) saturate(160%); }
+.slate-board.ro{ cursor:default; }
+.slate-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:.95rem; pointer-events:none; text-align:center; padding:20px; }
+.slate-note{ position:absolute; width:170px; min-height:66px; padding:12px 12px 14px; border-radius:15px; box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16); color:#3a3552; font-size:.9rem; line-height:1.42; transform:rotate(var(--rot,0deg)); cursor:grab; transition:box-shadow .2s ease, transform .12s ease; animation:snPop .34s cubic-bezier(.2,.9,.3,1.35); word-break:break-word; touch-action:none; }
+@media (hover:hover){ .slate-note:hover{ box-shadow:0 18px 34px -10px rgba(80,72,150,.46),0 3px 8px rgba(80,72,150,.2); z-index:6; } }
+.slate-note.dragging{ cursor:grabbing; transform:rotate(0deg) scale(1.05); z-index:20; box-shadow:0 24px 48px -12px rgba(80,72,150,.5); }
+.slate-board.ro .slate-note{ cursor:default; }
+.sn-text{ white-space:pre-wrap; margin-top:2px; }
+.sn-actions{ position:absolute; top:6px; right:6px; display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+.slate-note:hover .sn-actions{ opacity:1; }
+.sn-btn{ width:23px; height:23px; border:none; border-radius:8px; background:rgba(255,255,255,.62); color:#4a4560; font-size:.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; transition:background .14s,color .14s,transform .12s; }
+.sn-btn:hover{ background:#fff; transform:scale(1.1); }
+.sn-done:hover{ color:#0f9d6f; } .sn-task:hover{ color:var(--accent); }
+.slate-input{ cursor:text; z-index:30; box-shadow:0 18px 36px -10px rgba(80,72,150,.5); }
+.slate-input textarea{ width:100%; border:none; background:transparent; resize:none; font:inherit; font-size:.9rem; color:#3a3552; outline:none; }
+.slate-note.sn-removing{ animation:snPeel .26s ease forwards; }
+@keyframes snPop{ from{ opacity:0; transform:rotate(var(--rot,0deg)) scale(.7); } to{ opacity:1; transform:rotate(var(--rot,0deg)) scale(1); } }
+@keyframes snPeel{ to{ opacity:0; transform:rotate(var(--rot,0deg)) scale(.55) translateY(-10px); } }
+
 </style>
 </head>
 <body>
@@ -720,7 +809,7 @@ var App = {
   identity:null,      // derived {employeeId, employeeName, role}
   departments:[], categoryMaster:[], prefs:{theme:'light',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
-  reminders:[], staffCache:null, members:[], _staffView:null, _notifSeen:{}, dashFilter:'all', templates:[],
+  reminders:[], staffCache:null, members:[], _staffView:null, _notifSeen:{}, dashFilter:'all', templates:[], slateNotes:[], _slateView:null,
   _sugg:{}, nudgeIdx:0, nudgeTimer:null
 };
 
@@ -995,10 +1084,11 @@ var Sync = {
 document.addEventListener('DOMContentLoaded', init);
 function init(){
   Store.ready().then(function(){
-    return Promise.all([ Store.get('kv','auth'), Store.get('kv','departments'), Store.get('kv','prefs'), Store.get('kv','categoryMaster'), Sync.load(), Store.get('kv','notifSeen'), Store.get('kv','templates') ]);
+    return Promise.all([ Store.get('kv','auth'), Store.get('kv','departments'), Store.get('kv','prefs'), Store.get('kv','categoryMaster'), Sync.load(), Store.get('kv','notifSeen'), Store.get('kv','templates'), Store.get('kv','slateNotes') ]);
   }).then(function(r){
     App.auth=r[0]||null;
     App.templates=r[6]||[];
+    App.slateNotes=r[7]||[];
     App.departments=r[1]||DEFAULT_DEPARTMENTS.map(function(d){return {department:d.department,categories:d.categories.slice()};});
     App.prefs=r[2]||{theme:'light',collapsed:{}};
     if(!App.prefs.collapsed) App.prefs.collapsed={};
@@ -1051,11 +1141,11 @@ function bootApp(){
   document.getElementById('welcome').style.display='none';
   document.getElementById('id-avatar').textContent=initials(App.identity.employeeName);
   document.getElementById('id-name').textContent=App.identity.employeeName;
-  buildSidebar(); navigate('dashboard');
+  buildSidebar(); navigate('slate');
   startNudgeCycle();
   Sync.updatePill();
   requestNotifPermission();
-  if(Sync.online()){ Sync.full(); loadReminders(); loadTeamMembers(); }
+  if(Sync.online()){ Sync.full(); loadReminders(); loadTeamMembers(); Slate.pull(); }
   // Set up background timers/listeners exactly once (prevents stacking on re-login)
   if(!App._booted){
     App._booted = true;
@@ -1102,6 +1192,7 @@ function visibleDepartments(){
 }
 function buildSidebar(){
   var h='';
+  h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
   visibleDepartments().forEach(function(d){
@@ -1194,12 +1285,14 @@ function cmdkExec(i){
   setTimeout(function(){ try{ it.run(); }catch(e){} },10);
 }
 function navigate(view,dept,cat){
+  App._slateView=null;
   App.view=view; App.dept=dept||null; App.cat=cat||null; App.tab='pending';
   if(view==='category' && dept){ App.prefs.expanded[dept]=true; Data.savePrefs(); }  // auto-open the dept you enter
   closeSidebar();
   withVT(function(){
     buildSidebar();
     if(view==='dashboard') renderDashboard();
+    else if(view==='slate') renderSlate();
     else if(view==='board') renderBoard();
     else if(view==='category') renderCategory();
     else if(view==='search') renderSearch('');
@@ -1474,6 +1567,147 @@ function boardMove(taskId,target){
   else { Data.setStatus(taskId,'Pending').then(function(){ done('Set to Pending'); }).catch(fail); }
 }
 
+/* ================================================================
+   SLATE — quick-capture sticky notes (personal, synced, admin read-only)
+   ================================================================ */
+var Slate = {
+  colors:['#fff3b0','#ffd6e7','#c9f2d8','#e0d9ff','#ffe1c4','#c9e8ff','#ffd9cf','#d9f0ff'],
+  pick:function(){ return Slate.colors[Math.floor(Math.random()*Slate.colors.length)]; },
+  saveLocal:function(){ return Store.put('kv','slateNotes', App.slateNotes||[]); },
+  pull:function(){
+    if(!Sync.online() || !App.auth) return Promise.resolve();
+    return apiCall('getMyNotes',{}).then(function(res){
+      if(res&&res.ok){
+        var unsynced=(App.slateNotes||[]).filter(function(n){return n._temp;});
+        App.slateNotes=(res.notes||[]).concat(unsynced);
+        Slate.saveLocal();
+        if(App.view==='slate' && !App._slateView) paintSlate();
+      }
+    }).catch(function(){});
+  },
+  add:function(text,x,y,color){
+    if(!App.slateNotes) App.slateNotes=[];
+    var n={ id:'tmp-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), _temp:true, text:text, color:color||Slate.pick(), x:x, y:y, created:nowISO() };
+    App.slateNotes.push(n); Slate.saveLocal();
+    if(Sync.online()){
+      apiCall('saveNote',{text:text,color:n.color,x:x,y:y}).then(function(res){
+        if(res&&res.ok){ n.id=res.id; n._temp=false; Slate.saveLocal();
+          if(Math.round(n.x)!==x || Math.round(n.y)!==y) apiCall('updateNote',{id:n.id,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){});
+        }
+      }).catch(function(){ toast('Note saved on this device — will sync when online.','warn'); });
+    } else { toast('Note saved on this device — will sync when online.','warn'); }
+    return n;
+  },
+  move:function(n){
+    Slate.saveLocal();
+    if(n._temp || !Sync.online()) return;
+    clearTimeout(n._mt); n._mt=setTimeout(function(){ apiCall('updateNote',{id:n.id,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){}); }, 450);
+  },
+  remove:function(n){
+    App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal();
+    if(!n._temp && Sync.online()) apiCall('deleteNote',{id:n.id}).catch(function(){});
+  }
+};
+function renderSlate(){
+  App.view='slate';
+  var ro=!!App._slateView;
+  var notes = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
+  var h='';
+  if(ro){
+    h+='<div class="cat-head"><div class="crumb"><span data-action="open-staff" data-id="'+esc(App._slateView.id)+'" data-name="'+esc(App._slateView.name)+'" style="cursor:pointer;color:var(--accent);font-weight:600">← '+esc(App._slateView.name)+'</span></div><div class="cat-title">'+esc(App._slateView.name)+'’s Slate</div><div class="cat-sub">Read-only · '+notes.length+' note'+(notes.length!==1?'s':'')+'</div></div>';
+  } else {
+    h+='<div class="cat-head"><div class="cat-title">Slate</div><div class="cat-sub">Click anywhere on the board and type — it drops in as a sticky note. Drag to arrange, ✓ when done.</div><div class="cat-actions"><button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button></div></div>';
+  }
+  h+='<div id="slate-board" class="slate-board'+(ro?' ro':'')+'" data-action="slate-click"></div>';
+  document.getElementById('content').innerHTML=h;
+  paintSlate();
+}
+function paintSlate(){
+  var board=document.getElementById('slate-board'); if(!board) return;
+  var ro=!!App._slateView;
+  var notes = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
+  var html = notes.map(function(n){ return slateNoteHTML(n,ro); }).join('');
+  if(!notes.length) html += '<div class="slate-empty">'+(ro?'This slate is empty.':'Your slate is clear — click anywhere and start typing.')+'</div>';
+  board.innerHTML = html;
+  if(!ro) attachSlateDnD();
+}
+function slateNoteHTML(n, ro){
+  var s=String(n.id), seed=0; for(var i=0;i<s.length;i++) seed+=s.charCodeAt(i);
+  var rot=(seed%5)-2;
+  var actions = ro ? '' : '<button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Mark done">✓</button>';
+  return '<div class="slate-note" data-note="'+esc(n.id)+'" style="left:'+Math.max(2,n.x||10)+'px;top:'+Math.max(2,n.y||10)+'px;background:'+esc(n.color||'#fff3b0')+';--rot:'+rot+'deg">'+
+    '<div class="sn-actions">'+actions+'</div><div class="sn-text">'+esc(n.text)+'</div></div>';
+}
+function slateNew(){
+  var c=(App.slateNotes||[]).length%6; spawnNoteInput(28+c*22, 26+c*22);
+}
+function slateClick(e){
+  if(App._slateView) return;
+  var board=document.getElementById('slate-board'); if(!board || e.target!==board) return;
+  var rect=board.getBoundingClientRect();
+  var x=Math.round(e.clientX-rect.left+board.scrollLeft-78);
+  var y=Math.round(e.clientY-rect.top+board.scrollTop-22);
+  if(x<4)x=4; if(y<4)y=4;
+  spawnNoteInput(x,y);
+}
+function spawnNoteInput(x,y){
+  var ex=document.getElementById('slate-input-wrap'); if(ex) ex.remove();
+  var board=document.getElementById('slate-board'); if(!board) return;
+  var color=Slate.pick();
+  var w=document.createElement('div'); w.id='slate-input-wrap'; w.className='slate-note slate-input'; w.style.left=x+'px'; w.style.top=y+'px'; w.style.background=color; w.style.setProperty('--rot','0deg');
+  w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type, then Enter…" maxlength="600"></textarea>';
+  board.appendChild(w);
+  var ta=document.getElementById('slate-input'); ta._x=x; ta._y=y; ta._color=color;
+  ta.addEventListener('blur', function(){ commitSlateInput(); });
+  setTimeout(function(){ ta.focus(); }, 10);
+}
+function commitSlateInput(){
+  var ta=document.getElementById('slate-input'); if(!ta) return;
+  var text=(ta.value||'').trim(), x=ta._x, y=ta._y, color=ta._color;
+  var wrap=document.getElementById('slate-input-wrap'); if(wrap) wrap.remove();
+  if(!text) return;
+  Slate.add(text,x,y,color);
+  paintSlate();
+}
+function cancelSlateInput(){ var wrap=document.getElementById('slate-input-wrap'); if(wrap){ var ta=document.getElementById('slate-input'); if(ta) ta.value=''; wrap.remove(); } }
+function attachSlateDnD(){
+  var board=document.getElementById('slate-board'); if(!board) return;
+  board.querySelectorAll('.slate-note[data-note]').forEach(function(el){
+    el.addEventListener('pointerdown', function(e){
+      if(e.target.closest('.sn-btn')) return;
+      var id=el.getAttribute('data-note');
+      var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+      e.preventDefault();
+      var startX=e.clientX, startY=e.clientY, origX=n.x||10, origY=n.y||10, moved=false;
+      try{ el.setPointerCapture(e.pointerId); }catch(_){}
+      el.classList.add('dragging');
+      var mv=function(ev){ moved=true; n.x=Math.max(2,origX+(ev.clientX-startX)); n.y=Math.max(2,origY+(ev.clientY-startY)); el.style.left=n.x+'px'; el.style.top=n.y+'px'; };
+      var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=Math.round(n.x); n.y=Math.round(n.y); Slate.move(n); } };
+      el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
+    });
+  });
+}
+function slateDone(id){
+  var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+  var el=document.querySelector('.slate-note[data-note="'+id+'"]');
+  var fin=function(){ Slate.remove(n); paintSlate(); };
+  if(el && !_reduceMotion){ el.classList.add('sn-removing'); setTimeout(fin,260); } else fin();
+}
+function slateToTask(id){
+  var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+  openAssign();
+  setTimeout(function(){ var d=document.getElementById('assign-details'); if(d) d.value=n.text; var c=document.getElementById('assign-client'); if(c) c.focus(); }, 170);
+}
+function openStaffSlate(id,name){
+  if(!Sync.online()){ toast('Viewing a slate needs an internet connection.','warn'); return; }
+  document.getElementById('content').innerHTML=skelHead(name+'’s Slate')+skelList(3);
+  apiCall('adminGetSlate',{userId:id}).then(function(res){
+    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load slate.'); return; }
+    App._slateView={ id:id, name:name, notes:res.notes||[] };
+    App.view='slate'; buildSidebar(); renderSlate();
+  }).catch(function(e){ showContentError_(e.message||'Could not load slate.'); });
+}
+
 function renderList(){
   var f=App.listFilter, title='', desc='', list=[];
   var pending=App.tasks.filter(function(t){return isActive(t);});
@@ -1699,6 +1933,7 @@ function reopenTask(taskId){
 }
 function refreshView(){
   if(App.view==='dashboard') renderDashboard();
+  else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
   else if(App.view==='category') renderCategory();
   else if(App.view==='list') renderList();
@@ -1791,7 +2026,7 @@ function openStaff(staffId,name){
     var overdue=pend.filter(function(t){return t.dueDate && new Date(t.dueDate).getTime()<now;}).length;
     var h='<div class="cat-head"><div class="crumb"><span data-action="nav" data-view="team" style="cursor:pointer;color:var(--accent);font-weight:600">← Team</span></div>';
     h+='<div class="cat-title">'+esc(name)+'</div><div class="cat-sub">'+esc(member.role)+(member.active?'':' · inactive')+'</div>';
-    h+='<div class="cat-actions"><button class="add-btn" data-action="open-reminder-form">🔔 Raise Reminder</button></div></div>';
+    h+='<div class="cat-actions"><button class="add-btn" data-action="open-reminder-form">🔔 Raise Reminder</button><button class="btn btn-ghost btn-sm" data-action="open-staff-slate" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">📝 View Slate</button></div></div>';
     h+='<div class="stats"><div class="stat st-pending"><div class="stat-v">'+pend.length+'</div><div class="stat-l">Pending</div></div>'+
        '<div class="stat st-over"><div class="stat-v">'+overdue+'</div><div class="stat-l">Overdue</div></div>'+
        '<div class="stat st-done"><div class="stat-v">'+done.length+'</div><div class="stat-l">Completed</div></div>'+
@@ -2397,6 +2632,11 @@ document.addEventListener('click', function(e){
     case 'raise-reminder': submitReminder(el.getAttribute('data-id')); break;
     case 'open-assign': openAssign(el.getAttribute('data-dept'), el.getAttribute('data-cat')); break;
     case 'confirm-ok': var _cf=App._confirmFn; closeModal('confirm-modal'); if(_cf) setTimeout(_cf,10); break;
+    case 'slate-click': slateClick(e); break;
+    case 'slate-new': slateNew(); break;
+    case 'slate-done': slateDone(el.getAttribute('data-id')); break;
+    case 'slate-task': slateToTask(el.getAttribute('data-id')); break;
+    case 'open-staff-slate': openStaffSlate(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'open-cmdk': openCmdk(); break;
     case 'cmdk-exec': cmdkExec(parseInt(el.getAttribute('data-idx'),10)); break;
     case 'use-template': applyTemplate(el.getAttribute('data-id')); break;
@@ -2462,7 +2702,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); cancelSlateInput(); }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
@@ -2470,6 +2710,7 @@ document.addEventListener('keydown', function(e){
     else if(id==='comment-input'){ var cb=document.querySelector('[data-action="add-comment"]'); if(cb) addCommentUI(cb.getAttribute('data-uid')); }
     else if(id==='login-key'||id==='login-url'){ doLogin(); }
     else if(id==='nm-name'){ submitCreateMember(document.querySelector('[data-action="submit-create-member"]')); }
+    else if(id==='slate-input'){ if(!e.shiftKey){ e.preventDefault(); commitSlateInput(); } }
     else if(id==='add-dept'||id==='add-cat'){ e.preventDefault(); if(id==='add-dept'){ document.getElementById('dept-sugg').classList.add('hidden'); document.getElementById('add-cat').focus(); } else { document.getElementById('cat-sugg').classList.add('hidden'); document.getElementById('add-client').focus(); } }
   }
 });
