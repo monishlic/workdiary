@@ -109,7 +109,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .id-avatar{width:33px;height:33px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem}
 .id-name{font-size:.82rem;font-weight:600;color:var(--text)}
 @media(max-width:620px){.id-name{display:none}.conn-pill span{display:none}}
-#content{flex:1;padding:24px;max-width:1080px;width:100%}
+#content{flex:1;padding:24px 34px;width:100%;max-width:100%}
 
 /* Dashboard */
 .dash-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
@@ -1651,7 +1651,7 @@ function renderSlate(){
     h+='<div class="slate-tools">';
     h+='<input id="slate-search" class="slate-search" placeholder="Search notes…" autocomplete="off" value="'+esc(App._slateQuery||'')+'">';
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-tidy" title="Auto-arrange">✨ Tidy</button>';
-    h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">\U0001f5c4 Archive'+(archived.length?' ('+archived.length+')':'')+'</button>';
+    h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">🗄 Archive'+(archived.length?' ('+archived.length+')':'')+'</button>';
     h+='<button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button>';
     h+='</div></div>';
   }
@@ -1683,7 +1683,7 @@ function slateNoteHTML(n, ro){
     '<div class="sn-foot">'+badge+'<span class="sn-age">'+esc(noteAge(n.created))+'</span></div>'+
   '</div>';
 }
-function slateNew(){ var c=(App.slateNotes||[]).filter(function(n){return !n.done;}).length%6; spawnNoteInput(28+c*22, 26+c*22); }
+function slateNew(){ var board=document.getElementById('slate-board'); var active=(App.slateNotes||[]).filter(function(n){return !n.done;}); var pad=20,colW=192,rowH=124; var cols=board?Math.max(1,Math.floor((board.clientWidth-pad)/colW)):5; var i=active.length; spawnNoteInput(pad+(i%cols)*colW, pad+Math.floor(i/cols)*rowH); }
 function slateClick(e){
   if(App._slateView) return;
   var board=document.getElementById('slate-board'); if(!board || e.target!==board) return;
@@ -1767,7 +1767,7 @@ function openArchive(){
   var body = archived.length ? archived.map(function(n){
     return '<div class="arch-item"><span class="arch-dot" style="background:'+esc(n.color)+'"></span><div class="arch-main"><div class="arch-text">'+esc(n.text)+'</div><div class="arch-meta">'+esc(fmtDate(n.created))+'</div></div><button class="btn btn-ghost btn-sm" data-action="slate-restore" data-id="'+esc(n.id)+'">Restore</button><button class="btn btn-danger btn-sm" data-action="slate-del" data-id="'+esc(n.id)+'">Delete</button></div>';
   }).join('') : '<div class="cmdk-empty">No archived notes yet. Tick ✓ on a note to archive it here.</div>';
-  ov.innerHTML='<div class="modal" style="max-width:540px"><div class="modal-h"><h3>\U0001f5c4 Archived notes</h3><button class="modal-x" data-action="close-arch">&times;</button></div><div class="modal-b" id="arch-body">'+body+'</div></div>';
+  ov.innerHTML='<div class="modal" style="max-width:540px"><div class="modal-h"><h3>🗄 Archived notes</h3><button class="modal-x" data-action="close-arch">&times;</button></div><div class="modal-b" id="arch-body">'+body+'</div></div>';
   document.body.appendChild(ov);
 }
 function closeArch(){ var ov=document.getElementById('arch-ov'); if(ov) ov.remove(); }
