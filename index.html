@@ -595,24 +595,52 @@ body[data-theme="dark"]{ background:
 .board-col{ background:rgba(255,255,255,.5) !important; }
 
 /* ---- Slate (sticky notes) ---- */
-.slate-board{ position:relative; min-height:calc(100vh - 190px); border-radius:26px; background:rgba(255,255,255,.32); border:1.5px dashed rgba(120,110,175,.3); overflow:auto; cursor:crosshair; -webkit-backdrop-filter:blur(8px) saturate(160%); backdrop-filter:blur(8px) saturate(160%); }
+.slate-head-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; flex-wrap:wrap; }
+.slate-tools{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.slate-search{ border:1px solid var(--glass-brd); background:rgba(255,255,255,.6); border-radius:11px; padding:8px 12px; font:inherit; font-size:.84rem; color:var(--text); outline:none; width:180px; }
+.slate-search:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+.slate-board{ position:relative; min-height:calc(100vh - 166px); border-radius:26px; background:rgba(255,255,255,.30); border:1.5px dashed rgba(120,110,175,.3); overflow:auto; cursor:crosshair; -webkit-backdrop-filter:blur(8px) saturate(160%); backdrop-filter:blur(8px) saturate(160%); background-image:radial-gradient(rgba(120,110,175,.13) 1px, transparent 1px); background-size:20px 20px; }
 .slate-board.ro{ cursor:default; }
 .slate-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:.95rem; pointer-events:none; text-align:center; padding:20px; }
-.slate-note{ position:absolute; width:170px; min-height:66px; padding:12px 12px 14px; border-radius:15px; box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16); color:#3a3552; font-size:.9rem; line-height:1.42; transform:rotate(var(--rot,0deg)); cursor:grab; transition:box-shadow .2s ease, transform .12s ease; animation:snPop .34s cubic-bezier(.2,.9,.3,1.35); word-break:break-word; touch-action:none; }
+.slate-note{ position:absolute; width:172px; min-height:70px; padding:11px 12px 9px; border-radius:15px; border:2px solid rgba(224,49,49,0); box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16); color:#3a3552; font-size:.9rem; line-height:1.4; transform:rotate(var(--rot,0deg)); cursor:grab; transition:box-shadow .2s ease, transform .12s ease, border-color .5s ease; animation:snPop .34s cubic-bezier(.2,.9,.3,1.35); word-break:break-word; touch-action:none; user-select:none; -webkit-user-select:none; }
+.slate-note.angry{ border-color:rgba(224,49,49,var(--anger,0)); box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16), inset 0 0 0 999px rgba(255,74,60,calc(var(--anger,0)*.18)); }
 @media (hover:hover){ .slate-note:hover{ box-shadow:0 18px 34px -10px rgba(80,72,150,.46),0 3px 8px rgba(80,72,150,.2); z-index:6; } }
 .slate-note.dragging{ cursor:grabbing; transform:rotate(0deg) scale(1.05); z-index:20; box-shadow:0 24px 48px -12px rgba(80,72,150,.5); }
+.slate-note.dim{ opacity:.22; }
 .slate-board.ro .slate-note{ cursor:default; }
-.sn-text{ white-space:pre-wrap; margin-top:2px; }
+.sn-text{ white-space:pre-wrap; }
+.sn-foot{ display:flex; align-items:center; gap:6px; margin-top:8px; min-height:15px; }
+.sn-age{ font-size:.68rem; color:rgba(58,53,82,.55); margin-left:auto; }
+.slate-note.angry .sn-age{ color:rgba(185,30,25,calc(.55 + var(--anger,0)*.45)); font-weight:600; }
+.sn-tasked{ font-size:.66rem; font-weight:700; background:rgba(15,157,111,.16); color:#0b7a55; padding:2px 7px; border-radius:20px; cursor:pointer; }
+.sn-tasked:hover{ background:rgba(15,157,111,.3); }
 .sn-actions{ position:absolute; top:6px; right:6px; display:flex; gap:4px; opacity:0; transition:opacity .15s; }
 .slate-note:hover .sn-actions{ opacity:1; }
-.sn-btn{ width:23px; height:23px; border:none; border-radius:8px; background:rgba(255,255,255,.62); color:#4a4560; font-size:.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; transition:background .14s,color .14s,transform .12s; }
+.sn-btn{ width:23px; height:23px; border:none; border-radius:8px; background:rgba(255,255,255,.66); color:#4a4560; font-size:.82rem; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; transition:background .14s,color .14s,transform .12s; }
 .sn-btn:hover{ background:#fff; transform:scale(1.1); }
 .sn-done:hover{ color:#0f9d6f; } .sn-task:hover{ color:var(--accent); }
-.slate-input{ cursor:text; z-index:30; box-shadow:0 18px 36px -10px rgba(80,72,150,.5); }
+.slate-input{ cursor:text; z-index:30; box-shadow:0 18px 36px -10px rgba(80,72,150,.5); user-select:text; -webkit-user-select:text; }
 .slate-input textarea{ width:100%; border:none; background:transparent; resize:none; font:inherit; font-size:.9rem; color:#3a3552; outline:none; }
 .slate-note.sn-removing{ animation:snPeel .26s ease forwards; }
 @keyframes snPop{ from{ opacity:0; transform:rotate(var(--rot,0deg)) scale(.7); } to{ opacity:1; transform:rotate(var(--rot,0deg)) scale(1); } }
 @keyframes snPeel{ to{ opacity:0; transform:rotate(var(--rot,0deg)) scale(.55) translateY(-10px); } }
+/* Archive list */
+.arch-item{ display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--glass-line); }
+.arch-dot{ width:12px; height:12px; border-radius:50%; flex:0 0 auto; }
+.arch-main{ flex:1; min-width:0; }
+.arch-text{ font-size:.9rem; word-break:break-word; }
+.arch-meta{ font-size:.72rem; color:var(--text-muted); margin-top:2px; }
+/* Sidebar collapse-to-rail + hover-expand (desktop only) */
+.nav-ico{ font-size:1.02rem; }
+@media(min-width:900px){
+  #sidebar{ width:72px; z-index:120; transition:width .26s cubic-bezier(.2,.7,.3,1), box-shadow .26s; }
+  #sidebar:hover{ width:var(--sb-width); box-shadow:0 24px 60px -18px rgba(80,72,150,.4); }
+  #main{ margin-left:72px; }
+  #sidebar:not(:hover) .nav-link, #sidebar:not(:hover) .dept-header{ font-size:0; }
+  #sidebar:not(:hover) .sb-brand{ opacity:0; }
+  #sidebar:not(:hover) .dept-cats{ display:none; }
+  #sidebar:not(:hover) .bell-badge{ display:none; }
+}
 
 </style>
 </head>
@@ -1587,11 +1615,11 @@ var Slate = {
   },
   add:function(text,x,y,color){
     if(!App.slateNotes) App.slateNotes=[];
-    var n={ id:'tmp-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), _temp:true, text:text, color:color||Slate.pick(), x:x, y:y, created:nowISO() };
+    var n={ id:'tmp-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), _temp:true, text:text, color:color||Slate.pick(), x:x, y:y, done:false, taskRef:'', created:nowISO() };
     App.slateNotes.push(n); Slate.saveLocal();
     if(Sync.online()){
       apiCall('saveNote',{text:text,color:n.color,x:x,y:y}).then(function(res){
-        if(res&&res.ok){ n.id=res.id; n._temp=false; Slate.saveLocal();
+        if(res&&res.ok){ n.id=res.id; n._temp=false; n.created=res.created||n.created; Slate.saveLocal();
           if(Math.round(n.x)!==x || Math.round(n.y)!==y) apiCall('updateNote',{id:n.id,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){});
         }
       }).catch(function(){ toast('Note saved on this device — will sync when online.','warn'); });
@@ -1603,20 +1631,29 @@ var Slate = {
     if(n._temp || !Sync.online()) return;
     clearTimeout(n._mt); n._mt=setTimeout(function(){ apiCall('updateNote',{id:n.id,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){}); }, 450);
   },
-  remove:function(n){
-    App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal();
-    if(!n._temp && Sync.online()) apiCall('deleteNote',{id:n.id}).catch(function(){});
-  }
+  archive:function(n){ n.done=true; Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,done:true}).catch(function(){}); },
+  restore:function(n){ n.done=false; Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,done:false}).catch(function(){}); },
+  setTasked:function(n,ref){ n.taskRef=ref||'task'; Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,taskRef:n.taskRef}).catch(function(){}); },
+  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('deleteNote',{id:n.id}).catch(function(){}); }
 };
+function noteAnger(created){ var t=new Date(created).getTime(); if(!t) return 0; var days=(Date.now()-t)/86400000; return Math.max(0,Math.min(1,(days-1)/6)); }
+function noteAge(created){ var t=new Date(created).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(created); }
 function renderSlate(){
   App.view='slate';
   var ro=!!App._slateView;
-  var notes = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
+  var all = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
+  var archived = all.filter(function(n){return n.done;});
   var h='';
   if(ro){
-    h+='<div class="cat-head"><div class="crumb"><span data-action="open-staff" data-id="'+esc(App._slateView.id)+'" data-name="'+esc(App._slateView.name)+'" style="cursor:pointer;color:var(--accent);font-weight:600">← '+esc(App._slateView.name)+'</span></div><div class="cat-title">'+esc(App._slateView.name)+'’s Slate</div><div class="cat-sub">Read-only · '+notes.length+' note'+(notes.length!==1?'s':'')+'</div></div>';
+    h+='<div class="cat-head"><div class="crumb"><span data-action="open-staff" data-id="'+esc(App._slateView.id)+'" data-name="'+esc(App._slateView.name)+'" style="cursor:pointer;color:var(--accent);font-weight:600">← '+esc(App._slateView.name)+'</span></div><div class="cat-title">'+esc(App._slateView.name)+'’s Slate</div><div class="cat-sub">Read-only · '+all.filter(function(n){return !n.done;}).length+' note(s)</div></div>';
   } else {
-    h+='<div class="cat-head"><div class="cat-title">Slate</div><div class="cat-sub">Click anywhere on the board and type — it drops in as a sticky note. Drag to arrange, ✓ when done.</div><div class="cat-actions"><button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button></div></div>';
+    h+='<div class="slate-head-row"><div><div class="cat-title">Slate</div><div class="cat-sub">Click anywhere and type. Drag to arrange · ✓ archives · ➜ makes a task.</div></div>';
+    h+='<div class="slate-tools">';
+    h+='<input id="slate-search" class="slate-search" placeholder="Search notes…" autocomplete="off" value="'+esc(App._slateQuery||'')+'">';
+    h+='<button class="btn btn-ghost btn-sm" data-action="slate-tidy" title="Auto-arrange">✨ Tidy</button>';
+    h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">\U0001f5c4 Archive'+(archived.length?' ('+archived.length+')':'')+'</button>';
+    h+='<button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button>';
+    h+='</div></div>';
   }
   h+='<div id="slate-board" class="slate-board'+(ro?' ro':'')+'" data-action="slate-click"></div>';
   document.getElementById('content').innerHTML=h;
@@ -1625,7 +1662,8 @@ function renderSlate(){
 function paintSlate(){
   var board=document.getElementById('slate-board'); if(!board) return;
   var ro=!!App._slateView;
-  var notes = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
+  var all = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
+  var notes = all.filter(function(n){return !n.done;});
   var html = notes.map(function(n){ return slateNoteHTML(n,ro); }).join('');
   if(!notes.length) html += '<div class="slate-empty">'+(ro?'This slate is empty.':'Your slate is clear — click anywhere and start typing.')+'</div>';
   board.innerHTML = html;
@@ -1634,13 +1672,18 @@ function paintSlate(){
 function slateNoteHTML(n, ro){
   var s=String(n.id), seed=0; for(var i=0;i<s.length;i++) seed+=s.charCodeAt(i);
   var rot=(seed%5)-2;
-  var actions = ro ? '' : '<button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Mark done">✓</button>';
-  return '<div class="slate-note" data-note="'+esc(n.id)+'" style="left:'+Math.max(2,n.x||10)+'px;top:'+Math.max(2,n.y||10)+'px;background:'+esc(n.color||'#fff3b0')+';--rot:'+rot+'deg">'+
-    '<div class="sn-actions">'+actions+'</div><div class="sn-text">'+esc(n.text)+'</div></div>';
+  var anger=noteAnger(n.created);
+  var q=(App._slateQuery||'').toLowerCase();
+  var dim=(!ro && q && String(n.text).toLowerCase().indexOf(q)<0)?' dim':'';
+  var badge=n.taskRef ? '<span class="sn-tasked" data-action="slate-open-task" data-id="'+esc(n.id)+'" title="Tasked — find it">✓ task</span>' : '';
+  var actions = ro ? '' : '<button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Archive (done)">✓</button>';
+  return '<div class="slate-note'+dim+(anger>0.05?' angry':'')+'" data-note="'+esc(n.id)+'" style="left:'+Math.max(2,n.x||10)+'px;top:'+Math.max(2,n.y||10)+'px;background:'+esc(n.color||'#fff3b0')+';--rot:'+rot+'deg;--anger:'+anger.toFixed(2)+'">'+
+    '<div class="sn-actions">'+actions+'</div>'+
+    '<div class="sn-text">'+esc(n.text)+'</div>'+
+    '<div class="sn-foot">'+badge+'<span class="sn-age">'+esc(noteAge(n.created))+'</span></div>'+
+  '</div>';
 }
-function slateNew(){
-  var c=(App.slateNotes||[]).length%6; spawnNoteInput(28+c*22, 26+c*22);
-}
+function slateNew(){ var c=(App.slateNotes||[]).filter(function(n){return !n.done;}).length%6; spawnNoteInput(28+c*22, 26+c*22); }
 function slateClick(e){
   if(App._slateView) return;
   var board=document.getElementById('slate-board'); if(!board || e.target!==board) return;
@@ -1674,7 +1717,7 @@ function attachSlateDnD(){
   var board=document.getElementById('slate-board'); if(!board) return;
   board.querySelectorAll('.slate-note[data-note]').forEach(function(el){
     el.addEventListener('pointerdown', function(e){
-      if(e.target.closest('.sn-btn')) return;
+      if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked')) return;
       var id=el.getAttribute('data-note');
       var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
       e.preventDefault();
@@ -1682,7 +1725,7 @@ function attachSlateDnD(){
       try{ el.setPointerCapture(e.pointerId); }catch(_){}
       el.classList.add('dragging');
       var mv=function(ev){ moved=true; n.x=Math.max(2,origX+(ev.clientX-startX)); n.y=Math.max(2,origY+(ev.clientY-startY)); el.style.left=n.x+'px'; el.style.top=n.y+'px'; };
-      var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=Math.round(n.x); n.y=Math.round(n.y); Slate.move(n); } };
+      var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=Math.max(2,Math.round(n.x/20)*20); n.y=Math.max(2,Math.round(n.y/20)*20); el.style.left=n.x+'px'; el.style.top=n.y+'px'; Slate.move(n); } };
       el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
     });
   });
@@ -1690,14 +1733,46 @@ function attachSlateDnD(){
 function slateDone(id){
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
   var el=document.querySelector('.slate-note[data-note="'+id+'"]');
-  var fin=function(){ Slate.remove(n); paintSlate(); };
+  var fin=function(){ Slate.archive(n); paintSlate(); };
   if(el && !_reduceMotion){ el.classList.add('sn-removing'); setTimeout(fin,260); } else fin();
 }
+function slateTask(id){ slateToTask(id); }
 function slateToTask(id){
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+  App._slateTaskNoteId=id;
   openAssign();
   setTimeout(function(){ var d=document.getElementById('assign-details'); if(d) d.value=n.text; var c=document.getElementById('assign-client'); if(c) c.focus(); }, 170);
 }
+function slateOpenTask(id){
+  var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+  var q=String(n.text);
+  var sb=document.getElementById('search'); if(sb) sb.value=q;
+  App.view='search'; buildSidebar(); renderSearch(q); window.scrollTo(0,0);
+}
+function slateTidy(){
+  var board=document.getElementById('slate-board'); if(!board) return;
+  var active=(App.slateNotes||[]).filter(function(n){return !n.done;});
+  if(!active.length) return;
+  var pad=20, colW=190, rowH=120, cols=Math.max(1, Math.floor((board.clientWidth-pad)/colW));
+  active.sort(function(a,b){ return new Date(a.created)-new Date(b.created); });
+  active.forEach(function(n,i){ n.x=pad+(i%cols)*colW; n.y=pad+Math.floor(i/cols)*rowH; });
+  Slate.saveLocal(); paintSlate();
+  active.forEach(function(n){ if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,x:n.x,y:n.y}).catch(function(){}); });
+  toast('✨ Tidied up','success');
+}
+function openArchive(){
+  var archived=(App.slateNotes||[]).filter(function(n){return n.done;});
+  var ex=document.getElementById('arch-ov'); if(ex) ex.remove();
+  var ov=document.createElement('div'); ov.id='arch-ov'; ov.className='overlay';
+  var body = archived.length ? archived.map(function(n){
+    return '<div class="arch-item"><span class="arch-dot" style="background:'+esc(n.color)+'"></span><div class="arch-main"><div class="arch-text">'+esc(n.text)+'</div><div class="arch-meta">'+esc(fmtDate(n.created))+'</div></div><button class="btn btn-ghost btn-sm" data-action="slate-restore" data-id="'+esc(n.id)+'">Restore</button><button class="btn btn-danger btn-sm" data-action="slate-del" data-id="'+esc(n.id)+'">Delete</button></div>';
+  }).join('') : '<div class="cmdk-empty">No archived notes yet. Tick ✓ on a note to archive it here.</div>';
+  ov.innerHTML='<div class="modal" style="max-width:540px"><div class="modal-h"><h3>\U0001f5c4 Archived notes</h3><button class="modal-x" data-action="close-arch">&times;</button></div><div class="modal-b" id="arch-body">'+body+'</div></div>';
+  document.body.appendChild(ov);
+}
+function closeArch(){ var ov=document.getElementById('arch-ov'); if(ov) ov.remove(); }
+function slateRestore(id){ var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return; Slate.restore(n); openArchive(); if(App.view==='slate'&&!App._slateView) renderSlate(); }
+function slateDelPermanent(id){ var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return; Slate.remove(n); openArchive(); }
 function openStaffSlate(id,name){
   if(!Sync.online()){ toast('Viewing a slate needs an internet connection.','warn'); return; }
   document.getElementById('content').innerHTML=skelHead(name+'’s Slate')+skelList(3);
@@ -2227,6 +2302,7 @@ function submitAssign(){
   }).then(function(r){
     App._asBusy=false; closeModal('assign-modal');
     if(saveTpl){ saveTemplateFrom(r.dept, r.cat, details, tplName); }
+    if(App._slateTaskNoteId){ var _sn=(App.slateNotes||[]).find(function(n){return String(n.id)===String(App._slateTaskNoteId);}); if(_sn){ Slate.setTasked(_sn, client||'task'); } App._slateTaskNoteId=null; }
     if(r.self){ toast('✓ '+client+' added to your diary','success'); buildSidebar(); navigate('category',r.dept,r.cat); }
     else { var who=(App.members.find(function(m){return m.userId===to;})||{}).name||'teammate'; toast('✓ Assigned '+client+' to '+who,'success'); if(App.view==='assigned') renderAssignedByMe(); }
   }).catch(function(e){ App._asBusy=false; b.disabled=false; b.textContent='Save Task'; toast('Could not save. '+(e.message||''),'error'); });
@@ -2636,6 +2712,12 @@ document.addEventListener('click', function(e){
     case 'slate-new': slateNew(); break;
     case 'slate-done': slateDone(el.getAttribute('data-id')); break;
     case 'slate-task': slateToTask(el.getAttribute('data-id')); break;
+    case 'slate-open-task': slateOpenTask(el.getAttribute('data-id')); break;
+    case 'slate-tidy': slateTidy(); break;
+    case 'slate-archive': openArchive(); break;
+    case 'close-arch': closeArch(); break;
+    case 'slate-restore': slateRestore(el.getAttribute('data-id')); break;
+    case 'slate-del': slateDelPermanent(el.getAttribute('data-id')); break;
     case 'open-staff-slate': openStaffSlate(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'open-cmdk': openCmdk(); break;
     case 'cmdk-exec': cmdkExec(parseInt(el.getAttribute('data-idx'),10)); break;
@@ -2689,6 +2771,7 @@ document.addEventListener('input', function(e){
   if(!e.target)return;
   if(e.target.id==='search'){ if(App.view!=='search'){ App.view='search'; buildSidebar(); } renderSearch(e.target.value); }
   else if(e.target.id==='cmdk-input'){ App._cmdkSel=0; renderCmdk(e.target.value); }
+  else if(e.target.id==='slate-search'){ App._slateQuery=e.target.value; paintSlate(); }
   else if(e.target.classList && e.target.classList.contains('combo-input')){ suggestFor(e.target); }
 });
 document.addEventListener('focusin', function(e){
