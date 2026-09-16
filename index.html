@@ -295,6 +295,26 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .ip-tag{font-size:.66rem;font-weight:600;color:var(--warning-dark);background:var(--warning-bg);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
 .due{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap}
 .due-over{background:var(--danger-bg);color:var(--danger-dark)}
+.due-esc{background:#b91c1c;color:#fff}
+.rep-tag{font-size:.66rem;font-weight:600;color:#6d28d9;background:rgba(139,92,246,.16);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px;text-transform:capitalize}
+.esc-tag{font-size:.66rem;font-weight:700;color:#fff;background:#b91c1c;padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
+.esc-banner{display:flex;align-items:center;gap:10px;background:rgba(185,28,28,.10);border:1px solid rgba(185,28,28,.30);color:var(--danger-dark);padding:11px 15px;border-radius:12px;margin-bottom:18px;font-size:.86rem;font-weight:600}
+.esc-banner .esc-cta{margin-left:auto;background:#b91c1c;color:#fff;border:none;padding:6px 13px;border-radius:8px;font-weight:700;cursor:pointer;font-size:.8rem}
+.an-card{background:var(--card,#fff);border:1px solid var(--border,rgba(0,0,0,.08));border-radius:16px;padding:16px 18px;margin-bottom:18px}
+.an-h{font-weight:700;font-size:.95rem;margin-bottom:12px}
+.an-empty{color:var(--text-muted);font-size:.85rem;padding:8px 0}
+.an-row{display:grid;grid-template-columns:150px 1fr auto;align-items:center;gap:12px;padding:6px 0}
+.an-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.an-track{display:flex;height:14px;background:rgba(148,163,184,.18);border-radius:8px;overflow:hidden}
+.an-seg{height:100%;display:inline-block}
+.an-seg.an-done{background:#16a34a}
+.an-seg.an-pend{background:#f59e0b}
+.an-seg.an-cli{background:#6366f1}
+.an-val{font-size:.75rem;color:var(--text-muted);white-space:nowrap}
+.an-legend{display:flex;gap:16px;margin-top:10px;font-size:.74rem;color:var(--text-muted)}
+.an-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.an-legend i.an-done{background:#16a34a}.an-legend i.an-pend{background:#f59e0b}
+@media(max-width:640px){.an-row{grid-template-columns:100px 1fr;gap:8px}.an-val{grid-column:2;text-align:left}}
 .due-today{background:var(--warning-bg);color:var(--warning-dark)}
 .due-up{background:var(--accent-soft);color:var(--accent)}
 .d-status.ip{background:var(--warning-bg);color:var(--warning-dark)}
@@ -642,6 +662,35 @@ body[data-theme="dark"]{ background:
   #sidebar:not(:hover) .bell-badge{ display:none; }
 }
 
+/* ---- Voice assistant ---- */
+.assistant{ position:fixed; right:24px; bottom:24px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.asst-ball{ width:58px; height:58px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#8e7bff,#6aa8ff); color:#fff; font-size:1.5rem; box-shadow:0 16px 34px -8px rgba(124,108,246,.75); transition:transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s; align-self:flex-end; }
+.asst-ball:hover{ transform:translateY(-2px) scale(1.05); }
+.asst-ball:active{ transform:scale(.95); }
+.asst-menu{ display:flex; flex-direction:column; gap:8px; opacity:0; transform:translateY(12px) scale(.94); pointer-events:none; transition:opacity .18s ease, transform .2s cubic-bezier(.2,.7,.3,1); }
+.assistant.open .asst-menu{ opacity:1; transform:none; pointer-events:auto; }
+.asst-item{ display:flex; align-items:center; gap:9px; background:var(--glass-strong); -webkit-backdrop-filter:blur(20px) saturate(180%); backdrop-filter:blur(20px) saturate(180%); border:1px solid var(--glass-brd); color:var(--text); border-radius:14px; padding:9px 15px 9px 12px; font:inherit; font-size:.86rem; font-weight:600; cursor:pointer; box-shadow:var(--shadow); transition:transform .14s, box-shadow .2s; }
+.asst-item:hover{ transform:translateX(-3px); box-shadow:var(--shadow-md); }
+.asst-item .ai{ font-size:1.05rem; }
+@media(max-width:620px){ .assistant{ right:16px; bottom:16px; } }
+/* Voice overlay */
+#voice-ov.overlay{ align-items:flex-start; justify-content:center; padding-top:12vh; }
+.voice-box{ background:var(--glass-strong); -webkit-backdrop-filter:blur(26px) saturate(180%); backdrop-filter:blur(26px) saturate(180%); border:1px solid var(--glass-brd); width:100%; max-width:560px; border-radius:20px; box-shadow:0 34px 90px -24px rgba(80,72,150,.55); padding:18px; }
+#voice-ov:not(.hidden) .voice-box{ animation:modalIn .3s cubic-bezier(.16,.84,.28,1) both; }
+.voice-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.voice-mic{ font-size:1.35rem; }
+.voice-mic.rec{ animation:vpulse 1s infinite; }
+@keyframes vpulse{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.4; transform:scale(1.15);} }
+.voice-title{ font-weight:700; flex:1; }
+.voice-lang button{ border:1px solid var(--glass-brd); background:rgba(255,255,255,.5); color:var(--text-sec); border-radius:8px; padding:4px 10px; font:inherit; font-size:.78rem; cursor:pointer; margin-left:5px; }
+.voice-lang button.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+.voice-text{ width:100%; min-height:92px; border:1px solid var(--glass-brd); background:rgba(255,255,255,.62); border-radius:12px; padding:12px 14px; font:inherit; font-size:1rem; line-height:1.45; color:var(--text); outline:none; resize:vertical; }
+.voice-text:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+.voice-hint{ font-size:.77rem; color:var(--text-muted); margin:9px 2px; line-height:1.4; }
+.voice-foot{ display:flex; gap:8px; justify-content:flex-end; align-items:center; }
+.voice-foot .btn:first-child{ margin-right:auto; }
+.angry-count{ color:#d9463b; font-weight:700; }
+
 </style>
 </head>
 <body>
@@ -732,6 +781,8 @@ body[data-theme="dark"]{ background:
       <input type="text" id="assign-client" class="f-input" maxlength="120" placeholder="e.g. Raul Shah" autocomplete="off">
       <label class="f-label">Due Date &amp; Time <span class="opt">(optional)</span></label>
       <input type="datetime-local" id="assign-due" class="f-input">
+      <label class="f-label" style="margin-top:12px">Repeat <span class="opt">(optional — a fresh copy appears when this one is completed)</span></label>
+      <select id="assign-repeat" class="f-input"><option value="">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
       <label class="f-label" style="margin-top:12px">Reminders <span class="opt">(optional — pings the assignee at each time)</span></label>
       <div id="assign-reminders"></div>
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" data-action="add-reminder-row" data-target="assign-reminders">+ Add reminder</button>
@@ -906,6 +957,17 @@ function fmtDate(iso){ if(!iso)return''; try{ return new Date(iso).toLocaleDateS
 function fmtTime(iso){ if(!iso)return''; try{ return new Date(iso).toLocaleTimeString('en-US',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}); }catch(e){ return ''; } }
 function fmtDateTime(iso){ if(!iso)return''; return fmtDate(iso)+', '+fmtTime(iso); }
 function daysSince(iso){ if(!iso)return 0; return Math.floor((Date.now()-new Date(iso).getTime())/86400000); }
+function nextRepeatDate(base, repeat){
+  var d=new Date(base.getTime());
+  var bump=function(){ if(repeat==='weekly') d.setDate(d.getDate()+7); else if(repeat==='monthly') d.setMonth(d.getMonth()+1); else d.setDate(d.getDate()+1); };
+  bump(); var g=0; while(d.getTime()<Date.now() && g<500){ bump(); g++; } return d;
+}
+function shiftReminders(rems, oldDue, nd){
+  if(!Array.isArray(rems)||!rems.length||!oldDue) return [];
+  var delta=nd.getTime()-new Date(oldDue).getTime();
+  return rems.map(function(r){ return {at:new Date(new Date(r.at).getTime()+delta).toISOString(), message:r.message||'', fired:false}; });
+}
+function overdueDays(t){ if(!t||!t.dueDate||t.status==='Completed') return 0; var due=new Date(t.dueDate).getTime(); if(isNaN(due)||due>=Date.now()) return 0; return Math.floor((Date.now()-due)/86400000); }
 function isActive(t){ return t.status!=='Completed'; }
 function localToISO(v){ if(!v) return ''; var d=new Date(v); return isNaN(d.getTime())?'':d.toISOString(); }
 function isoToLocalInput(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; var p=function(n){return String(n).padStart(2,'0');}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
@@ -915,7 +977,7 @@ function daysUntilDue(iso){ var a=istYMD(new Date().toISOString()), b=istYMD(iso
 function dueInfo(t){
   if(!t.dueDate || t.status==='Completed') return null;
   var now=Date.now(), due=new Date(t.dueDate).getTime(); if(isNaN(due)) return null;
-  if(due<now) return {label:'Overdue', cls:'due-over'};
+  if(due<now){ var od=Math.floor((now-due)/86400000); if(od>=3) return {label:'Overdue '+od+'d', cls:'due-esc', esc:true}; return {label:'Overdue', cls:'due-over'}; }
   var du=daysUntilDue(t.dueDate);
   if(du===0) return {label:'Due today', cls:'due-today'};
   return {label:'Due '+fmtDue(t.dueDate), cls:'due-up'};
@@ -962,6 +1024,7 @@ var Data = {
       var task={ uid:genUid(), taskId:taskId, employeeId:App.identity.employeeId, employeeName:App.identity.employeeName,
         department:d.department, category:d.category, clientName:d.clientName, details:d.details||'',
         status:'Pending', dueDate:d.dueDate||'', followUpDate:d.followUpDate||'', reminders:Array.isArray(d.reminders)?d.reminders:[],
+        repeat:d.repeat||'',
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
       return Store.put('tasks',taskId,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending',d.clientName+' → '+d.category); Sync.afterChange(); return task; });
@@ -997,7 +1060,23 @@ var Data = {
     if(t.status==='Completed') return Promise.reject(new Error('Already completed.'));
     var ts=nowISO(); t.status='Completed'; t.completedTimestamp=ts; t.lastUpdatedTimestamp=ts; t.completedBy=App.identity.employeeName;
     t.syncStatus='PENDING_SYNC';
-    return Store.put('tasks',taskId,t).then(function(){ Data.log(taskId,'COMPLETED','Pending','Completed',t.clientName); Sync.afterChange(); });
+    return Store.put('tasks',taskId,t).then(function(){ Data.log(taskId,'COMPLETED','Pending','Completed',t.clientName); Sync.afterChange(); if(t.repeat) return Data.spawnRecurrence(t); });
+  },
+  spawnRecurrence:function(t){
+    if(!t||!t.repeat) return Promise.resolve();
+    return Data.nextTaskId().then(function(taskId){
+      var ts=nowISO();
+      var oldDue = t.dueDate ? new Date(t.dueDate) : new Date();
+      var nd = nextRepeatDate(oldDue, t.repeat);
+      var task={ uid:genUid(), taskId:taskId, employeeId:t.employeeId, employeeName:t.employeeName,
+        department:t.department, category:t.category, clientName:t.clientName, details:t.details||'',
+        status:'Pending', dueDate: t.dueDate? nd.toISOString():'', followUpDate:'',
+        reminders:shiftReminders(t.reminders, t.dueDate, nd), repeat:t.repeat,
+        createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
+        createdBy:t.createdBy||App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
+      if(t.assignedById){ task.assignedById=t.assignedById; task.assignedByName=t.assignedByName; task.createdById=t.createdById; task.createdByName=t.createdByName; }
+      return Store.put('tasks',taskId,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending','Recurring ('+t.repeat+') · '+t.clientName); Sync.afterChange(); return task; });
+    });
   },
   reopen:function(taskId){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
@@ -1170,6 +1249,7 @@ function bootApp(){
   document.getElementById('id-avatar').textContent=initials(App.identity.employeeName);
   document.getElementById('id-name').textContent=App.identity.employeeName;
   buildSidebar(); navigate('slate');
+  initAssistant();
   startNudgeCycle();
   Sync.updatePill();
   requestNotifPermission();
@@ -1223,6 +1303,7 @@ function buildSidebar(){
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
+  h+='<button class="nav-link'+(App.view==='clients'?' active':'')+'" data-action="nav" data-view="clients"><span class="nav-ico">👤</span> Clients</button>';
   visibleDepartments().forEach(function(d){
     var collapsed=!App.prefs.expanded[d.department];
     var dp=deptPending(d.department);
@@ -1248,6 +1329,7 @@ function buildSidebar(){
   h+='<button class="nav-link'+(App.view==='search'?' active':'')+'" data-action="nav" data-view="search"><span class="nav-ico">'+ico('search')+'</span> Search</button>';
   if(App.identity && App.identity.role==='Admin'){
     h+='<button class="nav-link'+((App.view==='team'||App.view==='staff')?' active':'')+'" data-action="nav" data-view="team"><span class="nav-ico">'+ico('team')+'</span> Team</button>';
+    h+='<button class="nav-link'+(App.view==='analytics'?' active':'')+'" data-action="nav" data-view="analytics"><span class="nav-ico">📊</span> Analytics</button>';
   }
   h+='<button class="nav-link'+(App.view==='settings'?' active':'')+'" data-action="nav" data-view="settings"><span class="nav-ico">'+ico('gear')+'</span> Settings</button>';
   h+='</div>';
@@ -1322,10 +1404,12 @@ function navigate(view,dept,cat){
     if(view==='dashboard') renderDashboard();
     else if(view==='slate') renderSlate();
     else if(view==='board') renderBoard();
+    else if(view==='clients') renderClients();
     else if(view==='category') renderCategory();
     else if(view==='search') renderSearch('');
     else if(view==='settings') renderSettings();
     else if(view==='team') renderTeam();
+    else if(view==='analytics') renderAnalytics();
     else if(view==='assigned') renderAssignedByMe();
     else if(view==='audit') renderActivityLog();
   });
@@ -1427,6 +1511,10 @@ function renderDashboard(){
   var h='<div class="dash-hero"><div class="hero-eyebrow">'+greet+', '+esc(App.identity.employeeName.split(' ')[0])+'</div><h2>'+heroLine+'</h2><p>'+heroSub+'</p>';
   h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="board">▤ Board</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button></div></div>';
 
+  // Escalation banner — anything overdue by 3+ days
+  var escalated=pending.filter(function(t){return overdueDays(t)>=3;}).length;
+  if(escalated>0) h+='<div class="esc-banner">&#128681; <span>'+escalated+' task'+(escalated!==1?'s':'')+' badly overdue (3+ days). These need attention now.</span><button class="esc-cta" data-action="show-list" data-filter="overdue">Review overdue</button></div>';
+
   // Rotating roast banner (timer runs continuously in the background)
   h+='<div class="nudge"><div class="nudge-inner" id="nudge-inner">'+nudgeHTML(currentNudge())+'</div></div>';
 
@@ -1487,6 +1575,8 @@ function taskCard(t,isDone,showCat){
   var tags='';
   if(byOther) tags+=' <span class="assign-tag">&#128204; by '+esc(t.assignedByName||'')+'</span>';
   if(t.status==='In Progress') tags+=' <span class="ip-tag">&#9881; In progress</span>';
+  if(t.repeat && !isDone) tags+=' <span class="rep-tag">&#128257; '+esc(t.repeat)+'</span>';
+  if(!isDone && overdueDays(t)>=3) tags+=' <span class="esc-tag">&#128681; Escalated</span>';
   h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+tags+'</div>';
   var meta='Added '+fmtDate(t.createdTimestamp);
   if(showCat) meta+=' · '+esc(t.department)+' › '+esc(t.category);
@@ -1606,8 +1696,9 @@ var Slate = {
     if(!Sync.online() || !App.auth) return Promise.resolve();
     return apiCall('getMyNotes',{}).then(function(res){
       if(res&&res.ok){
-        var unsynced=(App.slateNotes||[]).filter(function(n){return n._temp;});
-        App.slateNotes=(res.notes||[]).concat(unsynced);
+        var server=(res.notes||[]).map(function(n){ n.sid=n.id; return n; });
+        var unsynced=(App.slateNotes||[]).filter(function(n){ return !n.sid; });
+        App.slateNotes=server.concat(unsynced);
         Slate.saveLocal();
         if(App.view==='slate' && !App._slateView) paintSlate();
       }
@@ -1615,12 +1706,12 @@ var Slate = {
   },
   add:function(text,x,y,color){
     if(!App.slateNotes) App.slateNotes=[];
-    var n={ id:'tmp-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), _temp:true, text:text, color:color||Slate.pick(), x:x, y:y, done:false, taskRef:'', created:nowISO() };
+    var n={ id:'nl-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), sid:'', text:text, color:color||Slate.pick(), x:x, y:y, done:false, taskRef:'', created:nowISO() };
     App.slateNotes.push(n); Slate.saveLocal();
     if(Sync.online()){
       apiCall('saveNote',{text:text,color:n.color,x:x,y:y}).then(function(res){
-        if(res&&res.ok){ n.id=res.id; n._temp=false; n.created=res.created||n.created; Slate.saveLocal();
-          if(Math.round(n.x)!==x || Math.round(n.y)!==y) apiCall('updateNote',{id:n.id,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){});
+        if(res&&res.ok){ n.sid=res.id; n.created=res.created||n.created; Slate.saveLocal();
+          if(Math.round(n.x)!==x || Math.round(n.y)!==y) apiCall('updateNote',{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){});
         }
       }).catch(function(){ toast('Note saved on this device — will sync when online.','warn'); });
     } else { toast('Note saved on this device — will sync when online.','warn'); }
@@ -1628,13 +1719,13 @@ var Slate = {
   },
   move:function(n){
     Slate.saveLocal();
-    if(n._temp || !Sync.online()) return;
-    clearTimeout(n._mt); n._mt=setTimeout(function(){ apiCall('updateNote',{id:n.id,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){}); }, 450);
+    if(!n.sid || !Sync.online()) return;
+    clearTimeout(n._mt); n._mt=setTimeout(function(){ apiCall('updateNote',{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){}); }, 450);
   },
-  archive:function(n){ n.done=true; Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,done:true}).catch(function(){}); },
-  restore:function(n){ n.done=false; Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,done:false}).catch(function(){}); },
-  setTasked:function(n,ref){ n.taskRef=ref||'task'; Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,taskRef:n.taskRef}).catch(function(){}); },
-  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(!n._temp && Sync.online()) apiCall('deleteNote',{id:n.id}).catch(function(){}); }
+  archive:function(n){ n.done=true; Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,done:true}).catch(function(){}); },
+  restore:function(n){ n.done=false; Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,done:false}).catch(function(){}); },
+  setTasked:function(n,ref){ n.taskRef=ref||'task'; Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,taskRef:n.taskRef}).catch(function(){}); },
+  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('deleteNote',{id:n.sid}).catch(function(){}); }
 };
 function noteAnger(created){ var t=new Date(created).getTime(); if(!t) return 0; var days=(Date.now()-t)/86400000; return Math.max(0,Math.min(1,(days-1)/6)); }
 function noteAge(created){ var t=new Date(created).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(created); }
@@ -1647,17 +1738,25 @@ function renderSlate(){
   if(ro){
     h+='<div class="cat-head"><div class="crumb"><span data-action="open-staff" data-id="'+esc(App._slateView.id)+'" data-name="'+esc(App._slateView.name)+'" style="cursor:pointer;color:var(--accent);font-weight:600">← '+esc(App._slateView.name)+'</span></div><div class="cat-title">'+esc(App._slateView.name)+'’s Slate</div><div class="cat-sub">Read-only · '+all.filter(function(n){return !n.done;}).length+' note(s)</div></div>';
   } else {
-    h+='<div class="slate-head-row"><div><div class="cat-title">Slate</div><div class="cat-sub">Click anywhere and type. Drag to arrange · ✓ archives · ➜ makes a task.</div></div>';
+    h+='<div class="slate-head-row"><div><div class="cat-title">Slate</div><div class="cat-sub" id="slate-summary"></div></div>';
     h+='<div class="slate-tools">';
     h+='<input id="slate-search" class="slate-search" placeholder="Search notes…" autocomplete="off" value="'+esc(App._slateQuery||'')+'">';
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-tidy" title="Auto-arrange">✨ Tidy</button>';
-    h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">🗄 Archive'+(archived.length?' ('+archived.length+')':'')+'</button>';
+    h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">🗄 Archive<span id="arch-count">'+(archived.length?' ('+archived.length+')':'')+'</span></button>';
     h+='<button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button>';
     h+='</div></div>';
   }
   h+='<div id="slate-board" class="slate-board'+(ro?' ro':'')+'" data-action="slate-click"></div>';
   document.getElementById('content').innerHTML=h;
   paintSlate();
+  refreshSlateMeta();
+}
+function refreshSlateMeta(){
+  if(App._slateView) return;
+  var all=(App.slateNotes||[]), active=all.filter(function(n){return !n.done;}), arch=all.filter(function(n){return n.done;});
+  var angry=active.filter(function(n){return noteAnger(n.created)>=0.5;}).length;
+  var ac=document.getElementById('arch-count'); if(ac) ac.textContent=arch.length?(' ('+arch.length+')'):'';
+  var sm=document.getElementById('slate-summary'); if(sm) sm.innerHTML=active.length+' note'+(active.length!==1?'s':'')+(angry?(' · <b class="angry-count">'+angry+' getting angry 😤</b>'):'')+' · click anywhere to add';
 }
 function paintSlate(){
   var board=document.getElementById('slate-board'); if(!board) return;
@@ -1696,6 +1795,7 @@ function slateClick(e){
 function spawnNoteInput(x,y){
   var ex=document.getElementById('slate-input-wrap'); if(ex) ex.remove();
   var board=document.getElementById('slate-board'); if(!board) return;
+  var maxX=Math.max(4, board.clientWidth-184); if(x>maxX)x=maxX; if(x<4)x=4; if(y<4)y=4;
   var color=Slate.pick();
   var w=document.createElement('div'); w.id='slate-input-wrap'; w.className='slate-note slate-input'; w.style.left=x+'px'; w.style.top=y+'px'; w.style.background=color; w.style.setProperty('--rot','0deg');
   w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type, then Enter…" maxlength="600"></textarea>';
@@ -1709,31 +1809,43 @@ function commitSlateInput(){
   var text=(ta.value||'').trim(), x=ta._x, y=ta._y, color=ta._color;
   var wrap=document.getElementById('slate-input-wrap'); if(wrap) wrap.remove();
   if(!text) return;
-  Slate.add(text,x,y,color);
-  paintSlate();
+  var n=Slate.add(text,x,y,color);
+  appendNote(n);
 }
 function cancelSlateInput(){ var wrap=document.getElementById('slate-input-wrap'); if(wrap){ var ta=document.getElementById('slate-input'); if(ta) ta.value=''; wrap.remove(); } }
 function attachSlateDnD(){
   var board=document.getElementById('slate-board'); if(!board) return;
-  board.querySelectorAll('.slate-note[data-note]').forEach(function(el){
-    el.addEventListener('pointerdown', function(e){
-      if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked')) return;
-      var id=el.getAttribute('data-note');
-      var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
-      e.preventDefault();
-      var startX=e.clientX, startY=e.clientY, origX=n.x||10, origY=n.y||10, moved=false;
-      try{ el.setPointerCapture(e.pointerId); }catch(_){}
-      el.classList.add('dragging');
-      var mv=function(ev){ moved=true; n.x=Math.max(2,origX+(ev.clientX-startX)); n.y=Math.max(2,origY+(ev.clientY-startY)); el.style.left=n.x+'px'; el.style.top=n.y+'px'; };
-      var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=Math.max(2,Math.round(n.x/20)*20); n.y=Math.max(2,Math.round(n.y/20)*20); el.style.left=n.x+'px'; el.style.top=n.y+'px'; Slate.move(n); } };
-      el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
-    });
+  board.querySelectorAll('.slate-note[data-note]').forEach(attachOneNoteDnD);
+}
+function attachOneNoteDnD(el){
+  var board=document.getElementById('slate-board'); if(!board) return;
+  el.addEventListener('pointerdown', function(e){
+    if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked')) return;
+    var id=el.getAttribute('data-note');
+    var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+    e.preventDefault();
+    var startX=e.clientX, startY=e.clientY, origX=n.x||10, origY=n.y||10, moved=false;
+    try{ el.setPointerCapture(e.pointerId); }catch(_){}
+    el.classList.add('dragging');
+    var clampX=function(v){ return Math.min(Math.max(2, board.clientWidth-el.offsetWidth-4), Math.max(2,v)); };
+    var clampY=function(v){ return Math.min(Math.max(2, board.clientHeight-el.offsetHeight-4), Math.max(2,v)); };
+    var mv=function(ev){ moved=true; n.x=clampX(origX+(ev.clientX-startX)); n.y=clampY(origY+(ev.clientY-startY)); el.style.left=n.x+'px'; el.style.top=n.y+'px'; };
+    var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=clampX(Math.round(n.x/20)*20); n.y=clampY(Math.round(n.y/20)*20); el.style.left=n.x+'px'; el.style.top=n.y+'px'; Slate.move(n); } };
+    el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
   });
+}
+function appendNote(n){
+  var board=document.getElementById('slate-board'); if(!board) return;
+  var empty=board.querySelector('.slate-empty'); if(empty) empty.remove();
+  var tmp=document.createElement('div'); tmp.innerHTML=slateNoteHTML(n,false);
+  var el=tmp.firstElementChild; if(!el) return;
+  board.appendChild(el); attachOneNoteDnD(el);
 }
 function slateDone(id){
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
   var el=document.querySelector('.slate-note[data-note="'+id+'"]');
-  var fin=function(){ Slate.archive(n); paintSlate(); };
+  var fin=function(){ Slate.archive(n); if(el&&el.parentNode) el.parentNode.removeChild(el); refreshSlateMeta();
+    toastAction('🗄️ Archived','Undo',function(){ Slate.restore(n); if(App.view==='slate'&&!App._slateView){ if(document.getElementById('slate-board')) appendNote(n); refreshSlateMeta(); } },'info'); };
   if(el && !_reduceMotion){ el.classList.add('sn-removing'); setTimeout(fin,260); } else fin();
 }
 function slateTask(id){ slateToTask(id); }
@@ -1757,7 +1869,7 @@ function slateTidy(){
   active.sort(function(a,b){ return new Date(a.created)-new Date(b.created); });
   active.forEach(function(n,i){ n.x=pad+(i%cols)*colW; n.y=pad+Math.floor(i/cols)*rowH; });
   Slate.saveLocal(); paintSlate();
-  active.forEach(function(n){ if(!n._temp && Sync.online()) apiCall('updateNote',{id:n.id,x:n.x,y:n.y}).catch(function(){}); });
+  active.forEach(function(n){ if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,x:n.x,y:n.y}).catch(function(){}); });
   toast('✨ Tidied up','success');
 }
 function openArchive(){
@@ -1782,6 +1894,239 @@ function openStaffSlate(id,name){
     App.view='slate'; buildSidebar(); renderSlate();
   }).catch(function(e){ showContentError_(e.message||'Could not load slate.'); });
 }
+
+/* ================================================================
+   VOICE ASSISTANT (Phase A) — floating ball, bilingual voice,
+   rule-based command parser -> confirm on the task card
+   ================================================================ */
+function cap(x){ return x? x.charAt(0).toUpperCase()+x.slice(1) : x; }
+function initAssistant(){
+  if(document.getElementById('assistant')) return;
+  var a=document.createElement('div'); a.id='assistant'; a.className='assistant';
+  a.innerHTML='<div class="asst-menu" id="asst-menu">'+
+    '<button class="asst-item" data-action="asst-speak"><span class="ai">🎤</span><span>Speak</span></button>'+
+    '<button class="asst-item" data-action="asst-task"><span class="ai">➕</span><span>Task</span></button>'+
+    '<button class="asst-item" data-action="asst-note"><span class="ai">🗒️</span><span>Note</span></button>'+
+    '</div>'+
+    '<button class="asst-ball" data-action="asst-toggle" aria-label="Assistant">✨</button>';
+  document.body.appendChild(a);
+  if(!document.getElementById('voice-ov')){
+    var v=document.createElement('div'); v.id='voice-ov'; v.className='overlay hidden';
+    v.innerHTML='<div class="voice-box">'+
+      '<div class="voice-head"><span class="voice-mic">🎤</span><div class="voice-title">Listening…</div>'+
+      '<div class="voice-lang"><button data-action="voice-lang" data-lang="en-IN" class="on">EN</button><button data-action="voice-lang" data-lang="hi-IN">हिं</button></div></div>'+
+      '<textarea id="voice-text" class="voice-text" placeholder="Speak, or type your command…"></textarea>'+
+      '<div class="voice-hint" id="voice-hint"></div>'+
+      '<div class="voice-foot"><button class="btn btn-ghost" data-action="voice-cancel">Cancel</button>'+
+      '<button class="btn btn-ghost" id="voice-listen" data-action="voice-listen">🎤 Listen</button>'+
+      '<button class="btn btn-primary" data-action="voice-use">Use →</button></div></div>';
+    document.body.appendChild(v);
+  }
+}
+function toggleAsst(){ var a=document.getElementById('assistant'); if(a) a.classList.toggle('open'); }
+function closeAsst(){ var a=document.getElementById('assistant'); if(a) a.classList.remove('open'); }
+function voiceOpen(mode){
+  App._voiceMode=mode||'smart'; App._voiceLang=App._voiceLang||'en-IN'; closeAsst();
+  var ta=document.getElementById('voice-text'); if(ta) ta.value='';
+  var hint=document.getElementById('voice-hint');
+  if(hint) hint.textContent = (mode==='note') ? 'Say your note — e.g. "follow up with ABC for nominee change"' : 'Say: "assign task to Kapil to follow up with Ayush before 15 Sept 6:30 pm"';
+  document.querySelectorAll('.voice-lang button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-lang')===App._voiceLang); });
+  openModal('voice-ov'); voiceStart();
+  setTimeout(function(){ var t=document.getElementById('voice-text'); if(t) t.focus(); }, 40);
+}
+function voiceClose(){ voiceStop(); closeModal('voice-ov'); }
+function voiceStart(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var hint=document.getElementById('voice-hint'), lb=document.getElementById('voice-listen'), title=document.querySelector('.voice-title'), mic=document.querySelector('.voice-mic');
+  if(!SR){ if(lb){ lb.disabled=true; lb.textContent='🎤 n/a'; } if(hint) hint.textContent='Voice isn\'t supported in this browser — type your command and press Use.'; if(title) title.textContent='Type your command'; return; }
+  try{ if(App._rec){ App._rec.onend=null; App._rec.stop(); } }catch(_){}
+  var r; try{ r=new SR(); }catch(_){ return; } App._rec=r;
+  r.lang=App._voiceLang||'en-IN'; r.interimResults=true; r.continuous=true; r.maxAlternatives=1;
+  var base=(document.getElementById('voice-text').value||'');
+  r.onresult=function(ev){ var interim='',fin=''; for(var i=ev.resultIndex;i<ev.results.length;i++){ var tr=ev.results[i][0].transcript; if(ev.results[i].isFinal) fin+=tr; else interim+=tr; } var ta=document.getElementById('voice-text'); if(ta){ if(fin) base=(base?base+' ':'')+fin.trim(); ta.value=(base+(interim?(' '+interim):'')).trim(); } };
+  r.onerror=function(e){ if(e&&e.error==='not-allowed'){ if(hint) hint.textContent='Microphone blocked — allow mic access, or just type.'; } };
+  r.onend=function(){ App._recActive=false; if(mic) mic.classList.remove('rec'); if(lb) lb.textContent='🎤 Listen'; if(title) title.textContent='Tap Listen to speak, or type'; };
+  try{ r.start(); App._recActive=true; if(mic) mic.classList.add('rec'); if(lb) lb.textContent='⏹ Stop'; if(title) title.textContent='Listening…'; }catch(_){}
+}
+function voiceStop(){ try{ if(App._rec) App._rec.stop(); }catch(_){} App._recActive=false; }
+function voiceListen(){ if(App._recActive) voiceStop(); else voiceStart(); }
+function voiceLang(lang){ App._voiceLang=lang; document.querySelectorAll('.voice-lang button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-lang')===lang); }); if(App._recActive){ voiceStop(); setTimeout(voiceStart,150); } }
+function voiceUse(){ var ta=document.getElementById('voice-text'); var text=ta?ta.value:''; voiceClose(); finishVoice(text, App._voiceMode); }
+function finishVoice(text, mode){
+  text=(text||'').trim(); if(!text) return;
+  if(mode==='note'){ addSpokenNote(text); return; }
+  var pj=parseCommand(text);
+  if(mode==='task') pj.intent='task';
+  if(pj.intent==='note') addSpokenNote(pj.details||text);
+  else applyParsedTask(pj);
+}
+function addSpokenNote(text){
+  var doAdd=function(){ var board=document.getElementById('slate-board'); var active=(App.slateNotes||[]).filter(function(n){return !n.done;}); var pad=20,colW=192,rowH=124; var cols=board?Math.max(1,Math.floor((board.clientWidth-pad)/colW)):5; var i=active.length; var n=Slate.add(text, pad+(i%cols)*colW, pad+Math.floor(i/cols)*rowH, Slate.pick()); if(document.getElementById('slate-board')) appendNote(n); toast('🗒️ Note added','success'); };
+  if(App.view==='slate' && !App._slateView) doAdd(); else { navigate('slate'); setTimeout(doAdd, 320); }
+}
+function applyParsedTask(pj){
+  var go=function(){ openAssign(); setTimeout(function(){
+    var sel=document.getElementById('assign-to');
+    if(sel && pj.assigneeRaw){ var st=fuzzyStaff(pj.assigneeRaw); if(st) sel.value=st.userId; }
+    if(pj.client){ var c=document.getElementById('assign-client'); if(c) c.value=cap(pj.client); }
+    if(pj.details){ var dd=document.getElementById('assign-details'); if(dd) dd.value=pj.details; }
+    if(pj.dueISO){ var du=document.getElementById('assign-due'); if(du) du.value=pj.dueISO; }
+    var cl=document.getElementById('assign-client'); if(cl) cl.focus();
+    toast('Review & confirm the task ↓','info');
+  }, 240); };
+  if(Sync.online() && !(App.members||[]).length && typeof loadTeamMembers==='function'){ loadTeamMembers().then(go, go); } else go();
+}
+/* ---- fuzzy staff-name matching (phonetic-ish via edit distance) ---- */
+function levenshtein(a,b){ a=a||''; b=b||''; var m=a.length,n=b.length; if(!m) return n; if(!n) return m; var d=[]; for(var i=0;i<=m;i++)d[i]=[i]; for(var j=0;j<=n;j++)d[0][j]=j; for(i=1;i<=m;i++){ for(j=1;j<=n;j++){ d[i][j]=Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1)); } } return d[m][n]; }
+function fuzzyStaff(spoken){
+  var s=(spoken||'').toLowerCase().replace(/[^a-z]/g,''); if(!s) return null;
+  if(/^(me|myself|self|mujhe|mera|main|khud)$/.test(s) && App.identity) return {userId:App.identity.employeeId, name:App.identity.employeeName};
+  var best=null, bestD=99;
+  var pool=(App.members||[]).slice();
+  if(App.identity) pool.push({userId:App.identity.employeeId, name:App.identity.employeeName});
+  pool.forEach(function(m){ var first=(m.name||'').toLowerCase().split(/\s+/)[0].replace(/[^a-z]/g,''); var full=(m.name||'').toLowerCase().replace(/[^a-z]/g,''); var d=Math.min(levenshtein(s,first), levenshtein(s,full)); if(first.indexOf(s)===0||s.indexOf(first)===0) d=Math.min(d,1); if(d<bestD){ bestD=d; best=m; } });
+  var tol=Math.max(2, Math.ceil(s.length*0.5));
+  return (best && bestD<=tol) ? best : null;
+}
+/* ---- rule-based bilingual command parser ---- */
+function parseCommand(raw){
+  var text=(raw||'').trim(); var low=' '+text.toLowerCase()+' ';
+  var out={intent:'note', assigneeRaw:'', client:'', details:'', dueISO:''};
+  if(/^\s*(note|नोट|likh lo|likhlo|yaad rakh)/i.test(text)){ out.intent='note'; out.details=text.replace(/^\s*(note|नोट|likh lo|likhlo|yaad rakhna|yaad rakh|yaad)\s*[:\-–]?\s*/i,'').trim()||text; return out; }
+  var a = low.match(/assign(?:\s+task)?\s+to\s+([a-z]+)/) || low.match(/(?:give|allot|hand\s*over)\s+(?:task\s+)?(?:to\s+)?([a-z]+)/) || low.match(/\btask\s+(?:to|for)\s+([a-z]+)/) || low.match(/\b([a-z]+)\s+(?:ko|को)\b/) || low.match(/\bassign\s+([a-z]+)\b/);
+  if(a){ out.intent='task'; out.assigneeRaw=a[1]; }
+  if(!out.assigneeRaw && /\b(assign|task|टास्क|काम)\b/.test(low)) out.intent='task';
+  var c = low.match(/\bwith\s+([a-z]+)/) || low.match(/\bfor\s+(?:client\s+)?([a-z]+)/) || low.match(/\bclient\s+([a-z]+)/) || low.match(/\b([a-z]+)\s+(?:ka|ke|ki|का|के|की)\b/);
+  if(c && c[1]!==out.assigneeRaw) out.client=c[1];
+  out.dueISO=parseDueDateTime(text)||'';
+  var det=text;
+  if(out.assigneeRaw){ var ix=text.toLowerCase().indexOf(out.assigneeRaw); if(ix>=0) det=text.slice(ix+out.assigneeRaw.length); }
+  det=det.replace(/\b(before|by|due(?:\s+date)?|on|till|until|latest by|deadline|tak|से पहले|तक).*$/i,'');
+  det=det.replace(/^\s*(to|that|ki|कि|,|-|–)\s*/i,'').trim();
+  out.details=det||text;
+  return out;
+}
+function parseDueDateTime(text){
+  var low=' '+text.toLowerCase()+' '; var now=new Date(); var d=null;
+  if(/\b(day after tomorrow|parso|parson|परसों)\b/.test(low)){ d=new Date(now); d.setDate(d.getDate()+2); }
+  else if(/\b(tomorrow|kal|कल)\b/.test(low)){ d=new Date(now); d.setDate(d.getDate()+1); }
+  else if(/\b(today|aaj|आज|tonight)\b/.test(low)){ d=new Date(now); }
+  if(!d){ var wk=['sunday','monday','tuesday','wednesday','thursday','friday','saturday']; var wh=['ravivar','somwar','mangalwar','budhwar','guruwar','shukrawar','shanivar']; for(var i=0;i<7;i++){ if(low.indexOf(wk[i])>=0||low.indexOf(wh[i])>=0){ d=new Date(now); var add=(i-d.getDay()+7)%7; if(add===0) add=7; d.setDate(d.getDate()+add); break; } } }
+  if(!d){
+    var M={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11,january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11,'जनवरी':0,'फरवरी':1,'मार्च':2,'अप्रैल':3,'मई':4,'जून':5,'जुलाई':6,'अगस्त':7,'सितंबर':8,'सितम्बर':8,'अक्टूबर':9,'नवंबर':10,'नवम्बर':10,'दिसंबर':11,'दिसम्बर':11};
+    var day=null, mon=null;
+    var dm=low.match(/(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?([a-zअ-ह]+)/);
+    var md=low.match(/([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?/);
+    if(dm && M[dm[2]]!==undefined){ day=parseInt(dm[1],10); mon=M[dm[2]]; }
+    else if(md && M[md[1]]!==undefined){ day=parseInt(md[2],10); mon=M[md[1]]; }
+    else { for(var k in M){ if(low.indexOf(k)>=0){ var dn=low.match(/(\d{1,2})/); if(dn){ day=parseInt(dn[1],10); mon=M[k]; break; } } } }
+    if(day!=null && mon!=null){ var y=now.getFullYear(); d=new Date(y,mon,day,0,0,0); var t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()); if(d<t0) d=new Date(y+1,mon,day); }
+  }
+  var h=null, mi=0, hasT=false;
+  var t1=low.match(/(\d{1,2})[:.](\d{2})\s*(am|pm)?/);
+  var t2=low.match(/(?:at|by|around|तक)?\s*(\d{1,2})\s*(am|pm|baje|बजे|o'?clock|o clock)/);
+  if(t1){ h=parseInt(t1[1],10); mi=parseInt(t1[2],10); hasT=true; }
+  else if(t2){ h=parseInt(t2[1],10); hasT=true; }
+  if(hasT){
+    if(/\bpm\b/.test(low) && h<12) h+=12; if(/\bam\b/.test(low) && h===12) h=0;
+    if(/\b(shaam|शाम|evening|raat|रात|night|dopahar|दोपहर)\b/.test(low) && h>=1 && h<12) h+=12;
+    if(/\b(subah|सुबह|morning)\b/.test(low) && h===12) h=0;
+  }
+  if(!d && !hasT) return null;
+  if(!d){ d=new Date(now); }
+  if(hasT){ d.setHours(h, mi||0, 0, 0); } else { d.setHours(18,0,0,0); }
+  function pad(x){ return (x<10?'0':'')+x; }
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+/* ================================================================
+   CLIENTS — lightweight CRM view (groups your own tasks by client)
+   ================================================================ */
+function renderAnalytics(){
+  App.view='analytics'; buildSidebar();
+  var c=document.getElementById('content');
+  if(!(App.identity&&App.identity.role==='Admin')){ c.innerHTML='<div class="cat-head"><div class="cat-title">Analytics</div><div class="cat-sub">Admin only.</div></div>'; return; }
+  c.innerHTML=skelHead('Analytics')+skelList(4);
+  if(!Sync.online()){ showContentError_('Analytics needs an internet connection.'); return; }
+  apiCall('adminStaff',{}).then(function(res){
+    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load analytics.'); return; }
+    var staff=res.staff||[];
+    if(!staff.length){ paintAnalytics([]); return; }
+    var jobs=staff.map(function(s){ return apiCall('adminStaffTasks',{staffId:s.userId}).then(function(r){ return {s:s, tasks:(r&&r.ok&&r.tasks)?r.tasks:[]}; }).catch(function(){ return {s:s, tasks:[]}; }); });
+    Promise.all(jobs).then(function(rows){ paintAnalytics(rows); });
+  }).catch(function(e){ showContentError_(e.message||'Could not load analytics.'); });
+}
+function paintAnalytics(rows){
+  var c=document.getElementById('content'); if(!c) return;
+  var now=Date.now();
+  var totT=0,totDone=0,totPend=0,totOver=0,onTimeN=0,onTimeD=0, clientLoad={};
+  var per=rows.map(function(r){
+    var t=r.tasks||[], done=0,pend=0,over=0,ot=0,otd=0;
+    t.forEach(function(x){
+      if(x.status==='Completed'){ done++; if(x.dueDate&&x.completedTimestamp){ otd++; if(new Date(x.completedTimestamp).getTime()<=new Date(x.dueDate).getTime()) ot++; } }
+      else { pend++; if(x.dueDate&&new Date(x.dueDate).getTime()<now) over++; }
+      var cn=(x.clientName||'—'); clientLoad[cn]=(clientLoad[cn]||0)+1;
+    });
+    totT+=t.length; totDone+=done; totPend+=pend; totOver+=over; onTimeN+=ot; onTimeD+=otd;
+    return {name:r.s.name, role:r.s.role, total:t.length, done:done, pend:pend, over:over, otPct:(otd?Math.round(ot/otd*100):null)};
+  }).sort(function(a,b){return b.total-a.total;});
+  var onTime = onTimeD? Math.round(onTimeN/onTimeD*100):null;
+  var h='<div class="cat-head"><div class="cat-title">📊 Team Analytics</div><div class="cat-sub">'+rows.length+' staff · live from the team sheet</div></div>';
+  // KPI row
+  h+='<div class="stats">';
+  h+='<div class="stat st-pending"><div class="stat-v">'+totPend+'</div><div class="stat-l">Open</div></div>';
+  h+='<div class="stat st-over"><div class="stat-v">'+totOver+'</div><div class="stat-l">Overdue</div></div>';
+  h+='<div class="stat st-done"><div class="stat-v">'+totDone+'</div><div class="stat-l">Completed</div></div>';
+  h+='<div class="stat st-total"><div class="stat-v">'+(onTime===null?'—':onTime+'%')+'</div><div class="stat-l">On-time</div></div>';
+  h+='</div>';
+  // Throughput per staff
+  var maxT=Math.max(1, per.reduce(function(m,p){return Math.max(m,p.total);},0));
+  h+='<div class="an-card"><div class="an-h">Workload by staff</div>';
+  if(!per.length) h+='<div class="an-empty">No staff data yet.</div>';
+  per.forEach(function(p){
+    var wDone=Math.round(p.done/maxT*100), wPend=Math.round(p.pend/maxT*100);
+    var otTxt=p.otPct===null?'':' · '+p.otPct+'% on-time';
+    h+='<div class="an-row"><div class="an-name">'+esc(p.name)+(p.over>0?' <span class="esc-tag">🚩 '+p.over+'</span>':'')+'</div>'+
+       '<div class="an-track"><span class="an-seg an-done" style="width:'+wDone+'%"></span><span class="an-seg an-pend" style="width:'+wPend+'%"></span></div>'+
+       '<div class="an-val">'+p.done+' done · '+p.pend+' open'+otTxt+'</div></div>';
+  });
+  h+='<div class="an-legend"><span><i class="an-done"></i> Completed</span><span><i class="an-pend"></i> Open</span></div></div>';
+  // Top clients
+  var clients=Object.keys(clientLoad).map(function(k){return {n:k,c:clientLoad[k]};}).sort(function(a,b){return b.c-a.c;}).slice(0,8);
+  if(clients.length){
+    var maxC=Math.max(1,clients[0].c);
+    h+='<div class="an-card"><div class="an-h">Busiest clients</div>';
+    clients.forEach(function(cl){ h+='<div class="an-row"><div class="an-name">'+esc(cl.n)+'</div><div class="an-track"><span class="an-seg an-cli" style="width:'+Math.round(cl.c/maxC*100)+'%"></span></div><div class="an-val">'+cl.c+' task'+(cl.c!==1?'s':'')+'</div></div>'; });
+    h+='</div>';
+  }
+  c.innerHTML=h;
+}
+function renderClients(){
+  App.view='clients';
+  var map={};
+  (App.tasks||[]).forEach(function(t){ var c=(t.clientName||'').trim(); if(!c) return; var k=c.toLowerCase(); if(!map[k]) map[k]={name:c, tasks:[]}; map[k].tasks.push(t); });
+  var clients=Object.keys(map).map(function(k){ var cl=map[k]; cl.open=cl.tasks.filter(isActive).length; cl.done=cl.tasks.filter(function(t){return t.status==='Completed';}).length; cl.last=Math.max.apply(null, cl.tasks.map(function(t){return new Date(t.lastUpdatedTimestamp||t.createdTimestamp).getTime()||0;})); return cl; });
+  clients.sort(function(a,b){ return b.last-a.last; });
+  if(!clients.length){ document.getElementById('content').innerHTML='<div class="cat-head"><div class="cat-title">Clients</div></div><div class="empty"><div class="empty-ico">👤</div><div class="empty-t">No clients yet</div><div class="empty-s">Add tasks with client names and they’ll appear here as a mini address book.</div></div>'; return; }
+  var h='<div class="cat-head"><div class="cat-title">Clients</div><div class="cat-sub">'+clients.length+' client'+(clients.length!==1?'s':'')+' · tap anyone to see their full history</div></div>';
+  h+='<div class="dept-grid">';
+  clients.forEach(function(cl){ h+='<div class="dept-card" data-action="open-client" data-client="'+esc(cl.name)+'"><div style="display:flex;align-items:center;gap:11px;margin-bottom:9px"><div class="id-avatar" style="width:34px;height:34px">'+esc(initials(cl.name))+'</div><div class="dept-card-n">'+esc(cl.name)+'</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><span class="pill-stat pend">'+cl.open+' open</span><span class="pill-stat don">'+cl.done+' done</span></div></div>'; });
+  h+='</div>';
+  document.getElementById('content').innerHTML=h;
+}
+function openClient(name){
+  App.view='clients';
+  var tasks=(App.tasks||[]).filter(function(t){return (t.clientName||'').toLowerCase()===String(name).toLowerCase();}).sort(function(a,b){return new Date(b.createdTimestamp)-new Date(a.createdTimestamp);});
+  var open=tasks.filter(isActive), done=tasks.filter(function(t){return t.status==='Completed';});
+  var h='<div class="cat-head"><div class="crumb"><span data-action="nav" data-view="clients" style="cursor:pointer;color:var(--accent);font-weight:600">← Clients</span></div><div class="cat-title">'+esc(name)+'</div><div class="cat-sub">'+open.length+' open · '+done.length+' done · '+tasks.length+' total</div><div class="cat-actions"><button class="add-btn" data-action="new-client-task" data-client="'+esc(name)+'">'+plusIco()+'New task for '+esc(name)+'</button></div></div>';
+  h+='<div class="sec-title">Open ('+open.length+')</div><div class="task-list">';
+  if(!open.length) h+='<div class="empty" style="padding:20px"><div class="empty-t">Nothing open 🎉</div></div>'; else open.forEach(function(t){ h+=taskCard(t,false,true); });
+  h+='</div><div style="height:20px"></div><div class="sec-title">History ('+done.length+')</div><div class="task-list">';
+  if(!done.length) h+='<div class="empty" style="padding:20px"><div class="empty-t">No history yet</div></div>'; else done.forEach(function(t){ h+=taskCard(t,true,true); });
+  h+='</div>';
+  document.getElementById('content').innerHTML=h;
+}
+function newClientTask(name){ openAssign(); setTimeout(function(){ var c=document.getElementById('assign-client'); if(c) c.value=name; var dt=document.getElementById('assign-details'); if(dt) dt.focus(); }, 200); }
 
 function renderList(){
   var f=App.listFilter, title='', desc='', list=[];
@@ -2010,10 +2355,12 @@ function refreshView(){
   if(App.view==='dashboard') renderDashboard();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
+  else if(App.view==='clients') renderClients();
   else if(App.view==='category') renderCategory();
   else if(App.view==='list') renderList();
   else if(App.view==='search') renderSearch(document.getElementById('search').value);
   else if(App.view==='settings') renderSettings();
+  else if(App.view==='analytics') renderAnalytics();
 }
 
 /* ================================================================
@@ -2265,6 +2612,7 @@ function openAssign(dept,cat){
     document.getElementById('assign-cat').value=cat||App.cat||'';
     document.getElementById('assign-client').value=''; document.getElementById('assign-details').value='';
     document.getElementById('assign-due').value=''; document.getElementById('assign-reminders').innerHTML='';
+    var _rp=document.getElementById('assign-repeat'); if(_rp) _rp.value='';
     var sc=document.getElementById('assign-savetpl'); if(sc) sc.checked=false;
     var tn=document.getElementById('assign-tplname'); if(tn){ tn.value=''; tn.classList.add('hidden'); }
     renderTplPicker();
@@ -2283,6 +2631,7 @@ function submitAssign(){
   var client=(document.getElementById('assign-client').value||'').trim();
   var details=(document.getElementById('assign-details').value||'').trim();
   var due=localToISO(document.getElementById('assign-due').value);
+  var repeat=(document.getElementById('assign-repeat')||{}).value||'';
   var reminders=collectReminders('assign-reminders');
   var saveTpl=!!(document.getElementById('assign-savetpl')||{}).checked;
   var tplName=(document.getElementById('assign-tplname')||{}).value||'';
@@ -2294,10 +2643,10 @@ function submitAssign(){
   var b=document.getElementById('assign-submit'); b.disabled=true; b.innerHTML='<span class="mini-spin"></span> Saving…';
   ensureDeptCat(dept,cat).then(function(n){
     if(isSelf){
-      return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,reminders:reminders}).then(function(){ return {self:true,dept:n.dept,cat:n.cat}; });
+      return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,reminders:reminders,repeat:repeat}).then(function(){ return {self:true,dept:n.dept,cat:n.cat}; });
     }
     if(!Sync.online()) throw new Error('You are offline — you can only add tasks to yourself right now.');
-    return apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details, dueDate:due, reminders:reminders })
+    return apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details, dueDate:due, reminders:reminders, repeat:repeat })
       .then(function(res){ if(!res||!res.ok) throw new Error(res&&res.error?res.error:'Assign failed'); return {self:false,dept:n.dept,cat:n.cat}; });
   }).then(function(r){
     App._asBusy=false; closeModal('assign-modal');
@@ -2719,7 +3068,17 @@ document.addEventListener('click', function(e){
     case 'slate-restore': slateRestore(el.getAttribute('data-id')); break;
     case 'slate-del': slateDelPermanent(el.getAttribute('data-id')); break;
     case 'open-staff-slate': openStaffSlate(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
+    case 'open-client': openClient(el.getAttribute('data-client')); break;
+    case 'new-client-task': newClientTask(el.getAttribute('data-client')); break;
     case 'open-cmdk': openCmdk(); break;
+    case 'asst-toggle': toggleAsst(); break;
+    case 'asst-speak': voiceOpen('smart'); break;
+    case 'asst-task': closeAsst(); openAssign(); break;
+    case 'asst-note': voiceOpen('note'); break;
+    case 'voice-listen': voiceListen(); break;
+    case 'voice-lang': voiceLang(el.getAttribute('data-lang')); break;
+    case 'voice-use': voiceUse(); break;
+    case 'voice-cancel': voiceClose(); break;
     case 'cmdk-exec': cmdkExec(parseInt(el.getAttribute('data-idx'),10)); break;
     case 'use-template': applyTemplate(el.getAttribute('data-id')); break;
     case 'tpl-toggle': tplToggle(); break;
@@ -2785,7 +3144,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); cancelSlateInput(); }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); cancelSlateInput(); try{voiceClose();}catch(_){} }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
@@ -2794,6 +3153,7 @@ document.addEventListener('keydown', function(e){
     else if(id==='login-key'||id==='login-url'){ doLogin(); }
     else if(id==='nm-name'){ submitCreateMember(document.querySelector('[data-action="submit-create-member"]')); }
     else if(id==='slate-input'){ if(!e.shiftKey){ e.preventDefault(); commitSlateInput(); } }
+    else if(id==='voice-text'){ if(!e.shiftKey){ e.preventDefault(); voiceUse(); } }
     else if(id==='add-dept'||id==='add-cat'){ e.preventDefault(); if(id==='add-dept'){ document.getElementById('dept-sugg').classList.add('hidden'); document.getElementById('add-cat').focus(); } else { document.getElementById('cat-sugg').classList.add('hidden'); document.getElementById('add-client').focus(); } }
   }
 });
