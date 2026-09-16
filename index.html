@@ -1264,9 +1264,17 @@ function bootApp(){
     // …but check for NEW notifications adaptively: fast while you're looking, gentle in the background.
     var _notifTick=function(){ if(Sync.online()) loadReminders(); App._notifTimer=setTimeout(_notifTick, document.hidden?20000:6000); };
     App._notifTimer=setTimeout(_notifTick, 6000);
+    // Live Slate: while the Slate is open, quietly pull new notes (e.g. added from the
+    // voice extension) and repaint — but never while you're dragging or typing a note.
+    var _slateTick=function(){ if(Sync.online() && App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); App._slateTimer=setTimeout(_slateTick, document.hidden?30000:5000); };
+    App._slateTimer=setTimeout(_slateTick, 5000);
+    // Live tasks: quietly pull new/updated tasks (e.g. added from the voice extension or
+    // another device) and repaint the current view — but never while you're dragging or in a modal.
+    var _taskTick=function(){ if(Sync.online() && !document.hidden && App.view!=='slate' && !appViewBusy()) Sync.pull(); App._taskTimer=setTimeout(_taskTick, document.hidden?45000:12000); };
+    App._taskTimer=setTimeout(_taskTick, 12000);
     // And check instantly the moment the user returns to this tab/window.
-    document.addEventListener('visibilitychange', function(){ if(!document.hidden && Sync.online()) loadReminders(); });
-    window.addEventListener('focus', function(){ if(Sync.online()) loadReminders(); });
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden && Sync.online()){ loadReminders(); if(App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); else if(!appViewBusy()) Sync.pull(); } });
+    window.addEventListener('focus', function(){ if(Sync.online()){ loadReminders(); if(App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); else if(!appViewBusy()) Sync.pull(); } });
   }
 }
 
@@ -1700,7 +1708,7 @@ var Slate = {
         var unsynced=(App.slateNotes||[]).filter(function(n){ return !n.sid; });
         App.slateNotes=server.concat(unsynced);
         Slate.saveLocal();
-        if(App.view==='slate' && !App._slateView) paintSlate();
+        if(App.view==='slate' && !App._slateView && !slateIsBusy()) paintSlate();
       }
     }).catch(function(){});
   },
@@ -1728,6 +1736,20 @@ var Slate = {
   remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('deleteNote',{id:n.sid}).catch(function(){}); }
 };
 function noteAnger(created){ var t=new Date(created).getTime(); if(!t) return 0; var days=(Date.now()-t)/86400000; return Math.max(0,Math.min(1,(days-1)/6)); }
+// True while the user is mid-action on a task view — a live refresh must not interrupt them.
+function appViewBusy(){
+  if(App._dragId) return true;                                   // dragging a board card
+  if(document.querySelector('.overlay:not(.hidden)')) return true; // a modal (assign / detail / ⌘K) is open
+  return false;
+}
+// True while the user is actively dragging or typing a note — a live refresh must not interrupt them.
+function slateIsBusy(){
+  if(App._slateBusy) return true;
+  if(document.getElementById('slate-input-wrap')) return true;   // inline "add note" box is open
+  var a=document.activeElement;
+  if(a && (a.id==='slate-input' || a.id==='slate-search' || (a.closest && a.closest('#slate-board')))) return true;
+  return false;
+}
 function noteAge(created){ var t=new Date(created).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(created); }
 function renderSlate(){
   App.view='slate';
@@ -1825,12 +1847,13 @@ function attachOneNoteDnD(el){
     var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
     e.preventDefault();
     var startX=e.clientX, startY=e.clientY, origX=n.x||10, origY=n.y||10, moved=false;
+    App._slateBusy=true;
     try{ el.setPointerCapture(e.pointerId); }catch(_){}
     el.classList.add('dragging');
     var clampX=function(v){ return Math.min(Math.max(2, board.clientWidth-el.offsetWidth-4), Math.max(2,v)); };
     var clampY=function(v){ return Math.min(Math.max(2, board.clientHeight-el.offsetHeight-4), Math.max(2,v)); };
     var mv=function(ev){ moved=true; n.x=clampX(origX+(ev.clientX-startX)); n.y=clampY(origY+(ev.clientY-startY)); el.style.left=n.x+'px'; el.style.top=n.y+'px'; };
-    var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=clampX(Math.round(n.x/20)*20); n.y=clampY(Math.round(n.y/20)*20); el.style.left=n.x+'px'; el.style.top=n.y+'px'; Slate.move(n); } };
+    var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=clampX(Math.round(n.x/20)*20); n.y=clampY(Math.round(n.y/20)*20); el.style.left=n.x+'px'; el.style.top=n.y+'px'; Slate.move(n); } setTimeout(function(){ App._slateBusy=false; },300); };
     el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
   });
 }
