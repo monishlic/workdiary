@@ -1711,7 +1711,8 @@ var Slate = {
   },
   pull:function(){
     if(!Sync.online() || !App.auth) return Promise.resolve();
-    return apiCall('getMyNotes',{}).then(function(res){
+    if(Slate._pulling) return Slate._pulling;   // single-flight: never let two refreshes race and overwrite each other
+    var p = apiCall('getMyNotes',{}).then(function(res){
       if(res&&res.ok){
         var localBySid={}; (App.slateNotes||[]).forEach(function(n){ if(n.sid) localBySid[n.sid]=n; });
         var nowt=Date.now(), server=[];
@@ -1728,6 +1729,8 @@ var Slate = {
         if(App.view==='slate' && !App._slateView && !slateIsBusy()) paintSlate();
       }
     }).catch(function(){});
+    Slate._pulling = p.then(function(){ Slate._pulling=null; }, function(){ Slate._pulling=null; });
+    return p;
   },
   add:function(text,x,y,color){
     if(!App.slateNotes) App.slateNotes=[];
