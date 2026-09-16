@@ -1269,15 +1269,23 @@ function bootApp(){
     App._notifTimer=setTimeout(_notifTick, 4000);
     // Live Slate: while the Slate is open, quietly pull new notes (e.g. added from the
     // voice extension) and repaint — but never while you're dragging or typing a note.
-    var _slateTick=function(){ if(Sync.online() && App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); App._slateTimer=setTimeout(_slateTick, document.hidden?30000:5000); };
-    App._slateTimer=setTimeout(_slateTick, 5000);
+    var _slateTick=function(){ if(Sync.online() && App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); App._slateTimer=setTimeout(_slateTick, document.hidden?30000:3000); };
+    App._slateTimer=setTimeout(_slateTick, 3000);
     // Live tasks: quietly pull new/updated tasks (e.g. added from the voice extension or
     // another device) and repaint the current view — but never while you're dragging or in a modal.
     var _taskTick=function(){ if(Sync.online() && !document.hidden && App.view!=='slate' && !appViewBusy()) Sync.pull(); App._taskTimer=setTimeout(_taskTick, document.hidden?45000:8000); };
     App._taskTimer=setTimeout(_taskTick, 8000);
-    // And check instantly the moment the user returns to this tab/window.
-    document.addEventListener('visibilitychange', function(){ if(!document.hidden && Sync.online()){ loadReminders(); if(App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); else if(!appViewBusy()) Sync.pull(); } });
-    window.addEventListener('focus', function(){ if(Sync.online()){ loadReminders(); if(App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); else if(!appViewBusy()) Sync.pull(); } });
+    // When the user returns to this tab, do a short burst of checks — a note just added from
+    // the extension often lands on the server a beat AFTER you switch back, so one check misses it.
+    var _returnBurst=function(){
+      if(!Sync.online()) return;
+      loadReminders();
+      var slate=(App.view==='slate' && !App._slateView);
+      var hit=function(){ if(slate){ if(!slateIsBusy()) Slate.pull(); } else if(!appViewBusy()){ Sync.pull(); } };
+      hit(); setTimeout(hit, 1200); setTimeout(hit, 2800); setTimeout(hit, 4500);
+    };
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) _returnBurst(); });
+    window.addEventListener('focus', _returnBurst);
   }
 }
 
@@ -1795,6 +1803,9 @@ function renderSlate(){
   document.getElementById('content').innerHTML=h;
   paintSlate();
   refreshSlateMeta();
+  // Fetch fresh the moment the Slate opens (catches notes just added from the extension),
+  // then a couple of quick follow-ups in case the write is still landing on the server.
+  if(!ro && Sync.online()){ Slate.pull(); setTimeout(function(){ if(App.view==='slate'&&!App._slateView&&!slateIsBusy()) Slate.pull(); }, 1500); setTimeout(function(){ if(App.view==='slate'&&!App._slateView&&!slateIsBusy()) Slate.pull(); }, 3200); }
 }
 function refreshSlateMeta(){
   if(App._slateView) return;
