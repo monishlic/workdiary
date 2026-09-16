@@ -1151,7 +1151,8 @@ var Sync = {
 
   pull:function(){
     if(!Sync.online()) return Promise.resolve();
-    return apiCall('pull', {})
+    if(Sync._pulling) return Sync._pulling;   // single-flight: avoid overlapping pulls congesting the backend
+    var p = apiCall('pull', {})
       .then(function(res){
         if(!res || !res.ok || !res.tasks) return;
         var byUid={}; App.tasks.forEach(function(t){ if(t.uid) byUid[t.uid]=t; });
@@ -1168,6 +1169,8 @@ var Sync = {
         return Promise.all(saves).then(function(){ if(changed){ buildSidebar(); refreshView(); } });
       })
       .catch(function(e){ Sync.err=e.message||'Pull error'; Sync.updatePill('error'); });
+    Sync._pulling = p.then(function(){ Sync._pulling=null; }, function(){ Sync._pulling=null; });
+    return p;
   },
 
   full:function(){ return Sync.flush().then(function(){ return Sync.pull(); }).then(function(){ Sync.updatePill(); }); },
@@ -1262,16 +1265,16 @@ function bootApp(){
     // Heavy full sync on a relaxed cadence…
     setInterval(function(){ if(Sync.online()){ Sync.full(); } }, 60000);
     // …but check for NEW notifications adaptively: fast while you're looking, gentle in the background.
-    var _notifTick=function(){ if(Sync.online()) loadReminders(); App._notifTimer=setTimeout(_notifTick, document.hidden?20000:6000); };
-    App._notifTimer=setTimeout(_notifTick, 6000);
+    var _notifTick=function(){ if(Sync.online()) loadReminders(); App._notifTimer=setTimeout(_notifTick, document.hidden?20000:4000); };
+    App._notifTimer=setTimeout(_notifTick, 4000);
     // Live Slate: while the Slate is open, quietly pull new notes (e.g. added from the
     // voice extension) and repaint — but never while you're dragging or typing a note.
     var _slateTick=function(){ if(Sync.online() && App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); App._slateTimer=setTimeout(_slateTick, document.hidden?30000:5000); };
     App._slateTimer=setTimeout(_slateTick, 5000);
     // Live tasks: quietly pull new/updated tasks (e.g. added from the voice extension or
     // another device) and repaint the current view — but never while you're dragging or in a modal.
-    var _taskTick=function(){ if(Sync.online() && !document.hidden && App.view!=='slate' && !appViewBusy()) Sync.pull(); App._taskTimer=setTimeout(_taskTick, document.hidden?45000:12000); };
-    App._taskTimer=setTimeout(_taskTick, 12000);
+    var _taskTick=function(){ if(Sync.online() && !document.hidden && App.view!=='slate' && !appViewBusy()) Sync.pull(); App._taskTimer=setTimeout(_taskTick, document.hidden?45000:8000); };
+    App._taskTimer=setTimeout(_taskTick, 8000);
     // And check instantly the moment the user returns to this tab/window.
     document.addEventListener('visibilitychange', function(){ if(!document.hidden && Sync.online()){ loadReminders(); if(App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); else if(!appViewBusy()) Sync.pull(); } });
     window.addEventListener('focus', function(){ if(Sync.online()){ loadReminders(); if(App.view==='slate' && !App._slateView && !slateIsBusy()) Slate.pull(); else if(!appViewBusy()) Sync.pull(); } });
@@ -2089,15 +2092,16 @@ function renderAnalytics(){
   App.view='analytics'; buildSidebar();
   var c=document.getElementById('content');
   if(!(App.identity&&App.identity.role==='Admin')){ c.innerHTML='<div class="cat-head"><div class="cat-title">Analytics</div><div class="cat-sub">Admin only.</div></div>'; return; }
-  c.innerHTML=skelHead('Analytics')+skelList(4);
-  if(!Sync.online()){ showContentError_('Analytics needs an internet connection.'); return; }
+  if(App._analyticsCache) paintAnalytics(App._analyticsCache);
+  else c.innerHTML=skelHead('Analytics')+skelList(4);
+  if(!Sync.online()){ if(!App._analyticsCache) showContentError_('Analytics needs an internet connection.'); return; }
   apiCall('adminStaff',{}).then(function(res){
-    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load analytics.'); return; }
+    if(!res||!res.ok){ if(!App._analyticsCache) showContentError_(res&&res.error?res.error:'Could not load analytics.'); return; }
     var staff=res.staff||[];
-    if(!staff.length){ paintAnalytics([]); return; }
+    if(!staff.length){ App._analyticsCache=[]; paintAnalytics([]); return; }
     var jobs=staff.map(function(s){ return apiCall('adminStaffTasks',{staffId:s.userId}).then(function(r){ return {s:s, tasks:(r&&r.ok&&r.tasks)?r.tasks:[]}; }).catch(function(){ return {s:s, tasks:[]}; }); });
-    Promise.all(jobs).then(function(rows){ paintAnalytics(rows); });
-  }).catch(function(e){ showContentError_(e.message||'Could not load analytics.'); });
+    Promise.all(jobs).then(function(rows){ App._analyticsCache=rows; if(App.view==='analytics') paintAnalytics(rows); });
+  }).catch(function(e){ if(!App._analyticsCache) showContentError_(e.message||'Could not load analytics.'); });
 }
 function paintAnalytics(rows){
   var c=document.getElementById('content'); if(!c) return;
@@ -2449,11 +2453,8 @@ function skelGrid(n){ var h='<div class="skel-grid skel-wrap" style="margin-top:
 function skelHead(title){ return '<div class="cat-head"><div class="cat-title">'+esc(title)+'</div><div class="cat-sub">Loading…</div></div>'; }
 
 function renderTeam(){
-  document.getElementById('content').innerHTML=skelHead('Team')+skelGrid(6);
-  if(!Sync.online()){ showContentError_('Team view needs an internet connection.'); return; }
-  apiCall('adminMembers',{}).then(function(res){
-    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load team.'); return; }
-    App._members=res.members||[];
+  var paint=function(members){
+    App._members=members||[];
     var active=App._members.filter(function(m){return m.active;});
     var totPend=0, totDone=0; active.forEach(function(m){ totPend+=m.pending; totDone+=m.completed; });
     var h='<div class="cat-head"><div class="cat-title">Team</div><div class="cat-sub">'+active.length+' active member'+(active.length!==1?'s':'')+' · tap anyone to manage them</div>';
@@ -2469,16 +2470,21 @@ function renderTeam(){
       h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill-stat pend">'+m.pending+' pending</span><span class="pill-stat don">'+m.completed+' done</span></div></div>';
     });
     h+='</div>';
-    document.getElementById('content').innerHTML=h;
-  }).catch(function(e){ showContentError_(e.message||'Could not load team.'); });
+    if(App.view==='team') document.getElementById('content').innerHTML=h;
+  };
+  if(App._teamCache) paint(App._teamCache);
+  else document.getElementById('content').innerHTML=skelHead('Team')+skelGrid(6);
+  if(!Sync.online()){ if(!App._teamCache) showContentError_('Team view needs an internet connection.'); return; }
+  apiCall('adminMembers',{}).then(function(res){
+    if(!res||!res.ok){ if(!App._teamCache) showContentError_(res&&res.error?res.error:'Could not load team.'); return; }
+    App._teamCache=res.members||[]; paint(App._teamCache);
+  }).catch(function(e){ if(!App._teamCache) showContentError_(e.message||'Could not load team.'); });
 }
 
 function openStaff(staffId,name){
   App.view='staff'; App._staffView={id:staffId,name:name}; buildSidebar();
-  document.getElementById('content').innerHTML=skelHead(name)+skelList(5);
-  apiCall('adminStaffTasks',{staffId:staffId}).then(function(res){
-    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load.'); return; }
-    var tasks=res.tasks||[];
+  App._staffCache=App._staffCache||{};
+  var paint=function(tasks){
     App._adminTaskCache={}; tasks.forEach(function(t){ App._adminTaskCache[t.uid]=t; });
     var pend=tasks.filter(function(t){return isActive(t);}).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
     var done=tasks.filter(function(t){return t.status==='Completed';}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);});
@@ -2516,8 +2522,15 @@ function openStaff(staffId,name){
     h+='</div><div style="height:22px"></div><div class="sec-title">Completed ('+done.length+')</div><div class="task-list">';
     if(!done.length) h+='<div class="empty" style="padding:26px"><div class="empty-t">Nothing completed yet</div></div>'; else done.forEach(function(t){ h+=taskCardAdmin(t); });
     h+='</div>';
-    document.getElementById('content').innerHTML=h;
-  }).catch(function(e){ showContentError_(e.message||'Could not load.'); });
+    if(App.view==='staff' && App._staffView && App._staffView.id===staffId) document.getElementById('content').innerHTML=h;
+  };
+  if(App._staffCache[staffId]) paint(App._staffCache[staffId]);
+  else document.getElementById('content').innerHTML=skelHead(name)+skelList(5);
+  if(!Sync.online()){ if(!App._staffCache[staffId]) showContentError_('This view needs an internet connection.'); return; }
+  apiCall('adminStaffTasks',{staffId:staffId}).then(function(res){
+    if(!res||!res.ok){ if(!App._staffCache[staffId]) showContentError_(res&&res.error?res.error:'Could not load.'); return; }
+    App._staffCache[staffId]=res.tasks||[]; paint(App._staffCache[staffId]);
+  }).catch(function(e){ if(!App._staffCache[staffId]) showContentError_(e.message||'Could not load.'); });
 }
 
 /* Read-only card for admin viewing another person's work */
@@ -2702,11 +2715,8 @@ function submitAssign(){
 
 function renderAssignedByMe(){
   App.view='assigned'; buildSidebar();
-  document.getElementById('content').innerHTML=skelHead('Assigned by Me')+skelList(5);
-  if(!Sync.online()){ showContentError_('This view needs an internet connection.'); return; }
-  apiCall('getAssignedByMe',{}).then(function(res){
-    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load.'); return; }
-    var tasks=res.tasks||[]; App._sharedCache={}; tasks.forEach(function(t){ App._sharedCache[t.uid]=t; });
+  var paint=function(tasks){
+    App._sharedCache={}; tasks.forEach(function(t){ App._sharedCache[t.uid]=t; });
     var pend=tasks.filter(function(t){return t.status!=='Completed';});
     var done=tasks.filter(function(t){return t.status==='Completed';});
     var h='<div class="cat-head"><div class="cat-title">Assigned by Me</div><div class="cat-sub">'+tasks.length+' task'+(tasks.length!==1?'s':'')+' you gave to others</div>';
@@ -2716,17 +2726,21 @@ function renderAssignedByMe(){
     h+='</div><div style="height:20px"></div><div class="sec-title">Completed ('+done.length+')</div><div class="task-list">';
     if(!done.length) h+='<div class="empty" style="padding:24px"><div class="empty-t">None completed yet</div></div>'; else done.forEach(function(t){ h+=sharedCard(t); });
     h+='</div>';
-    document.getElementById('content').innerHTML=h;
-  }).catch(function(e){ showContentError_(e.message||'Could not load.'); });
+    if(App.view==='assigned') document.getElementById('content').innerHTML=h;
+  };
+  // Instant paint from the last-known list, then refresh in the background.
+  if(App._assignedCache) paint(App._assignedCache);
+  else document.getElementById('content').innerHTML=skelHead('Assigned by Me')+skelList(5);
+  if(!Sync.online()){ if(!App._assignedCache) showContentError_('This view needs an internet connection.'); return; }
+  apiCall('getAssignedByMe',{}).then(function(res){
+    if(!res||!res.ok){ if(!App._assignedCache) showContentError_(res&&res.error?res.error:'Could not load.'); return; }
+    App._assignedCache=res.tasks||[]; paint(App._assignedCache);
+  }).catch(function(e){ if(!App._assignedCache) showContentError_(e.message||'Could not load.'); });
 }
 
 function renderActivityLog(){
   App.view='audit'; buildSidebar();
-  document.getElementById('content').innerHTML=skelHead('Activity Log')+skelList(6);
-  if(!Sync.online()){ showContentError_('Activity Log needs an internet connection.'); return; }
-  apiCall('getAudit',{limit:300}).then(function(res){
-    if(!res||!res.ok){ showContentError_(res&&res.error?res.error:'Could not load activity.'); return; }
-    var e=res.entries||[];
+  var paint=function(e){
     var h='<div class="cat-head"><div class="crumb"><span data-action="nav" data-view="team" style="cursor:pointer;color:var(--accent);font-weight:600">← Team</span></div>';
     h+='<div class="cat-title">Activity Log</div><div class="cat-sub">Everything that happened across the team · newest first</div></div>';
     if(!e.length){ h+='<div class="empty" style="padding:26px"><div class="empty-t">Nothing logged yet</div></div>'; }
@@ -2740,8 +2754,15 @@ function renderActivityLog(){
       });
       h+='</div>';
     }
-    document.getElementById('content').innerHTML=h;
-  }).catch(function(err){ showContentError_(err.message||'Could not load activity.'); });
+    if(App.view==='audit') document.getElementById('content').innerHTML=h;
+  };
+  if(App._auditCache) paint(App._auditCache);
+  else document.getElementById('content').innerHTML=skelHead('Activity Log')+skelList(6);
+  if(!Sync.online()){ if(!App._auditCache) showContentError_('Activity Log needs an internet connection.'); return; }
+  apiCall('getAudit',{limit:300}).then(function(res){
+    if(!res||!res.ok){ if(!App._auditCache) showContentError_(res&&res.error?res.error:'Could not load activity.'); return; }
+    App._auditCache=res.entries||[]; paint(App._auditCache);
+  }).catch(function(err){ if(!App._auditCache) showContentError_(err.message||'Could not load activity.'); });
 }
 
 /* ---------- Phase 4: member management ---------- */
