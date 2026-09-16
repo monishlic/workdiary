@@ -1700,11 +1700,28 @@ var Slate = {
   colors:['#fff3b0','#ffd6e7','#c9f2d8','#e0d9ff','#ffe1c4','#c9e8ff','#ffd9cf','#d9f0ff'],
   pick:function(){ return Slate.colors[Math.floor(Math.random()*Slate.colors.length)]; },
   saveLocal:function(){ return Store.put('kv','slateNotes', App.slateNotes||[]); },
+  _tomb:{},   // sid -> time deleted here, so a live pull won't resurrect it before the server catches up
+  // Send a note change and shield it from the live poll until the server has caught up.
+  _push:function(n,payload){
+    if(!n.sid || !Sync.online()) return;
+    n._pending=(n._pending||0)+1;
+    apiCall('updateNote',payload).catch(function(){}).then(function(){
+      setTimeout(function(){ n._pending=Math.max(0,(n._pending||1)-1); }, 2500);
+    });
+  },
   pull:function(){
     if(!Sync.online() || !App.auth) return Promise.resolve();
     return apiCall('getMyNotes',{}).then(function(res){
       if(res&&res.ok){
-        var server=(res.notes||[]).map(function(n){ n.sid=n.id; return n; });
+        var localBySid={}; (App.slateNotes||[]).forEach(function(n){ if(n.sid) localBySid[n.sid]=n; });
+        var nowt=Date.now(), server=[];
+        (res.notes||[]).forEach(function(sv){
+          sv.sid=sv.id;
+          if(Slate._tomb[sv.sid] && (nowt-Slate._tomb[sv.sid])<20000) return;   // deleted here — don't resurrect yet
+          var loc=localBySid[sv.sid];
+          if(loc && loc._pending>0){ server.push(loc); }                        // keep our in-flight edit
+          else { if(loc){ sv._mt=loc._mt; } server.push(sv); }
+        });
         var unsynced=(App.slateNotes||[]).filter(function(n){ return !n.sid; });
         App.slateNotes=server.concat(unsynced);
         Slate.saveLocal();
@@ -1728,12 +1745,12 @@ var Slate = {
   move:function(n){
     Slate.saveLocal();
     if(!n.sid || !Sync.online()) return;
-    clearTimeout(n._mt); n._mt=setTimeout(function(){ apiCall('updateNote',{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){}); }, 450);
+    clearTimeout(n._mt); n._mt=setTimeout(function(){ Slate._push(n,{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}); }, 450);
   },
-  archive:function(n){ n.done=true; Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,done:true}).catch(function(){}); },
-  restore:function(n){ n.done=false; Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,done:false}).catch(function(){}); },
-  setTasked:function(n,ref){ n.taskRef=ref||'task'; Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,taskRef:n.taskRef}).catch(function(){}); },
-  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('deleteNote',{id:n.sid}).catch(function(){}); }
+  archive:function(n){ n.done=true; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:true}); },
+  restore:function(n){ n.done=false; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:false}); },
+  setTasked:function(n,ref){ n.taskRef=ref||'task'; Slate.saveLocal(); Slate._push(n,{id:n.sid,taskRef:n.taskRef}); },
+  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(n.sid){ Slate._tomb[n.sid]=Date.now(); if(Sync.online()) apiCall('deleteNote',{id:n.sid}).catch(function(){}); } }
 };
 function noteAnger(created){ var t=new Date(created).getTime(); if(!t) return 0; var days=(Date.now()-t)/86400000; return Math.max(0,Math.min(1,(days-1)/6)); }
 // True while the user is mid-action on a task view — a live refresh must not interrupt them.
