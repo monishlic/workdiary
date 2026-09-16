@@ -1166,7 +1166,7 @@ var Sync = {
             lt.syncStatus='SYNCED'; saves.push(Store.put('tasks',lt.taskId,lt)); changed=true;
           }
         });
-        return Promise.all(saves).then(function(){ if(changed){ buildSidebar(); refreshView(); } });
+        return Promise.all(saves).then(function(){ if(changed){ buildSidebar(); if(App.view!=='slate') refreshView(); } });
       })
       .catch(function(e){ Sync.err=e.message||'Pull error'; Sync.updatePill('error'); });
     Sync._pulling = p.then(function(){ Sync._pulling=null; }, function(){ Sync._pulling=null; });
@@ -1889,8 +1889,9 @@ function appendNote(n){
 }
 function slateDone(id){
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+  Slate.archive(n);   // mark done + protect immediately, so a refresh can't re-show it during the animation
   var el=document.querySelector('.slate-note[data-note="'+id+'"]');
-  var fin=function(){ Slate.archive(n); if(el&&el.parentNode) el.parentNode.removeChild(el); refreshSlateMeta();
+  var fin=function(){ if(el&&el.parentNode) el.parentNode.removeChild(el); refreshSlateMeta();
     toastAction('🗄️ Archived','Undo',function(){ Slate.restore(n); if(App.view==='slate'&&!App._slateView){ if(document.getElementById('slate-board')) appendNote(n); refreshSlateMeta(); } },'info'); };
   if(el && !_reduceMotion){ el.classList.add('sn-removing'); setTimeout(fin,260); } else fin();
 }
