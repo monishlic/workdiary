@@ -1154,6 +1154,7 @@ var Sync = {
     if(Sync._pulling) return Sync._pulling;   // single-flight: avoid overlapping pulls congesting the backend
     var p = apiCall('pull', {})
       .then(function(res){
+        if(res && res.ok && Sync.err){ Sync.err=''; Sync.updatePill(); }   // a successful read means we're back online — self-heal the error state
         if(!res || !res.ok || !res.tasks) return;
         var byUid={}; App.tasks.forEach(function(t){ if(t.uid) byUid[t.uid]=t; });
         var saves=[], changed=false;
@@ -1725,6 +1726,7 @@ var Slate = {
     if(Slate._pulling) return Slate._pulling;   // single-flight: never let two refreshes race and overwrite each other
     var p = apiCall('getMyNotes',{}).then(function(res){
       if(res&&res.ok){
+        if(Sync.err){ Sync.err=''; Sync.updatePill(); }
         var localBySid={}; (App.slateNotes||[]).forEach(function(n){ if(n.sid) localBySid[n.sid]=n; });
         var nowt=Date.now(), server=[];
         (res.notes||[]).forEach(function(sv){
@@ -2587,6 +2589,7 @@ function loadReminders(){
     return apiCall('getReminders',{}).then(function(res){
       App._remBusy = false;
       if(!res||!res.ok) return;
+      if(Sync.err){ Sync.err=''; Sync.updatePill(); }   // reminders came through — connection is healthy again
       var list = res.reminders||[];
       var maxTs = watermark, nowMs = Date.now();
       list.forEach(function(r){ var ts=notifTs(r.reminderId); if(ts>maxTs) maxTs=ts; });
