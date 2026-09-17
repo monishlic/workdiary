@@ -1287,6 +1287,8 @@ function bootApp(){
     };
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) _returnBurst(); });
     window.addEventListener('focus', _returnBurst);
+    // Live bridge from the voice extension: show a saved note on the Slate instantly.
+    window.addEventListener('message', function(ev){ var d=ev&&ev.data; if(d&&d.__edNote&&d.__edNote.text){ try{ Slate.addEph(d.__edNote); }catch(e){} } });
   }
 }
 
@@ -1736,7 +1738,8 @@ var Slate = {
           if(loc && loc._pending>0){ server.push(loc); }                        // keep our in-flight edit
           else { if(loc){ sv._mt=loc._mt; } server.push(sv); }
         });
-        var unsynced=(App.slateNotes||[]).filter(function(n){ return !n.sid; });
+        var stexts={}; server.forEach(function(n){ stexts[(n.text||'').trim()]=true; });
+        var unsynced=(App.slateNotes||[]).filter(function(n){ if(n.sid) return false; if(n._eph && stexts[(n.text||'').trim()]) return false; return true; });
         App.slateNotes=server.concat(unsynced);
         Slate.saveLocal();
         if(App.view==='slate' && !App._slateView && !slateIsBusy()) paintSlate();
@@ -1762,6 +1765,17 @@ var Slate = {
     Slate.saveLocal();
     if(!n.sid || !Sync.online()) return;
     clearTimeout(n._mt); n._mt=setTimeout(function(){ Slate._push(n,{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}); }, 450);
+  },
+  // Instant note handed over live from the voice extension (backend save already fired there).
+  addEph:function(note){
+    if(!note || !note.text) return;
+    if(!App.slateNotes) App.slateNotes=[];
+    var t=(note.text||'').trim();
+    // guard against a double bridge message for the same note
+    if((App.slateNotes||[]).some(function(x){ return x._eph && (x.text||'').trim()===t && Math.abs(new Date(x.created).getTime()-new Date(note.created||Date.now()).getTime())<8000; })) return;
+    var n={ id:'eph-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), sid:'', text:note.text, color:note.color||Slate.pick(), x:Number(note.x)||40, y:Number(note.y)||40, done:false, taskRef:'', created:note.created||nowISO(), _eph:true };
+    App.slateNotes.push(n); Slate.saveLocal();
+    if(App.view==='slate' && !App._slateView){ if(document.getElementById('slate-board')) appendNote(n); refreshSlateMeta(); }
   },
   archive:function(n){ n.done=true; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:true}); },
   restore:function(n){ n.done=false; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:false}); },
