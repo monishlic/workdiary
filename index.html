@@ -297,6 +297,55 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .due-over{background:var(--danger-bg);color:var(--danger-dark)}
 .due-esc{background:#b91c1c;color:#fff}
 .rep-tag{font-size:.66rem;font-weight:600;color:#6d28d9;background:rgba(139,92,246,.16);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px;text-transform:capitalize}
+.prio-tag{font-size:.64rem;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle}
+.prio-high{background:rgba(191,86,75,.13);color:#a8443b}
+.prio-medium{background:rgba(200,133,54,.13);color:#976117}
+.prio-low{background:rgba(86,146,86,.15);color:#4b7a49}
+.due-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.due-presets button{font-size:.74rem;font-weight:600;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--bg);color:var(--text-sec);cursor:pointer}
+.due-presets button:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-head-row{margin-bottom:6px}
+.cal-dow{text-align:center;font-size:.72rem;font-weight:700;color:var(--text-muted);padding:4px}
+.cal-cell{min-height:74px;border:1px solid var(--border);border-radius:10px;padding:6px;background:var(--bg-card);cursor:pointer;position:relative;transition:border-color .15s}
+.cal-cell.empty{border:none;background:transparent;cursor:default}
+.cal-cell:hover:not(.empty){border-color:var(--accent)}
+.cal-cell.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.cal-cell.sel{background:var(--accent-soft);border-color:var(--accent)}
+.cal-num{font-size:.8rem;font-weight:700;color:var(--text-sec)}
+.cal-dot{position:absolute;bottom:6px;right:6px;min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.cal-dot.over{background:#b91c1c}
+.lb-list{display:flex;flex-direction:column;gap:10px}
+.lb-card{display:flex;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:13px 16px}
+.lb-card.good{border-left:4px solid #16a34a}.lb-card.mid{border-left:4px solid #e0a458}.lb-card.low{border-left:4px solid #cbd5e1}
+.lb-medal{font-size:1.5rem;min-width:34px;text-align:center}
+.lb-rank{font-size:1rem;font-weight:800;color:var(--text-muted)}
+.lb-main{flex:1;min-width:0}
+.lb-name{font-weight:700;font-size:.95rem}
+.lb-role{font-size:.68rem;font-weight:600;color:var(--text-muted);background:var(--bg);padding:1px 7px;border-radius:8px;margin-left:6px}
+.lb-live{font-size:.66rem;font-weight:700;color:#16a34a;margin-left:6px}
+.lb-bar{height:8px;background:rgba(148,163,184,.2);border-radius:5px;margin:7px 0;overflow:hidden}
+.lb-bar span{display:block;height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+.lb-metrics{display:flex;flex-wrap:wrap;gap:12px;font-size:.76rem;color:var(--text-sec)}
+.lb-over{color:#b91c1c;font-weight:700}
+.lb-score{font-size:1.5rem;font-weight:800;color:var(--accent);text-align:center;min-width:56px}
+.lb-score small{display:block;font-size:.6rem;color:var(--text-muted);font-weight:600}
+.sr-owner{font-size:.68rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 8px;border-radius:8px;margin-left:6px}
+.bulkmode .card.bulk-pick{cursor:pointer;position:relative;padding-left:44px}
+.card.bulk-pick::before{content:'';position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;border:2px solid var(--border);border-radius:6px;background:#fff}
+.card.bulk-pick.bulk-on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.card.bulk-pick.bulk-on::before{background:var(--accent);border-color:var(--accent)}
+.card.bulk-pick.bulk-on::after{content:'✓';position:absolute;left:18px;top:50%;transform:translateY(-50%);color:#fff;font-size:.8rem;font-weight:800}
+.bulk-bar{position:sticky;bottom:12px;display:flex;align-items:center;gap:10px;background:var(--primary,#0f172a);color:#fff;padding:11px 16px;border-radius:14px;box-shadow:0 12px 30px -8px rgba(0,0,0,.4);margin-top:14px;font-weight:600;font-size:.85rem}
+@media(max-width:560px){.cal-cell{min-height:56px}.lb-metrics{gap:8px}}
+.det-sec{margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+.det-sec-h{font-weight:700;font-size:.9rem;margin-bottom:8px}
+.cl-count{font-size:.72rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 8px;border-radius:10px;margin-left:6px}
+.cl-item{display:flex;align-items:flex-start;gap:9px;padding:6px 0;font-size:.9rem;cursor:pointer}
+.cl-item input{margin-top:3px}
+.cl-item.done span{text-decoration:line-through;color:var(--text-muted)}
+.det-link{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);padding:7px 11px;border-radius:9px;font-size:.82rem;font-weight:600;text-decoration:none;margin:3px 6px 3px 0;word-break:break-all}
+.det-link:hover{filter:brightness(.96)}
 .esc-tag{font-size:.66rem;font-weight:700;color:#fff;background:#b91c1c;padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
 .esc-banner{display:flex;align-items:center;gap:10px;background:rgba(185,28,28,.10);border:1px solid rgba(185,28,28,.30);color:var(--danger-dark);padding:11px 15px;border-radius:12px;margin-bottom:18px;font-size:.86rem;font-weight:600}
 .esc-banner .esc-cta{margin-left:auto;background:#b91c1c;color:#fff;border:none;padding:6px 13px;border-radius:8px;font-weight:700;cursor:pointer;font-size:.8rem}
@@ -779,8 +828,17 @@ body[data-theme="dark"]{ background:
       </div>
       <label class="f-label">Client Name <span class="req">*</span></label>
       <input type="text" id="assign-client" class="f-input" maxlength="120" placeholder="e.g. Raul Shah" autocomplete="off">
-      <label class="f-label">Due Date &amp; Time <span class="opt">(optional)</span></label>
-      <input type="datetime-local" id="assign-due" class="f-input">
+      <label class="f-label">Priority</label>
+      <select id="assign-priority" class="f-input"><option value="high">🔴 High / Urgent</option><option value="medium" selected>🟠 Medium</option><option value="low">🟢 Low</option></select>
+      <label class="f-label" style="margin-top:12px">Due Date &amp; Time <span class="opt">(optional)</span></label>
+      <input type="datetime-local" id="assign-due" class="f-input" step="60">
+      <div class="due-presets">
+        <button type="button" data-action="due-preset" data-when="today18">Today 6 PM</button>
+        <button type="button" data-action="due-preset" data-when="tom10">Tomorrow 10 AM</button>
+        <button type="button" data-action="due-preset" data-when="tom18">Tomorrow 6 PM</button>
+        <button type="button" data-action="due-preset" data-when="in2">In 2 days</button>
+        <button type="button" data-action="due-preset" data-when="clear">Clear</button>
+      </div>
       <label class="f-label" style="margin-top:12px">Repeat <span class="opt">(optional — a fresh copy appears when this one is completed)</span></label>
       <select id="assign-repeat" class="f-input"><option value="">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
       <label class="f-label" style="margin-top:12px">Reminders <span class="opt">(optional — pings the assignee at each time)</span></label>
@@ -788,6 +846,10 @@ body[data-theme="dark"]{ background:
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" data-action="add-reminder-row" data-target="assign-reminders">+ Add reminder</button>
       <label class="f-label" style="margin-top:12px">Details / Instructions <span class="opt">(optional)</span></label>
       <textarea id="assign-details" class="f-area" rows="3" maxlength="2000" placeholder="What needs to be done?"></textarea>
+      <label class="f-label" style="margin-top:12px">Checklist <span class="opt">(optional — one step per line)</span></label>
+      <textarea id="assign-checklist" class="f-area" rows="3" placeholder="Collect KYC&#10;Fill the form&#10;Submit"></textarea>
+      <label class="f-label" style="margin-top:12px">Attachment links <span class="opt">(optional — one per line: Label | https://…)</span></label>
+      <textarea id="assign-links" class="f-area" rows="2" placeholder="Aadhaar scan | https://drive.google.com/…"></textarea>
       <div class="tpl-save">
         <label class="tpl-check"><input type="checkbox" id="assign-savetpl" data-action="tpl-toggle"> <span>Save as template</span></label>
         <input type="text" id="assign-tplname" class="f-input hidden" maxlength="60" placeholder="Template name (e.g. Policy Renewal)" autocomplete="off">
@@ -886,6 +948,7 @@ var FB = (function(){
   function newId(p){ return p+'-'+Date.now()+'-'+Math.floor(Math.random()*100000); }
   function me(){ return App.auth || {}; }
   function isAdmin(){ return (me().role==='Admin'); }
+  function isOverseer(){ var r=me().role; return (r==='Admin'||r==='Manager'); }
   function docsToArr(qs){ var out=[]; qs.forEach(function(d){ out.push(d.data()); }); return out; }
 
   function addNotif(forUserId, fromName, message, taskUid, type){
@@ -945,7 +1008,8 @@ var FB = (function(){
             var task={ uid:uid, taskId:'AS-'+Date.now(), ownerId:a.userId, ownerName:a.name,
               department:b.department, category:b.category, clientName:b.clientName, details:b.details||'',
               status:'Pending', dueDate:b.dueDate||'', followUpDate:b.followUpDate||'',
-              reminders:Array.isArray(b.reminders)?b.reminders:[], repeat:b.repeat||'',
+              reminders:Array.isArray(b.reminders)?b.reminders:[], repeat:b.repeat||'', priority:b.priority||'medium',
+              checklist:Array.isArray(b.checklist)?b.checklist:[], links:Array.isArray(b.links)?b.links:[],
               createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
               createdById:u.userId, createdByName:u.name, assignedById:u.userId, assignedByName:u.name, syncStatus:'SYNCED' };
             return col('tasks').doc(uid).set(task)
@@ -1027,7 +1091,7 @@ var FB = (function(){
 
         case 'adminMembers':
         case 'adminStaff': {
-          if(!isAdmin()) throw new Error('Admin access required.');
+          if(!isOverseer()) throw new Error('Admin access required.');
           return Promise.all([col('users').get(), col('tasks').get()]).then(function(r){
             var users=docsToArr(r[0]), tasks=docsToArr(r[1]);
             var pend={}, done={};
@@ -1040,12 +1104,12 @@ var FB = (function(){
           });
         }
         case 'adminStaffTasks': {
-          if(!isAdmin()) throw new Error('Admin access required.');
+          if(!isOverseer()) throw new Error('Admin access required.');
           if(!b.staffId) throw new Error('Missing staffId.');
           return col('tasks').where('ownerId','==',String(b.staffId)).get().then(function(qs){ return {ok:true, tasks:docsToArr(qs)}; });
         }
         case 'adminGetSlate': {
-          if(!isAdmin()) throw new Error('Admin access required.');
+          if(!isOverseer()) throw new Error('Admin access required.');
           return col('notes').where('ownerId','==',String(b.userId)).get().then(function(qs){ return {ok:true, notes:docsToArr(qs)}; });
         }
 
@@ -1082,7 +1146,7 @@ var FB = (function(){
           return col('users').doc(String(b.userId)).set(patch,{merge:true}).then(function(){ return logAudit('Updated member', '', b.userId, JSON.stringify(patch)); }).then(function(){ return {ok:true}; });
         }
         case 'adminResetKey': {
-          if(!isAdmin()) throw new Error('Admin access required.');
+          if(!isOverseer()) throw new Error('Admin access required.');
           return col('users').doc(String(b.userId)).get().then(function(s){ var role=s.exists?s.data().role:'Staff'; var key=(role==='Admin'?'ADMIN-':'KEY-')+Math.random().toString(36).slice(2,8).toUpperCase(); return col('users').doc(String(b.userId)).set({accessKey:key},{merge:true}).then(function(){ return {ok:true, key:key, accessKey:key}; }); });
         }
         case 'adminResetUser': {
@@ -1113,8 +1177,32 @@ var FB = (function(){
           });
         }
 
+        case 'teamStats': {
+          if(!isOverseer()) throw new Error('Admin access required.');
+          return Promise.all([col('users').get(), col('tasks').get(), col('notes').get()]).then(function(r){
+            var users=docsToArr(r[0]), tasks=docsToArr(r[1]), notes=docsToArr(r[2]);
+            var now=Date.now(), wk=now-7*86400000, S={};
+            function ct(x){ return x?new Date(x).getTime():0; }
+            users.forEach(function(u){ if(u.active===false) return; S[u.userId]={userId:u.userId,name:u.name,role:u.role,lastActive:u.lastActive||'',total:0,completed:0,onTime:0,assigned:0,notes:0,completed7:0,assigned7:0,overdue:0,onTime7:0}; });
+            tasks.forEach(function(t){
+              var o=S[t.ownerId];
+              if(o){ o.total++;
+                if(t.status==='Completed'){ o.completed++; var c=ct(t.completedTimestamp); if(c>=wk)o.completed7++; if(t.dueDate){ var due=ct(t.dueDate); if(c&&c<=due){ o.onTime++; if(c>=wk)o.onTime7++; } } }
+                else if(t.dueDate && ct(t.dueDate)<now){ o.overdue++; }
+              }
+              var a=S[t.assignedById]; if(a && String(t.assignedById)!==String(t.ownerId)){ a.assigned++; if(ct(t.createdTimestamp)>=wk) a.assigned7++; }
+            });
+            notes.forEach(function(n){ var o=S[n.ownerId]; if(o) o.notes++; });
+            return {ok:true, staff:Object.keys(S).map(function(k){return S[k];})};
+          });
+        }
+        case 'heartbeat': {
+          if(!me().userId) return {ok:true};
+          return col('users').doc(String(me().userId)).set({lastActive:nowISO()},{merge:true}).then(function(){return {ok:true};});
+        }
+
         case 'getAudit': {
-          if(!isAdmin()) throw new Error('Admin access required.');
+          if(!isOverseer()) throw new Error('Admin access required.');
           return col('audit').get().then(function(qs){ var arr=docsToArr(qs); arr.sort(function(a,c){ return new Date(c.ts)-new Date(a.ts); }); return {ok:true, entries:arr.slice(0, b.limit||300)}; });
         }
         case 'getTaskHistory': {
@@ -1325,11 +1413,24 @@ var Data = {
       var task={ uid:genUid(), taskId:taskId, employeeId:App.identity.employeeId, employeeName:App.identity.employeeName,
         department:d.department, category:d.category, clientName:d.clientName, details:d.details||'',
         status:'Pending', dueDate:d.dueDate||'', followUpDate:d.followUpDate||'', reminders:Array.isArray(d.reminders)?d.reminders:[],
-        repeat:d.repeat||'',
+        repeat:d.repeat||'', priority:d.priority||'medium', checklist:Array.isArray(d.checklist)?d.checklist:[], links:Array.isArray(d.links)?d.links:[],
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
       return Store.put('tasks',taskId,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending',d.clientName+' → '+d.category); Sync.afterChange(); return task; });
     });
+  },
+  deleteTask:function(taskId){
+    var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.resolve();
+    var uid=t.uid; App.tasks=App.tasks.filter(function(x){return x.taskId!==taskId;});
+    try{ FBLive.rewriteTasks(); }catch(e){}
+    if(uid){ try{ FB.col('tasks').doc(String(uid)).delete(); }catch(e){} }
+    return Promise.resolve();
+  },
+  toggleCheck:function(taskId,i){
+    var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t||!t.checklist||!t.checklist[i]) return Promise.resolve();
+    t.checklist[i].done=!t.checklist[i].done; t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
+    refreshChecklist(t);
+    return Store.put('tasks',taskId,t).then(function(){ Sync.afterChange(); });
   },
   updateDetails:function(taskId,details){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
@@ -1344,6 +1445,8 @@ var Data = {
     if(f.dueDate!==undefined) t.dueDate=f.dueDate;
     if(f.followUpDate!==undefined) t.followUpDate=f.followUpDate;
     if(f.reminders!==undefined) t.reminders=f.reminders;
+    if(f.checklist!==undefined) t.checklist=f.checklist;
+    if(f.links!==undefined) t.links=f.links;
     t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
     var note=moved?('Moved to '+f.department+' › '+f.category):(renamed?'Renamed & edited':'Edited');
     return Store.put('tasks',taskId,t).then(function(){ Data.log(taskId,'EDITED',t.status,t.status,note); Sync.afterChange(); });
@@ -1540,6 +1643,7 @@ var FBLive = {
     if(FBLive.started) return; FBLive.started=true;
     var uid=String(App.identity.employeeId); var db;
     try{ db=FB.db(); }catch(e){ return; }
+    try{ apiCall('heartbeat',{}); }catch(e){}   // record "last active" for the leaderboard
 
     // My own tasks
     db.collection('tasks').where('ownerId','==',uid).onSnapshot(function(qs){
@@ -1581,12 +1685,16 @@ var FBLive = {
     }, function(){});
 
     // Admin: keep Team / Analytics / Staff-profile / Activity-log live as ANY staff changes anything
-    if(App.identity.role==='Admin'){
-      db.collection('tasks').onSnapshot(function(){
+    if(isBoss()){
+      db.collection('tasks').onSnapshot(function(qs){
+        App._allTasks=[]; App._adminTaskCache=App._adminTaskCache||{};
+        qs.forEach(function(d){ var t=d.data(); if(t.uid){ App._allTasks.push(t); App._adminTaskCache[t.uid]=t; } });
+        App._teamCache=null; App._analyticsCache=null; App._staffCache={}; App._lbCache=null;
         if(App.view==='team') renderTeam();
         else if(App.view==='analytics') renderAnalytics();
         else if(App.view==='staff' && App._staffView) openStaff(App._staffView.id, App._staffView.name);
-        else { App._teamCache=null; App._analyticsCache=null; App._staffCache={}; }
+        else if(App.view==='leaderboard') renderLeaderboard();
+        else if(App.view==='search'){ var _si=document.getElementById('search'); if(_si) renderSearch(_si.value); }
       }, function(){});
       db.collection('audit').onSnapshot(function(){
         App._auditCache=null;
@@ -1628,17 +1736,11 @@ function bootApp(){
     // Push local (offline) changes up whenever the tab regains focus.
     window.addEventListener('focus', function(){ if(Sync.online()) Sync.flush(); });
     // Live bridge from the voice extension: show a saved note on the Slate instantly.
-    // Voice-extension note: save it to Firebase (so it persists + syncs live) AND show it instantly.
+    // Voice-extension note: the EXTENSION now saves it to Firebase itself, so here we only
+    // show it instantly (ephemeral) — the live notes listener replaces it with the saved copy.
     window.addEventListener('message', function(ev){
       var d=ev&&ev.data; if(!(d&&d.__edNote&&d.__edNote.text)) return;
-      var nt=d.__edNote; var t=(nt.text||'').trim();
-      // ignore the extension's double-broadcast of the same note
-      if((App.slateNotes||[]).some(function(x){ return (x.text||'').trim()===t && Math.abs(Date.now()-new Date(x.created||0).getTime())<9000; })) return;
-      try{
-        var n=Slate.add(nt.text, Number(nt.x)||40, Number(nt.y)||40, nt.color||Slate.pick());
-        if(App.view==='slate' && !App._slateView && document.getElementById('slate-board')) appendNote(n);
-        refreshSlateMeta();
-      }catch(e){}
+      try{ Slate.addEph(d.__edNote); }catch(e){}
     });
   }
 }
@@ -1668,7 +1770,7 @@ function plusIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="current
    ================================================================ */
 function visibleDepartments(){
   var allowed = App.auth && App.auth.allowedDepartments;
-  if(!allowed || !allowed.length || (App.identity && App.identity.role==='Admin')) return App.departments;
+  if(!allowed || !allowed.length || (App.identity && isBoss())) return App.departments;
   return App.departments.filter(function(d){ return allowed.indexOf(d.department)!==-1; });
 }
 function buildSidebar(){
@@ -1677,6 +1779,7 @@ function buildSidebar(){
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
   h+='<button class="nav-link'+(App.view==='clients'?' active':'')+'" data-action="nav" data-view="clients"><span class="nav-ico">👤</span> Clients</button>';
+  h+='<button class="nav-link'+(App.view==='calendar'?' active':'')+'" data-action="nav" data-view="calendar"><span class="nav-ico">📅</span> Calendar</button>';
   visibleDepartments().forEach(function(d){
     var collapsed=!App.prefs.expanded[d.department];
     var dp=deptPending(d.department);
@@ -1700,9 +1803,11 @@ function buildSidebar(){
   h+='<button class="nav-link'+((App.view==='list'&&App.listFilter==='completed')?' active':'')+'" data-action="show-list" data-filter="completed"><span class="nav-ico">'+ico('check')+'</span> Completed</button>';
   h+='<button class="nav-link'+(App.view==='assigned'?' active':'')+'" data-action="nav" data-view="assigned"><span class="nav-ico">'+ico('assigned')+'</span> Assigned by Me</button>';
   h+='<button class="nav-link'+(App.view==='search'?' active':'')+'" data-action="nav" data-view="search"><span class="nav-ico">'+ico('search')+'</span> Search</button>';
-  if(App.identity && App.identity.role==='Admin'){
+  if(App.identity && isBoss()){
     h+='<button class="nav-link'+((App.view==='team'||App.view==='staff')?' active':'')+'" data-action="nav" data-view="team"><span class="nav-ico">'+ico('team')+'</span> Team</button>';
     h+='<button class="nav-link'+(App.view==='analytics'?' active':'')+'" data-action="nav" data-view="analytics"><span class="nav-ico">📊</span> Analytics</button>';
+    h+='<button class="nav-link'+(App.view==='leaderboard'?' active':'')+'" data-action="nav" data-view="leaderboard"><span class="nav-ico">🏆</span> Leaderboard</button>';
+    h+='<button class="nav-link'+(App.view==='weekly'?' active':'')+'" data-action="nav" data-view="weekly"><span class="nav-ico">🗓️</span> Weekly Report</button>';
   }
   h+='<button class="nav-link'+(App.view==='settings'?' active':'')+'" data-action="nav" data-view="settings"><span class="nav-ico">'+ico('gear')+'</span> Settings</button>';
   h+='</div>';
@@ -1729,7 +1834,7 @@ function cmdkItems(){
   nav('Completed','Everything done',function(){ showList('completed'); });
   nav('Assigned by Me','Tasks you gave out',function(){ navigate('assigned'); });
   nav('Settings','Preferences & templates',function(){ navigate('settings'); });
-  if(App.identity && App.identity.role==='Admin'){ nav('Team','Members & analytics',function(){ navigate('team'); }); nav('Activity Log','Audit trail',function(){ renderActivityLog(); }); }
+  if(App.identity && isBoss()){ nav('Team','Members & analytics',function(){ navigate('team'); }); nav('Activity Log','Audit trail',function(){ renderActivityLog(); }); }
   visibleDepartments().forEach(function(d){ var dep=d.department, c0=(d.categories&&d.categories[0])||'Other'; items.push({t:dep,sub:'Department',ico:'▤',grp:'Departments',run:function(){ navigate('category',dep,c0); }}); });
   var seen={};
   App.tasks.forEach(function(t){ var c=t.clientName; if(!c) return; var k=c.toLowerCase(); if(seen[k]) return; seen[k]=1; var id=t.taskId; items.push({t:c,sub:t.department+' › '+t.category,ico:'◔',grp:'Clients',run:function(){ openTask(id); }}); });
@@ -1785,6 +1890,9 @@ function navigate(view,dept,cat){
     else if(view==='analytics') renderAnalytics();
     else if(view==='assigned') renderAssignedByMe();
     else if(view==='audit') renderActivityLog();
+    else if(view==='calendar') renderCalendar();
+    else if(view==='leaderboard') renderLeaderboard();
+    else if(view==='weekly') renderWeekly();
   });
   window.scrollTo(0,0);
 }
@@ -1942,10 +2050,34 @@ function stat(v,l,c,filter){ return '<div class="stat '+c+'" data-action="show-l
 /* ================================================================
    TASK CARD
    ================================================================ */
+function isBoss(){ return !!(App.identity && (App.identity.role==='Admin'||App.identity.role==='Manager')); }
+function toLocalInput(d){ function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
+function setDuePreset(when){
+  var inp=document.getElementById('assign-due'); if(!inp) return;
+  if(when==='clear'){ inp.value=''; return; }
+  var d=new Date();
+  if(when==='today18'){ d.setHours(18,0,0,0); }
+  else if(when==='tom10'){ d.setDate(d.getDate()+1); d.setHours(10,0,0,0); }
+  else if(when==='tom18'){ d.setDate(d.getDate()+1); d.setHours(18,0,0,0); }
+  else if(when==='in2'){ d.setDate(d.getDate()+2); d.setHours(18,0,0,0); }
+  inp.value=toLocalInput(d);
+}
+function prioTag(p){ p=(p||'medium'); if(p==='high') return '<span class="prio-tag prio-high">● High</span> '; if(p==='low') return '<span class="prio-tag prio-low">● Low</span> '; return '<span class="prio-tag prio-medium">● Med</span> '; }
+function parseChecklist(text){ return String(text||'').split('\n').map(function(l){return l.trim();}).filter(Boolean).map(function(t){return {text:t.slice(0,200), done:false};}); }
+function parseLinks(text){ return String(text||'').split('\n').map(function(l){return l.trim();}).filter(Boolean).map(function(l){ var p=l.split('|'); var url,label; if(p.length>1){ label=p[0].trim(); url=p.slice(1).join('|').trim(); } else { url=l; label=l; } if(!/^https?:\/\//i.test(url)) url='https://'+url.replace(/^\/+/,''); return {label:label||url, url:url}; }); }
+function mergeChecklist(oldArr, text){ var newItems=parseChecklist(text); var oldByText={}; (oldArr||[]).forEach(function(x){ oldByText[x.text]=x.done; }); return newItems.map(function(x){ if(oldByText[x.text]) x.done=true; return x; }); }
+function checklistBlock(t){ var cl=t.checklist||[]; if(!cl.length) return ''; var done=cl.filter(function(x){return x.done;}).length;
+  var h='<div id="cl-wrap" class="det-sec"><div class="det-sec-h">✔️ Checklist <span class="cl-count">'+done+'/'+cl.length+'</span></div>';
+  cl.forEach(function(x,i){ h+='<label class="cl-item'+(x.done?' done':'')+'"><input type="checkbox" '+(x.done?'checked':'')+' data-action="toggle-check" data-id="'+esc(t.taskId)+'" data-i="'+i+'"><span>'+esc(x.text)+'</span></label>'; });
+  return h+'</div>'; }
+function refreshChecklist(t){ var w=document.getElementById('cl-wrap'); if(!w) return; var tmp=document.createElement('div'); tmp.innerHTML=checklistBlock(t); if(tmp.firstChild) w.replaceWith(tmp.firstChild); }
+function linksBlock(t){ var ls=t.links||[]; if(!ls.length) return ''; var h='<div class="det-sec"><div class="det-sec-h">📎 Attachments</div>'; ls.forEach(function(l){ h+='<a class="det-link" href="'+esc(l.url)+'" target="_blank" rel="noopener noreferrer">🔗 '+esc(l.label||l.url)+'</a>'; }); return h+'</div>'; }
+function prioRank(p){ return p==='high'?0:(p==='low'?2:1); }
 function taskCard(t,isDone,showCat){
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
   var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
   var tags='';
+  if(!isDone) tags+=prioTag(t.priority);
   if(byOther) tags+=' <span class="assign-tag">&#128204; by '+esc(t.assignedByName||'')+'</span>';
   if(t.status==='In Progress') tags+=' <span class="ip-tag">&#9881; In progress</span>';
   if(t.repeat && !isDone) tags+=' <span class="rep-tag">&#128257; '+esc(t.repeat)+'</span>';
@@ -1981,7 +2113,7 @@ function renderCategory(){
 
   var h='<div class="cat-head"><div class="crumb">'+esc(App.dept)+'</div><div class="cat-title">'+esc(App.cat)+'</div>';
   h+='<div class="cat-sub">'+pend.length+' pending item'+(pend.length!==1?'s':'')+'</div>';
-  h+='<div class="cat-actions"><button class="add-btn" data-action="open-assign" data-dept="'+esc(App.dept)+'" data-cat="'+esc(App.cat)+'">'+plusIco()+'Add Client</button></div></div>';
+  h+='<div class="cat-actions"><button class="add-btn" data-action="open-assign" data-dept="'+esc(App.dept)+'" data-cat="'+esc(App.cat)+'">'+plusIco()+'Add Client</button><button class="btn btn-ghost btn-sm" data-action="bulk-toggle">'+(App._bulk?'✕ Cancel select':'☑ Select')+'</button></div></div>';
 
   h+='<div class="tabs">';
   h+='<button class="tab'+(App.tab==='pending'?' active':'')+'" data-action="switch-tab" data-tab="pending">Pending<span class="tab-c">'+pend.length+'</span></button>';
@@ -1994,11 +2126,26 @@ function renderCategory(){
   if(list.length===0){
     if(App.tab==='completed') h+='<div class="empty"><div class="empty-ico">📂</div><div class="empty-t">No completed work yet</div><div class="empty-s">Completed items will be cemented here.</div></div>';
     else h+='<div class="empty"><div class="empty-ico">🎉</div><div class="empty-t">You\'re all clear</div><div class="empty-s">No '+esc(App.cat)+' work here.</div><button class="add-btn" data-action="open-assign" data-dept="'+esc(App.dept)+'" data-cat="'+esc(App.cat)+'">'+plusIco()+'Add Client</button></div>';
-  } else { list.forEach(function(t){ h+=taskCard(t,t.status==='Completed',false); }); }
+  } else { list.forEach(function(t){ h+=bulkCard(t); }); }
   h+='</div>';
+  if(App._bulk) h+='<div class="bulk-bar"><span id="bulk-count">0 selected</span><div style="margin-left:auto;display:flex;gap:8px"><button class="btn btn-success btn-sm" data-action="bulk-complete">✓ Complete</button><button class="btn btn-danger btn-sm" data-action="bulk-delete">🗑 Delete</button></div></div>';
   document.getElementById('content').innerHTML=h;
 }
+function bulkCard(t){ var isDone=t.status==='Completed'; if(!App._bulk) return taskCard(t,isDone,false);
+  var sel=App._bulkSel&&App._bulkSel[t.taskId]; var c=taskCard(t,isDone,false);
+  return c.replace('<div class="card', '<div data-bulk="'+esc(t.taskId)+'" class="card bulk-pick'+(sel?' bulk-on':'')+'');
+}
 function switchTab(tab){ App.tab=tab; renderCategory(); }
+function toggleBulk(taskId, el){ App._bulkSel=App._bulkSel||{}; if(App._bulkSel[taskId]){ delete App._bulkSel[taskId]; el.classList.remove('bulk-on'); } else { App._bulkSel[taskId]=true; el.classList.add('bulk-on'); } var n=Object.keys(App._bulkSel).length; var c=document.getElementById('bulk-count'); if(c) c.textContent=n+' selected'; }
+function bulkComplete(){ var ids=Object.keys(App._bulkSel||{}); if(!ids.length){ toast('Select some tasks first.','info'); return; }
+  var jobs=ids.map(function(id){ var t=App.tasks.find(function(x){return x.taskId===id;}); return (t && t.status!=='Completed') ? Data.complete(id) : Promise.resolve(); });
+  Promise.all(jobs).then(function(){ toast('✓ Completed '+ids.length+' task(s)','success'); App._bulk=false; App._bulkSel={}; buildSidebar(); renderCategory(); });
+}
+function bulkDelete(){ var ids=Object.keys(App._bulkSel||{}); if(!ids.length){ toast('Select some tasks first.','info'); return; }
+  openConfirm({ icon:'🗑️', title:'Delete '+ids.length+' task(s)?', body:'This permanently deletes the selected tasks. Cannot be undone.', okLabel:'Delete', okClass:'btn-danger', onOk:function(){
+    Promise.all(ids.map(function(id){ return Data.deleteTask(id); })).then(function(){ toast('🗑️ Deleted '+ids.length+' task(s)','success'); App._bulk=false; App._bulkSel={}; buildSidebar(); renderCategory(); });
+  }});
+}
 
 /* ================================================================
    LIST VIEW (filters from stat cards / Completed)
@@ -2470,7 +2617,7 @@ function parseDueDateTime(text){
 function renderAnalytics(){
   App.view='analytics'; buildSidebar();
   var c=document.getElementById('content');
-  if(!(App.identity&&App.identity.role==='Admin')){ c.innerHTML='<div class="cat-head"><div class="cat-title">Analytics</div><div class="cat-sub">Admin only.</div></div>'; return; }
+  if(!(App.identity&&isBoss())){ c.innerHTML='<div class="cat-head"><div class="cat-title">Analytics</div><div class="cat-sub">Admin only.</div></div>'; return; }
   if(App._analyticsCache) paintAnalytics(App._analyticsCache);
   else c.innerHTML=skelHead('Analytics')+skelList(4);
   if(!Sync.online()){ if(!App._analyticsCache) showContentError_('Analytics needs an internet connection.'); return; }
@@ -2577,16 +2724,25 @@ function renderList(){
 /* ================================================================
    SEARCH
    ================================================================ */
+function searchRow(t){
+  var own=String(t.ownerId)===String(App.identity.employeeId);
+  var owner = own?'':' <span class="sr-owner">'+esc(t.ownerName||'')+'</span>';
+  var attrs = own ? 'data-action="open-task" data-id="'+esc(t.taskId)+'"' : 'data-action="open-admin-task" data-uid="'+esc(t.uid)+'"';
+  return '<div class="card" '+attrs+'><div class="card-body"><div class="card-client">'+prioTag(t.priority)+esc(t.clientName)+owner+'</div><div class="card-meta">'+esc(t.department)+' › '+esc(t.category)+'</div>'+(t.details?'<div class="card-preview">'+esc(t.details)+'</div>':'')+'</div></div>';
+}
 function renderSearch(q){
   q=(q||'').toLowerCase().trim();
-  var h='<div class="cat-head"><div class="cat-title">Search</div><div class="cat-sub">Search across all your work — pending and completed.</div></div>';
-  if(!q){ document.getElementById('content').innerHTML=h+'<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">Start typing to search</div><div class="empty-s">Client name, details, category or Task ID.</div></div>'; var s=document.getElementById('search'); if(s)s.focus(); return; }
-  var res=App.tasks.filter(function(t){ return [t.clientName,t.department,t.category,t.details,t.taskId].join(' ').toLowerCase().indexOf(q)!==-1; })
-    .sort(function(a,b){ if(a.status!==b.status) return a.status!=='Completed'?-1:1; return new Date(b.createdTimestamp)-new Date(a.createdTimestamp); });
-  h+='<div class="sub" style="margin-bottom:14px">'+res.length+' result'+(res.length!==1?'s':'')+' for "'+esc(q)+'"</div><div class="task-list">';
-  if(res.length===0) h+='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">No work found</div><div class="empty-s">Nothing matches "'+esc(q)+'".</div></div>';
-  else res.forEach(function(t){ h+=taskCard(t,t.status==='Completed',true); });
-  h+='</div>';
+  var boss=isBoss();
+  var head='<div class="cat-head"><div class="cat-title">🔍 Search</div><div class="cat-sub">'+(boss?'Searches the whole team — results grouped by status':'Search across your work — grouped by status')+'</div></div>';
+  if(boss && !App._allTasks){ document.getElementById('content').innerHTML=head+skelList(3); return; }  // team data loads via live listener
+  var pool = boss ? (App._allTasks||[]) : (App.tasks||[]);
+  if(!q){ document.getElementById('content').innerHTML=head+'<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">Start typing to search</div><div class="empty-s">Client, details, category, task ID'+(boss?', or staff name':'')+'.</div></div>'; var s=document.getElementById('search'); if(s)s.focus(); return; }
+  var res=pool.filter(function(t){ return [t.clientName,t.department,t.category,t.details,t.taskId,t.ownerName].join(' ').toLowerCase().indexOf(q)!==-1; });
+  var groups={'Pending':[],'In Progress':[],'Completed':[]};
+  res.forEach(function(t){ (groups[t.status]||groups.Pending).push(t); });
+  var h=head+'<div class="sub" style="margin:2px 0 14px;color:var(--text-muted);font-size:.85rem">'+res.length+' result'+(res.length!==1?'s':'')+' for "'+esc(q)+'"</div>';
+  if(!res.length){ h+='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">No work found</div><div class="empty-s">Nothing matches "'+esc(q)+'".</div></div>'; }
+  else { [['Pending','🟡'],['In Progress','⚙️'],['Completed','✅']].forEach(function(g){ var arr=groups[g[0]]; if(!arr.length) return; arr.sort(function(a,b){return new Date(b.createdTimestamp)-new Date(a.createdTimestamp);}); h+='<div class="sec-title">'+g[1]+' '+g[0]+' ('+arr.length+')</div><div class="task-list">'; arr.forEach(function(t){ h+=searchRow(t); }); h+='</div><div style="height:14px"></div>'; }); }
   document.getElementById('content').innerHTML=h;
 }
 
@@ -2693,6 +2849,8 @@ function openTask(taskId){
     h+='<textarea class="f-area" id="det-details" rows="4">'+esc(t.details||'')+'</textarea>';
     h+='<label class="f-label">Due Date &amp; Time <span class="opt">(optional)</span></label><input type="datetime-local" id="det-due" class="f-input" value="'+esc(isoToLocalInput(t.dueDate))+'">';
     h+='<label class="f-label" style="margin-top:12px">Reminders <span class="opt">(optional)</span></label><div id="det-reminders"></div><button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" data-action="add-reminder-row" data-target="det-reminders">+ Add reminder</button>';
+    h+='<label class="f-label" style="margin-top:12px">Checklist <span class="opt">(one per line)</span></label><textarea class="f-area" id="det-checklist" rows="3">'+esc((t.checklist||[]).map(function(x){return x.text;}).join('\n'))+'</textarea>';
+    h+='<label class="f-label" style="margin-top:12px">Attachment links <span class="opt">(Label | https://…)</span></label><textarea class="f-area" id="det-links" rows="2">'+esc((t.links||[]).map(function(x){return (x.label&&x.label!==x.url?x.label+' | ':'')+x.url;}).join('\n'))+'</textarea>';
     h+='<div class="d-grid" style="margin-top:16px"><div class="d-row"><div class="d-lbl">Created</div><div class="d-val">'+esc(fmtDateTime(t.createdTimestamp))+'</div></div>';
     h+='<div class="d-row"><div class="d-lbl">Ageing</div><div class="d-val">'+daysSince(t.createdTimestamp)+' day(s) pending</div></div></div>';
     h+='<div class="d-row"><div class="d-lbl">Task ID</div><div class="d-val" style="font-size:.8rem;color:var(--text-muted)">'+esc(t.taskId)+'</div></div>';
@@ -2707,6 +2865,8 @@ function openTask(taskId){
     h+='<div class="d-row"><div class="d-lbl">Details</div><div class="d-val">'+(t.details?esc(t.details):'—')+'</div></div>';
     h+='<div class="d-row"><div class="d-lbl">Task ID</div><div class="d-val" style="font-size:.8rem;color:var(--text-muted)">'+esc(t.taskId)+'</div></div>';
     if(shared && active) h+='<div class="c-muted" style="margin-top:6px">You can update the status &amp; comment. Only the person who assigned this can edit the task.</div>';
+    h+=checklistBlock(t);
+    h+=linksBlock(t);
   }
   if(shared && t.uid) h+=historyBlock(t.uid);
   if(shared && t.uid) h+=commentsBlock(t.uid);
@@ -2740,13 +2900,16 @@ function saveTask(taskId,btn){
   var details=(document.getElementById('det-details').value||'').trim();
   var due=localToISO((document.getElementById('det-due')||{}).value||'');
   var reminders=collectReminders('det-reminders');
+  var t0=App.tasks.find(function(x){return x.taskId===taskId;})||{};
+  var checklist=mergeChecklist(t0.checklist,(document.getElementById('det-checklist')||{}).value||'');
+  var links=parseLinks((document.getElementById('det-links')||{}).value||'');
   if(!client){ toast('Client name is required.','error'); return; }
   if(!dept){ toast('Department is required.','error'); return; }
   if(!cat){ toast('Category is required.','error'); return; }
   if(App._saveBusy) return; App._saveBusy=true;
   btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span> Saving…';
   ensureDeptCat(dept,cat).then(function(n){
-    return Data.updateTask(taskId,{clientName:client,department:n.dept,category:n.cat,details:details,dueDate:due,reminders:reminders});
+    return Data.updateTask(taskId,{clientName:client,department:n.dept,category:n.cat,details:details,dueDate:due,reminders:reminders,checklist:checklist,links:links});
   }).then(function(){ App._saveBusy=false; toast('✓ Changes saved','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
   .catch(function(e){ App._saveBusy=false; btn.disabled=false; btn.textContent='Save Changes'; toast('Could not save. '+(e.message||''),'error'); });
 }
@@ -2777,6 +2940,85 @@ function reopenTask(taskId){
   Data.reopen(taskId).then(function(){ toast('Task reopened','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
   .catch(function(e){ toast(e.message||'Could not reopen.','error'); });
 }
+/* ===== #10 CALENDAR (month view) ===== */
+function renderCalendar(){
+  App.view='calendar'; buildSidebar();
+  if(!App._cal){ var n=new Date(); App._cal={y:n.getFullYear(), m:n.getMonth()}; }
+  if(!App._calSel){ App._calSel=toLocalInput(new Date()).slice(0,10); }
+  var y=App._cal.y, m=App._cal.m;
+  var first=new Date(y,m,1), startDow=first.getDay(), days=new Date(y,m+1,0).getDate();
+  var monName=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  // bucket active tasks by due date
+  var byDay={}; (App.tasks||[]).forEach(function(t){ if(t.status==='Completed'||!t.dueDate) return; var k=toLocalInput(new Date(t.dueDate)).slice(0,10); (byDay[k]=byDay[k]||[]).push(t); });
+  var todayK=toLocalInput(new Date()).slice(0,10);
+  var h='<div class="cat-head"><div class="cat-title">📅 Calendar</div><div class="cat-sub">Your tasks by due date</div><div class="cat-actions"><button class="btn btn-ghost btn-sm" data-action="cal-prev">‹ Prev</button><span style="font-weight:700;padding:0 6px">'+esc(monName)+'</span><button class="btn btn-ghost btn-sm" data-action="cal-next">Next ›</button></div></div>';
+  h+='<div class="cal-grid cal-head-row">'+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="cal-dow">'+d+'</div>';}).join('')+'</div>';
+  h+='<div class="cal-grid">';
+  for(var i=0;i<startDow;i++) h+='<div class="cal-cell empty"></div>';
+  for(var d=1;d<=days;d++){ var k=toLocalInput(new Date(y,m,d)).slice(0,10); var list=byDay[k]||[]; var over=list.filter(function(t){return new Date(t.dueDate).getTime()<Date.now();}).length;
+    h+='<div class="cal-cell'+(k===todayK?' today':'')+(k===App._calSel?' sel':'')+'" data-action="cal-day" data-date="'+k+'"><div class="cal-num">'+d+'</div>'+(list.length?'<div class="cal-dot'+(over?' over':'')+'">'+list.length+'</div>':'')+'</div>';
+  }
+  h+='</div>';
+  var sel=byDay[App._calSel]||[];
+  h+='<div class="sec-title" style="margin-top:18px">'+esc(App._calSel)+' — '+sel.length+' task'+(sel.length!==1?'s':'')+'</div><div class="task-list">';
+  if(!sel.length) h+='<div class="empty" style="padding:22px"><div class="empty-t">Nothing due this day</div></div>'; else sel.sort(function(a,b){return prioRank(a.priority)-prioRank(b.priority);}).forEach(function(t){ h+=taskCard(t,false,true); });
+  h+='</div>';
+  document.getElementById('content').innerHTML=h;
+}
+
+/* ===== #16 LEADERBOARD ===== */
+function renderLeaderboard(){
+  App.view='leaderboard'; buildSidebar();
+  var c=document.getElementById('content');
+  if(!isBoss()){ c.innerHTML='<div class="cat-head"><div class="cat-title">Leaderboard</div><div class="cat-sub">Admins & managers only.</div></div>'; return; }
+  if(App._lbCache) paintLeaderboard(App._lbCache); else c.innerHTML=skelHead('Leaderboard')+skelList(4);
+  apiCall('teamStats',{}).then(function(res){ if(res&&res.ok){ App._lbCache=res.staff||[]; if(App.view==='leaderboard') paintLeaderboard(App._lbCache); } else showContentError_((res&&res.error)||'Could not load.'); }).catch(function(e){ if(!App._lbCache) showContentError_(e.message||'Could not load.'); });
+}
+function scoreOf(s){ var rec=0; if(s.lastActive){ var days=(Date.now()-new Date(s.lastActive).getTime())/86400000; rec = days<=1?6:(days<=3?4:(days<=7?2:0)); } return s.onTime*3 + s.completed*2 + s.assigned*1 + s.notes*0.5 + rec; }
+function paintLeaderboard(staff){
+  var c=document.getElementById('content'); if(!c) return;
+  var rows=staff.slice().map(function(s){ s._score=Math.round(scoreOf(s)); s._otRate=s.completed?Math.round(s.onTime/s.completed*100):0; return s; }).sort(function(a,b){return b._score-a._score;});
+  var maxS=Math.max(1, rows.reduce(function(m,s){return Math.max(m,s._score);},0));
+  var h='<div class="cat-head"><div class="cat-title">🏆 Leaderboard</div><div class="cat-sub">Ranked by on-time completions, throughput, tasks assigned, note usage &amp; how regularly they use the tool</div></div>';
+  h+='<div class="lb-list">';
+  rows.forEach(function(s,i){
+    var medal = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':'<span class="lb-rank">'+(i+1)+'</span>'));
+    var band = i<Math.ceil(rows.length/3)?'good':(i>=Math.floor(rows.length*2/3)?'low':'mid');
+    var recent = s.lastActive && (Date.now()-new Date(s.lastActive).getTime())<3*86400000;
+    h+='<div class="lb-card '+band+'"><div class="lb-medal">'+medal+'</div>'+
+       '<div class="lb-main"><div class="lb-name">'+esc(s.name)+' <span class="lb-role">'+esc(s.role)+'</span>'+(recent?'<span class="lb-live">● active</span>':'')+'</div>'+
+       '<div class="lb-bar"><span style="width:'+Math.round(s._score/maxS*100)+'%"></span></div>'+
+       '<div class="lb-metrics"><span>✅ '+s.completed+' done</span><span>⏱ '+s._otRate+'% on-time</span><span>📤 '+s.assigned+' assigned</span><span>🗒️ '+s.notes+' notes</span>'+(s.overdue?'<span class="lb-over">🚩 '+s.overdue+' overdue</span>':'')+'</div></div>'+
+       '<div class="lb-score">'+s._score+'<small>pts</small></div></div>';
+  });
+  h+='</div>';
+  c.innerHTML=h;
+}
+
+/* ===== #15 WEEKLY REPORT ===== */
+function renderWeekly(){
+  App.view='weekly'; buildSidebar();
+  var c=document.getElementById('content');
+  if(!isBoss()){ c.innerHTML='<div class="cat-head"><div class="cat-title">Weekly Report</div><div class="cat-sub">Admins & managers only.</div></div>'; return; }
+  c.innerHTML=skelHead('Weekly Report')+skelList(4);
+  apiCall('teamStats',{}).then(function(res){ if(res&&res.ok) paintWeekly(res.staff||[]); else showContentError_((res&&res.error)||'Could not load.'); }).catch(function(e){ showContentError_(e.message||'Could not load.'); });
+}
+function paintWeekly(staff){
+  var c=document.getElementById('content'); if(!c) return;
+  var rows=staff.slice().sort(function(a,b){return b.completed7-a.completed7;});
+  var tc=0,ta=0,to=0; rows.forEach(function(s){ tc+=s.completed7; ta+=s.assigned7; to+=s.overdue; });
+  var today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  var txt='📋 WEEKLY REPORT · '+today+' (last 7 days)\n\nTeam: '+tc+' completed · '+ta+' newly assigned · '+to+' currently overdue\n\n';
+  var h='<div class="cat-head"><div class="cat-title">🗓️ Weekly Report</div><div class="cat-sub">Last 7 days · '+tc+' completed · '+ta+' assigned · '+to+' overdue now</div><div class="cat-actions"><button class="btn btn-primary btn-sm" data-action="copy-weekly">Copy report</button></div></div>';
+  h+='<div class="an-card"><div class="an-h">Per staff (last 7 days)</div>';
+  rows.forEach(function(s){ var line=s.name+': '+s.completed7+' done, '+s.assigned7+' assigned, '+(s.completed?Math.round(s.onTime7/Math.max(1,s.completed7)*100):0)+'% on-time'+(s.overdue?', '+s.overdue+' overdue':''); txt+='• '+line+'\n';
+    h+='<div class="an-row"><div class="an-name">'+esc(s.name)+(s.overdue?' <span class="esc-tag">🚩'+s.overdue+'</span>':'')+'</div><div class="an-val" style="grid-column:2/4">✅ '+s.completed7+' done · 📤 '+s.assigned7+' assigned · ⏱ '+(s.completed7?Math.round(s.onTime7/s.completed7*100):0)+'% on-time</div></div>';
+  });
+  h+='</div>';
+  App._weeklyTxt=txt;
+  c.innerHTML=h;
+}
+
 function refreshView(){
   if(App.view==='dashboard') renderDashboard();
   else if(App.view==='slate' && !App._slateView) renderSlate();
@@ -2787,6 +3029,7 @@ function refreshView(){
   else if(App.view==='search') renderSearch(document.getElementById('search').value);
   else if(App.view==='settings') renderSettings();
   else if(App.view==='analytics') renderAnalytics();
+  else if(App.view==='calendar') renderCalendar();
 }
 
 /* ================================================================
@@ -2876,7 +3119,7 @@ function openStaff(staffId,name){
     var overdue=pend.filter(function(t){return t.dueDate && new Date(t.dueDate).getTime()<now;}).length;
     var h='<div class="cat-head"><div class="crumb"><span data-action="nav" data-view="team" style="cursor:pointer;color:var(--accent);font-weight:600">← Team</span></div>';
     h+='<div class="cat-title">'+esc(name)+'</div><div class="cat-sub">'+esc(member.role)+(member.active?'':' · inactive')+'</div>';
-    h+='<div class="cat-actions"><button class="add-btn" data-action="open-reminder-form">🔔 Raise Reminder</button><button class="btn btn-ghost btn-sm" data-action="open-staff-slate" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">📝 View Slate</button></div></div>';
+    h+='<div class="cat-actions"><button class="add-btn" data-action="invite-member" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">📩 Invite</button><button class="btn btn-ghost btn-sm" data-action="open-reminder-form">🔔 Raise Reminder</button><button class="btn btn-ghost btn-sm" data-action="open-staff-slate" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">📝 View Slate</button></div></div>';
     h+='<div class="stats"><div class="stat st-pending"><div class="stat-v">'+pend.length+'</div><div class="stat-l">Pending</div></div>'+
        '<div class="stat st-over"><div class="stat-v">'+overdue+'</div><div class="stat-l">Overdue</div></div>'+
        '<div class="stat st-done"><div class="stat-v">'+done.length+'</div><div class="stat-l">Completed</div></div>'+
@@ -2884,17 +3127,19 @@ function openStaff(staffId,name){
     h+='<div class="insights"><div class="insight"><div class="insight-l">Done this week</div><div class="insight-v">'+cWeek+'</div></div>'+
        '<div class="insight"><div class="insight-l">Done this month</div><div class="insight-v">'+cMonth+'</div></div>'+
        '<div class="insight"><div class="insight-l">Oldest pending</div><div class="insight-v">'+(pend.length?oldest+'d':'—')+'</div></div></div>';
-    if(App.identity.role==='Admin'){
+    if(isBoss()){
       h+='<div class="set-sec"><h3>⚙️ Member Controls</h3>';
       h+='<div class="set-field"><div><div class="set-k">Access key</div><div class="set-sub" style="font-family:monospace">'+esc(member.accessKey||'—')+'</div></div><button class="btn btn-ghost btn-sm" data-action="reset-key" data-id="'+esc(staffId)+'">Reset (random)</button></div>';
       h+='<div class="set-field" style="flex-direction:column;align-items:stretch;gap:8px"><div><div class="set-k">Set a custom key</div><div class="set-sub">Type any key/password you want for '+esc(name)+' (min 4 characters). They log in with it.</div></div><div style="display:flex;gap:8px"><input id="setkey-input" class="f-input" style="flex:1" placeholder="e.g. Rahul@123" autocomplete="off"><button class="btn btn-primary btn-sm" data-action="set-key" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Set key</button></div></div>';
-      h+='<div class="set-field"><div><div class="set-k">Role</div><div class="set-sub">'+esc(member.role)+'</div></div><button class="btn btn-ghost btn-sm" data-action="toggle-role" data-id="'+esc(staffId)+'" data-role="'+(member.role==='Admin'?'Staff':'Admin')+'">Make '+(member.role==='Admin'?'Staff':'Admin')+'</button></div>';
+      if(App.identity.role==='Admin'){
+      h+='<div class="set-field"><div><div class="set-k">Role</div><div class="set-sub">'+esc(member.role)+'</div></div><div style="display:flex;gap:8px"><select id="role-sel" class="f-input" style="width:auto"><option value="Staff"'+(member.role==='Staff'?' selected':'')+'>Staff</option><option value="Manager"'+(member.role==='Manager'?' selected':'')+'>Manager</option><option value="Admin"'+(member.role==='Admin'?' selected':'')+'>Admin</option></select><button class="btn btn-ghost btn-sm" data-action="set-role" data-id="'+esc(staffId)+'">Set role</button></div></div>';
       h+='<div class="set-field"><div><div class="set-k">Status</div><div class="set-sub">'+(member.active?'Active':'Inactive')+'</div></div><button class="btn '+(member.active?'btn-danger':'btn-success')+' btn-sm" data-action="toggle-active" data-id="'+esc(staffId)+'" data-active="'+(member.active?'0':'1')+'">'+(member.active?'Deactivate':'Activate')+'</button></div>';
       h+='<div class="set-field" style="flex-direction:column;align-items:stretch;gap:8px"><div><div class="set-k">Visible departments</div><div class="set-sub">Tick what this person sees in their tool. None ticked = they see all.</div></div><div class="vis-grid">';
       App.departments.forEach(function(d){ var on=member.allowedDepartments&&member.allowedDepartments.indexOf(d.department)!==-1; h+='<label class="vis-item"><input type="checkbox" class="vis-cb" value="'+esc(d.department)+'" '+(on?'checked':'')+'> '+esc(d.department)+'</label>'; });
       h+='</div><button class="btn btn-primary btn-sm" style="align-self:flex-start" data-action="save-visibility" data-id="'+esc(staffId)+'">Save visibility</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset this member’s data</div><div class="set-sub">Clears all of '+esc(name)+'’s own tasks &amp; activity. Tasks others assigned to them are kept. Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="reset-member" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Reset</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Delete ALL of '+esc(name)+'’s tasks</div><div class="set-sub">Permanently removes <b>every</b> task on '+esc(name)+'’s plate — including ones others assigned to them (so the assigner loses it too). Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="admin-del-all-tasks" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Delete all</button></div>';
+      }
       h+='</div>';
     }
     h+='<div id="rem-form" style="display:none;margin-bottom:18px" class="set-sec"><label class="f-label">Reminder for '+esc(name)+'</label><textarea id="rem-msg" class="f-area" rows="2" placeholder="e.g. Please follow up on Raul Shah today"></textarea><div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary" data-action="raise-reminder" data-id="'+esc(staffId)+'">Send Reminder</button><button class="btn btn-ghost" data-action="cancel-reminder">Cancel</button></div></div>';
@@ -3051,6 +3296,9 @@ function openAssign(dept,cat){
     document.getElementById('assign-client').value=''; document.getElementById('assign-details').value='';
     document.getElementById('assign-due').value=''; document.getElementById('assign-reminders').innerHTML='';
     var _rp=document.getElementById('assign-repeat'); if(_rp) _rp.value='';
+    var _pr=document.getElementById('assign-priority'); if(_pr) _pr.value='medium';
+    var _cl=document.getElementById('assign-checklist'); if(_cl) _cl.value='';
+    var _lk=document.getElementById('assign-links'); if(_lk) _lk.value='';
     var sc=document.getElementById('assign-savetpl'); if(sc) sc.checked=false;
     var tn=document.getElementById('assign-tplname'); if(tn){ tn.value=''; tn.classList.add('hidden'); }
     renderTplPicker();
@@ -3070,6 +3318,9 @@ function submitAssign(){
   var details=(document.getElementById('assign-details').value||'').trim();
   var due=localToISO(document.getElementById('assign-due').value);
   var repeat=(document.getElementById('assign-repeat')||{}).value||'';
+  var priority=(document.getElementById('assign-priority')||{}).value||'medium';
+  var checklist=parseChecklist((document.getElementById('assign-checklist')||{}).value||'');
+  var links=parseLinks((document.getElementById('assign-links')||{}).value||'');
   var reminders=collectReminders('assign-reminders');
   var saveTpl=!!(document.getElementById('assign-savetpl')||{}).checked;
   var tplName=(document.getElementById('assign-tplname')||{}).value||'';
@@ -3086,7 +3337,7 @@ function submitAssign(){
   };
   ensureDeptCat(dept,cat).then(function(n){
     if(isSelf){
-      return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,reminders:reminders,repeat:repeat}).then(function(){
+      return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,reminders:reminders,repeat:repeat,priority:priority,checklist:checklist,links:links}).then(function(){
         App._asBusy=false; closeModal('assign-modal'); finishCommon(n.dept,n.cat);
         toast('✓ '+client+' added to your diary','success'); buildSidebar(); navigate('category',n.dept,n.cat);
       });
@@ -3098,7 +3349,7 @@ function submitAssign(){
     var prov={ uid:'prov-'+Date.now(), taskId:'AS-'+Date.now(), clientName:client, department:n.dept, category:n.cat, details:details, status:'Pending', dueDate:due||'', createdTimestamp:nowISO(), lastUpdatedTimestamp:nowISO(), assignedById:App.identity.employeeId, assignedByName:App.identity.employeeName, ownerId:to, ownerName:who, _prov:true };
     App._assignedCache=(App._assignedCache||[]); App._assignedCache.unshift(prov);
     if(App.view==='assigned') renderAssignedByMe();
-    apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details, dueDate:due, reminders:reminders, repeat:repeat })
+    apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details, dueDate:due, reminders:reminders, repeat:repeat, priority:priority, checklist:checklist, links:links })
       .then(function(res){
         if(!res||!res.ok){ toast('“'+client+'” didn’t sync: '+((res&&res.error)||'try again'),'error'); }
         else { App._assignedCache=null; if(App.view==='assigned') renderAssignedByMe(); }
@@ -3216,6 +3467,23 @@ function doAdminResetMember_(id,name){
     reloadStaff_(id,name);
   }).catch(function(e){ App._mkBusy=false; toast(e.message||'Could not reset.','error'); });
 }
+function inviteMemberUI(id,name){
+  var m=(App._members||[]).find(function(x){return x.userId===id;});
+  var key=(m&&m.accessKey)||'';
+  if(!key){ toast('No access key set for '+name+' yet — set one first.','error'); return; }
+  var link=location.origin+location.pathname;
+  var msg='📔 E-Diary — your work diary\n\n'+
+          'Open: '+link+'\n'+
+          'Your access key: '+key+'\n\n'+
+          'Log in with this key once — it remembers you after that.\n'+
+          'Tip: in Chrome, click the install icon in the address bar (or menu → "Open as app") to add it to your desktop or phone.';
+  App._inviteMsg=msg;
+  document.getElementById('member-title').textContent='Invite '+name;
+  document.getElementById('member-body').innerHTML='<div class="set-sub" style="margin-bottom:10px">Copy this and send it to '+esc(name)+' on WhatsApp / email. It has their link and key.</div>'+
+    '<textarea readonly class="f-area" rows="7" style="width:100%;font-size:.85rem;font-family:inherit" onclick="this.select()">'+esc(msg)+'</textarea>';
+  document.getElementById('member-foot').innerHTML='<button class="btn btn-primary" data-action="copy-invite">Copy invite</button><button class="btn btn-ghost" data-action="close-modal" data-modal="member-modal">Done</button>';
+  openModal('member-modal');
+}
 function copyKey(key,btn){
   if(!key) return;
   var done=function(){ if(btn){ var o=btn.textContent; btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent=o; },1400); } };
@@ -3224,7 +3492,7 @@ function copyKey(key,btn){
 }
 function openAddMember(){
   var h='<label class="f-label">Full name</label><input id="nm-name" class="f-input" placeholder="e.g. Rahul Shah" autocomplete="off">';
-  h+='<label class="f-label" style="margin-top:14px">Role</label><select id="nm-role" class="f-input"><option value="Staff">Staff — sees only their own work</option><option value="Admin">Admin — sees & manages everyone</option></select>';
+  h+='<label class="f-label" style="margin-top:14px">Role</label><select id="nm-role" class="f-input"><option value="Staff">Staff — sees only their own work</option><option value="Manager">Manager — sees whole team &amp; can assign, but no member admin</option><option value="Admin">Admin — sees &amp; manages everyone</option></select>';
   h+='<label class="f-label" style="margin-top:14px">Access key <span style="font-weight:400;color:var(--text-muted)">(optional — type your own, or leave blank for an auto one)</span></label><input id="nm-key" class="f-input" placeholder="e.g. Rahul@123" autocomplete="off">';
   h+='<label class="f-label" style="margin-top:14px">Visible departments <span style="font-weight:400;color:var(--text-muted)">(optional — none ticked = sees all)</span></label><div class="vis-grid" id="nm-vis">';
   App.departments.forEach(function(d){ h+='<label class="vis-item"><input type="checkbox" class="vis-cb" value="'+esc(d.department)+'"> '+esc(d.department)+'</label>'; });
@@ -3341,7 +3609,7 @@ function openAdminTask(uid){
 /* Editable view for the assigner (Assigned by Me) or an admin (staff profile) */
 function openManagedTask(t){
   var isDone=t.status==='Completed';
-  var canEdit=(App.identity.role==='Admin') || String(t.assignedById)===String(App.identity.employeeId);
+  var canEdit=String(t.assignedById)===String(App.identity.employeeId);   // ONLY the assigner edits/completes an assigned task
   document.getElementById('det-title').textContent=canEdit?('Manage · '+t.clientName):t.clientName;
   var h='<div class="assign-banner" style="background:var(--accent-soft)">&#128204; Assigned to '+esc(t.ownerName)+' · '+esc(t.status)+'</div>';
   if(canEdit && !isDone){
@@ -3464,9 +3732,9 @@ function taskCardAdmin(t){
   h+='<div class="card-meta">'+meta+'</div>';
   if(t.details) h+='<div class="card-preview">'+esc(t.details)+'</div>';
   h+='</div><div class="card-right">';
-  if(isDone) h+='<button class="btn btn-ghost btn-sm" data-action="admin-act" data-uid="'+esc(t.uid)+'" data-status="Pending">Reopen</button>';
-  else h+='<button class="complete-btn" data-action="admin-act" data-uid="'+esc(t.uid)+'" data-status="Completed">'+ico('check')+' Complete</button>';
-  h+='<button class="btn btn-ghost btn-sm" data-action="admin-del-task" data-uid="'+esc(t.uid)+'" data-client="'+esc(t.clientName)+'" title="Delete this task for everyone" style="color:var(--danger)">🗑</button>';
+  h+='<span class="'+(isDone?'done-badge':'days days-warn')+'">'+(isDone?ico('check')+' Done':'⏳ '+esc(t.status))+'</span>';
+  // Oversight is READ-ONLY. Only an ADMIN may delete; nobody edits/completes another's task from here (that's the assigner/owner's job).
+  if(App.identity.role==='Admin') h+='<button class="btn btn-ghost btn-sm" data-action="admin-del-task" data-uid="'+esc(t.uid)+'" data-client="'+esc(t.clientName)+'" title="Delete this task for everyone" style="color:var(--danger)">🗑</button>';
   h+='</div></div>'; return h;
 }
 function adminAct(uid,status,btn){
@@ -3548,6 +3816,8 @@ function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('o
    ================================================================ */
 document.addEventListener('click', function(e){
   var el=e.target.closest('[data-action]');
+  // In bulk-select mode, clicking a task card toggles its selection instead of opening it
+  if(App._bulk){ var bp=e.target.closest('[data-bulk]'); if(bp){ toggleBulk(bp.getAttribute('data-bulk'), bp); return; } }
   // Hide combobox suggestions when clicking outside a combo
   if(!e.target.closest('.combo')) hideSuggs();
   // Click the dim backdrop of any modal to close it
@@ -3594,12 +3864,24 @@ document.addEventListener('click', function(e){
     case 'open-add-member': openAddMember(); break;
     case 'submit-create-member': submitCreateMember(el); break;
     case 'copy-key': copyKey(el.getAttribute('data-key'), el); break;
+    case 'invite-member': inviteMemberUI(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
+    case 'toggle-check': Data.toggleCheck(el.getAttribute('data-id'), parseInt(el.getAttribute('data-i'),10)); break;
+    case 'due-preset': setDuePreset(el.getAttribute('data-when')); break;
+    case 'cal-prev': App._cal.m--; if(App._cal.m<0){App._cal.m=11;App._cal.y--;} renderCalendar(); break;
+    case 'cal-next': App._cal.m++; if(App._cal.m>11){App._cal.m=0;App._cal.y++;} renderCalendar(); break;
+    case 'cal-day': App._calSel=el.getAttribute('data-date'); renderCalendar(); break;
+    case 'copy-weekly': copyKey(App._weeklyTxt||'', el); break;
+    case 'bulk-toggle': App._bulk=!App._bulk; App._bulkSel={}; renderCategory(); break;
+    case 'bulk-complete': bulkComplete(); break;
+    case 'bulk-delete': bulkDelete(); break;
+    case 'copy-invite': copyKey(App._inviteMsg||'', el); break;
     case 'reset-key': adminResetKeyUI(el.getAttribute('data-id'), el); break;
     case 'set-key': adminSetKeyUI(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'reset-member': adminResetMember(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'admin-del-task': adminDeleteTaskUI(el.getAttribute('data-uid'), el.getAttribute('data-client')); break;
     case 'admin-del-all-tasks': adminDeleteAllTasksUI(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'toggle-role': adminToggleRole(el.getAttribute('data-id'), el.getAttribute('data-role'), el); break;
+    case 'set-role': var _rs=document.getElementById('role-sel'); adminToggleRole(el.getAttribute('data-id'), _rs?_rs.value:'Staff', el); break;
     case 'toggle-active': adminToggleActive(el.getAttribute('data-id'), el.getAttribute('data-active'), el); break;
     case 'save-visibility': adminSaveVisibility(el.getAttribute('data-id'), el); break;
     case 'dash-filter': App.dashFilter=el.getAttribute('data-filter'); renderDashboard(); break;
