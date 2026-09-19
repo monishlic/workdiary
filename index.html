@@ -378,7 +378,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .cal-cell.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .cal-cell.sel{background:var(--accent-soft);border-color:var(--accent)}
 .cal-num{font-size:.8rem;font-weight:700;color:var(--text-sec)}
-.cal-dot{position:absolute;bottom:6px;right:6px;min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.cal-dot{min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.cal-dots{position:absolute;bottom:6px;right:6px;display:flex;gap:4px}
+.cal-dot.done{background:var(--success)}
+.cal-cell.hasdone{background:var(--success-bg)}
+.cal-donehead{margin:16px 0 8px;font-size:.8rem;font-weight:800;color:var(--success-dark)}
+.cal-donecard .card{border-left:3px solid var(--success);background:var(--success-bg)}
+/* My Tasks view */
+.mt-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mt-chip{border:1px solid var(--border);background:var(--bg-card);border-radius:999px;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:700;color:var(--text-sec);cursor:pointer;display:flex;align-items:center;gap:7px}
+.mt-chip .mt-c{background:rgba(120,110,175,.14);border-radius:999px;padding:0 7px;font-size:.72rem;font-weight:800}
+.mt-chip.on{color:#fff}
+.mt-chip-all.on{background:var(--accent);border-color:transparent}
+.mt-chip-overdue.on{background:var(--danger);border-color:transparent}
+.mt-chip-pending.on{background:var(--warning);border-color:transparent;color:#231a00}
+.mt-chip-inprog.on{background:#3b82f6;border-color:transparent}
+.mt-chip-done.on{background:var(--success);border-color:transparent}
+.mt-chip.on .mt-c{background:rgba(255,255,255,.28)}
+.mt-list{display:flex;flex-direction:column;gap:9px}
+.mt-row{display:flex;background:var(--bg-card);border:1px solid var(--border);border-left-width:5px;border-radius:12px;padding:12px 14px;cursor:pointer;transition:transform .12s,box-shadow .18s}
+.mt-row:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.mt-overdue{border-left-color:var(--danger);background:linear-gradient(90deg,var(--danger-bg),transparent 55%)}
+.mt-pending{border-left-color:var(--warning);background:linear-gradient(90deg,var(--warning-bg),transparent 55%)}
+.mt-inprog{border-left-color:#3b82f6;background:linear-gradient(90deg,rgba(59,130,246,.10),transparent 55%)}
+.mt-done{border-left-color:var(--success);background:linear-gradient(90deg,var(--success-bg),transparent 55%)}
+.mt-main{flex:1;min-width:0}
+.mt-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mt-client{font-weight:800;font-size:.95rem;color:var(--text)}
+.mt-state{margin-left:auto;font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:999px}
+.mt-state.mt-overdue{background:var(--danger);color:#fff}
+.mt-state.mt-pending{background:var(--warning);color:#231a00}
+.mt-state.mt-inprog{background:#3b82f6;color:#fff}
+.mt-state.mt-done{background:var(--success);color:#fff}
+.mt-meta{font-size:.78rem;color:var(--text-sec);margin-top:5px;line-height:1.5}
+.mt-meta .mt-sep{color:var(--text-muted);margin:0 2px}
 .cal-dot.over{background:#b91c1c}
 .podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:end;margin-bottom:22px}
 .pod{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:16px 10px;text-align:center;position:relative}
@@ -877,6 +910,37 @@ body.slate-selecting .assistant, body.slate-selecting .chat-fab{ display:none; }
 .tp-item:hover{ border-color:var(--accent); background:var(--accent-soft); }
 .tp-c{ font-weight:700; font-size:.9rem; color:var(--text); }
 .tp-m{ font-size:.76rem; color:var(--text-muted); margin-top:2px; }
+/* Modern chat: rows with avatars, date dividers, read ticks, presence, WhatsApp-style list */
+.cp-av.sm{ width:26px; height:26px; font-size:.72rem; }
+.cp-av.md{ width:38px; height:38px; font-size:.95rem; }
+.chat-row{ display:flex; align-items:flex-end; gap:7px; margin-bottom:8px; }
+.chat-row.mine{ flex-direction:row-reverse; }
+.chat-row .cp-av{ flex:0 0 auto; margin-bottom:2px; }
+.chat-col{ display:flex; flex-direction:column; max-width:78%; }
+.chat-row.mine .chat-col{ align-items:flex-end; }
+.chat-msg{ max-width:100%; margin-bottom:0; }
+.chat-daydiv{ text-align:center; margin:10px 0 12px; }
+.chat-daydiv span{ background:rgba(120,110,175,.14); color:var(--text-sec); font-size:.7rem; font-weight:700; padding:3px 12px; border-radius:999px; }
+.chat-meta{ display:flex; align-items:center; gap:4px; justify-content:flex-end; margin-top:2px; }
+.chat-msg .chat-time{ margin:0; }
+.chat-tick{ font-size:.72rem; color:var(--text-muted); font-weight:700; }
+.chat-tick.seen{ color:#3aa0ff; }
+.chat-rowact{ margin-top:2px; }
+.pr-dot{ width:9px; height:9px; border-radius:50%; background:var(--text-muted); display:inline-block; }
+.pr-dot.on{ background:#22c55e; }
+.pr-dot.ring{ position:absolute; right:-1px; bottom:-1px; border:2px solid var(--glass-strong); }
+/* DM contact header */
+.chat-topbar.dmbar{ gap:10px; padding:12px 14px 12px; align-items:center; border-bottom:1px solid var(--glass-line); }
+.dmbar-info{ flex:1; min-width:0; }
+.dmbar-name{ font-weight:800; font-size:1rem; color:var(--text); }
+.dmbar-sub{ font-size:.74rem; color:var(--text-muted); display:flex; align-items:center; gap:5px; }
+.dmbar .chat-back{ margin:0; }
+/* Conversation list */
+.cp-avwrap{ position:relative; flex:0 0 auto; }
+.cp-top{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.cp-time{ font-size:.7rem; color:var(--text-muted); flex:0 0 auto; }
+.cp-bot{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:1px; }
+.cp-bot .cp-last{ flex:1; min-width:0; }
 select[multiple].f-input{ height:auto; padding:4px; }
 select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 #assign-repeat-detail{ border-left:2px solid var(--accent-soft); padding-left:10px; margin-top:4px; }
@@ -1511,7 +1575,14 @@ var FB = (function(){
         }
         case 'heartbeat': {
           if(!me().userId) return {ok:true};
-          return col('users').doc(String(me().userId)).set({lastActive:nowISO()},{merge:true}).then(function(){return {ok:true};});
+          var hb={lastActive:nowISO()};
+          if(b.opened) hb.lastOpened=nowISO();          // set only when the app is freshly launched
+          return col('users').doc(String(me().userId)).set(hb,{merge:true}).then(function(){return {ok:true};});
+        }
+        case 'markDmRead': {
+          if(!b.otherId || !me().userId) return {ok:true};
+          var patch={dmRead:{}}; patch.dmRead[String(b.otherId)]=nowISO();
+          return col('users').doc(String(me().userId)).set(patch,{merge:true}).then(function(){return {ok:true};});
         }
 
         case 'getAudit': {
@@ -2027,7 +2098,14 @@ var FBLive = {
     if(FBLive.started) return; FBLive.started=true;
     var uid=String(App.identity.employeeId); var db;
     try{ db=FB.db(); }catch(e){ return; }
-    try{ apiCall('heartbeat',{}); }catch(e){}   // record "last active" for the leaderboard
+    try{ apiCall('heartbeat',{opened:true}); }catch(e){}   // launch → records last-active + last-opened
+    // Keep "last seen" fresh: on focus/visibility and every few minutes while open.
+    if(!FBLive._hb){ FBLive._hb=true;
+      var beat=function(){ if(!document.hidden){ try{ apiCall('heartbeat',{}); }catch(e){} } };
+      window.addEventListener('focus', beat);
+      document.addEventListener('visibilitychange', beat);
+      setInterval(beat, 180000);
+    }
 
     // My own tasks
     db.collection('tasks').where('ownerId','==',uid).onSnapshot(function(qs){
@@ -2082,8 +2160,10 @@ var FBLive = {
 
     // Team members — keep the assign dropdown & Team list live as staff are added/changed
     db.collection('users').onSnapshot(function(qs){
-      var members=[]; qs.forEach(function(d){ var u=d.data(); if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role}); });
+      var members=[]; App._userMeta=App._userMeta||{};
+      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role}); });
       App.members=members;
+      if(App._chat && App._chat.open) renderChat();   // live read-receipts / presence in the chat
       App._teamCache=null;   // force fresh counts next time Team opens
       if(App.view==='team') renderTeam();
     }, function(){});
@@ -2181,6 +2261,7 @@ function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
+  h+='<button class="nav-link'+(App.view==='mytasks'?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> My Tasks</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
   h+='<button class="nav-link'+(App.view==='clients'?' active':'')+'" data-action="nav" data-view="clients"><span class="nav-ico">👤</span> Clients</button>';
   h+='<button class="nav-link'+(App.view==='calendar'?' active':'')+'" data-action="nav" data-view="calendar"><span class="nav-ico">📅</span> Calendar</button>';
@@ -2289,6 +2370,7 @@ function navigate(view,dept,cat){
   withVT(function(){
     buildSidebar();
     if(view==='dashboard') renderDashboard();
+    else if(view==='mytasks') renderMyTasks();
     else if(view==='slate') renderSlate();
     else if(view==='board') renderBoard();
     else if(view==='clients') renderClients();
@@ -2401,7 +2483,7 @@ function renderDashboard(){
   var heroLine = pending.length ? (pending.length+' open item'+(pending.length!==1?'s':'')) : "You're all clear ✨";
   var heroSub = pending.length ? (overdue? (overdue+' overdue — best to clear those first.') : 'Nothing overdue. Keep the streak going.') : 'Nothing pending right now. Add your next task when you\'re ready.';
   var h='<div class="dash-hero"><div class="hero-eyebrow">'+greet+', '+esc(App.identity.employeeName.split(' ')[0])+(streak>0?'<span class="streak-chip">🔥 '+streak+'-day clear streak</span>':'')+'</div><h2>'+heroLine+'</h2><p>'+heroSub+'</p>';
-  h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="board">▤ Board</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button>'+(snoozedCount?'<button class="hero-btn" data-action="show-list" data-filter="snoozed">😴 '+snoozedCount+' snoozed</button>':'')+'</div></div>';
+  h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="mytasks">✅ My Tasks</button><button class="hero-btn" data-action="nav" data-view="board">▤ Board</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button>'+(snoozedCount?'<button class="hero-btn" data-action="show-list" data-filter="snoozed">😴 '+snoozedCount+' snoozed</button>':'')+'</div></div>';
 
   // Escalation banner — anything overdue by 3+ days
   var escalated=pending.filter(function(t){return overdueDays(t)>=3;}).length;
@@ -3547,24 +3629,76 @@ function renderCalendar(){
   var y=App._cal.y, m=App._cal.m;
   var first=new Date(y,m,1), startDow=first.getDay(), days=new Date(y,m+1,0).getDate();
   var monName=first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-  // bucket active tasks by due date
-  var byDay={}; (App.tasks||[]).forEach(function(t){ if(t.status==='Completed'||!t.dueDate) return; var k=toLocalInput(new Date(t.dueDate)).slice(0,10); (byDay[k]=byDay[k]||[]).push(t); });
+  // bucket active tasks by due date, and completed tasks by the date they were completed
+  var byDay={}, byDone={};
+  (App.tasks||[]).forEach(function(t){
+    if(t.status==='Completed'){ if(t.completedTimestamp){ var ck=toLocalInput(new Date(t.completedTimestamp)).slice(0,10); (byDone[ck]=byDone[ck]||[]).push(t); } return; }
+    if(!t.dueDate) return; var k=toLocalInput(new Date(t.dueDate)).slice(0,10); (byDay[k]=byDay[k]||[]).push(t);
+  });
   var todayK=toLocalInput(new Date()).slice(0,10);
-  var h='<div class="cat-head"><div class="cat-title">📅 Calendar</div><div class="cat-sub">Your tasks by due date</div><div class="cat-actions"><button class="btn btn-ghost btn-sm" data-action="cal-prev">‹ Prev</button><button class="btn btn-ghost btn-sm" data-action="cal-today">Today</button><button class="btn btn-ghost btn-sm" data-action="cal-next">Next ›</button></div></div>';
+  var h='<div class="cat-head"><div class="cat-title">📅 Calendar</div><div class="cat-sub">Tasks by due date · ✅ completed shown in green</div><div class="cat-actions"><button class="btn btn-ghost btn-sm" data-action="cal-prev">‹ Prev</button><button class="btn btn-ghost btn-sm" data-action="cal-today">Today</button><button class="btn btn-ghost btn-sm" data-action="cal-next">Next ›</button></div></div>';
   h+='<div class="cal-month-title">'+esc(monName)+'</div>';
   h+='<div class="cal-grid cal-head-row">'+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){return '<div class="cal-dow">'+d+'</div>';}).join('')+'</div>';
   h+='<div class="cal-grid">';
   for(var i=0;i<startDow;i++) h+='<div class="cal-cell empty"></div>';
-  for(var d=1;d<=days;d++){ var k=toLocalInput(new Date(y,m,d)).slice(0,10); var list=byDay[k]||[]; var over=list.filter(function(t){return new Date(t.dueDate).getTime()<Date.now();}).length;
-    h+='<div class="cal-cell'+(k===todayK?' today':'')+(k===App._calSel?' sel':'')+'" data-action="cal-day" data-date="'+k+'"><div class="cal-num">'+d+'</div>'+(list.length?'<div class="cal-dot'+(over?' over':'')+'">'+list.length+'</div>':'')+'</div>';
+  for(var d=1;d<=days;d++){ var k=toLocalInput(new Date(y,m,d)).slice(0,10); var list=byDay[k]||[]; var done=byDone[k]||[]; var over=list.filter(function(t){return new Date(t.dueDate).getTime()<Date.now();}).length;
+    var dots=''; if(list.length) dots+='<div class="cal-dot'+(over?' over':'')+'">'+list.length+'</div>'; if(done.length) dots+='<div class="cal-dot done">✓'+done.length+'</div>';
+    h+='<div class="cal-cell'+(k===todayK?' today':'')+(k===App._calSel?' sel':'')+(done.length&&!list.length?' hasdone':'')+'" data-action="cal-day" data-date="'+k+'"><div class="cal-num">'+d+'</div>'+(dots?'<div class="cal-dots">'+dots+'</div>':'')+'</div>';
   }
   h+='</div>';
-  var sel=byDay[App._calSel]||[];
-  h+='<div class="sec-title" style="margin-top:18px">'+esc(App._calSel)+' — '+sel.length+' task'+(sel.length!==1?'s':'')+'</div><div class="task-list">';
-  if(!sel.length) h+='<div class="empty" style="padding:22px"><div class="empty-t">Nothing due this day</div></div>'; else sel.sort(function(a,b){return prioRank(a.priority)-prioRank(b.priority);}).forEach(function(t){ h+=taskCard(t,false,true); });
+  var sel=byDay[App._calSel]||[]; var selDone=byDone[App._calSel]||[];
+  h+='<div class="sec-title" style="margin-top:18px">'+esc(fmtDate(App._calSel))+' — '+sel.length+' due'+(selDone.length?' · '+selDone.length+' completed':'')+'</div>';
+  h+='<div class="task-list">';
+  if(!sel.length && !selDone.length) h+='<div class="empty" style="padding:22px"><div class="empty-t">Nothing due or completed this day</div></div>';
+  else {
+    sel.sort(function(a,b){return prioRank(a.priority)-prioRank(b.priority);}).forEach(function(t){ h+=taskCard(t,false,true); });
+    if(selDone.length){ h+='<div class="cal-donehead">✅ Completed on this day</div>'; selDone.sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);}).forEach(function(t){ h+='<div class="cal-donecard">'+taskCard(t,true,true)+'</div>'; }); }
+  }
   h+='</div>';
   document.getElementById('content').innerHTML=h;
 }
+
+/* ===== MY TASKS (colour-coded, nearest-due first) ===== */
+function myTaskState(t){
+  if(t.status==='Completed') return 'done';
+  if(t.status==='In Progress') return 'inprog';
+  if(t.dueDate && new Date(t.dueDate).getTime()<Date.now()) return 'overdue';
+  return 'pending';
+}
+function myTaskRow(t){
+  var st=myTaskState(t);
+  var lbl={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}[st];
+  var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
+  var meta=[];
+  if(byOther) meta.push('👤 by '+esc(t.assignedByName||'')); else meta.push('👤 self');
+  meta.push('📅 '+esc(t.dueDate?fmtDateTime(t.dueDate):'No due date'));
+  meta.push('🏷 '+esc(t.department)+' › '+esc(t.category));
+  return '<div class="mt-row mt-'+st+'" data-action="open-task" data-id="'+esc(t.taskId)+'"><div class="mt-main"><div class="mt-top">'+prioTag(t.priority)+'<span class="mt-client">'+esc(t.clientName)+'</span><span class="mt-state mt-'+st+'">'+lbl+'</span></div><div class="mt-meta">'+meta.join(' <span class="mt-sep">·</span> ')+'</div></div></div>';
+}
+function renderMyTasks(){
+  App.view='mytasks'; buildSidebar();
+  var f=App._myFilter||'all';
+  var all=(App.tasks||[]).filter(function(t){ return !isSnoozed(t); }).slice();
+  all.sort(function(a,b){
+    var ac=a.status==='Completed', bc=b.status==='Completed';
+    if(ac!==bc) return ac?1:-1;                       // active first, completed last
+    if(!ac){ var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; return new Date(a.createdTimestamp)-new Date(b.createdTimestamp); }
+    return new Date(b.completedTimestamp||0)-new Date(a.completedTimestamp||0);
+  });
+  var counts={all:all.length,overdue:0,pending:0,inprog:0,done:0};
+  all.forEach(function(t){ counts[myTaskState(t)]++; });
+  var list = f==='all'? all : all.filter(function(t){ return myTaskState(t)===f; });
+  var h='<div class="cat-head"><div class="cat-title">✅ My Tasks</div><div class="cat-sub">Everything on your plate — nearest due on top</div></div>';
+  h+='<div class="mt-filters">';
+  [['all','All'],['overdue','Overdue'],['pending','Pending'],['inprog','In Progress'],['done','Completed']].forEach(function(c){
+    h+='<button class="mt-chip mt-chip-'+c[0]+(f===c[0]?' on':'')+'" data-action="mytask-filter" data-f="'+c[0]+'">'+c[1]+'<span class="mt-c">'+counts[c[0]]+'</span></button>';
+  });
+  h+='</div><div class="mt-list">';
+  if(!list.length) h+='<div class="empty" style="padding:26px"><div class="empty-ico">🎉</div><div class="empty-t">Nothing here</div></div>'; else list.forEach(function(t){ h+=myTaskRow(t); });
+  h+='</div>';
+  document.getElementById('content').innerHTML=h;
+}
+function myTaskFilter(f){ App._myFilter=f; renderMyTasks(); }
 
 /* ===== #16 LEADERBOARD ===== */
 function renderLeaderboard(){
@@ -3624,6 +3758,7 @@ function paintWeekly(staff){
 
 function refreshView(){
   if(App.view==='dashboard') renderDashboard();
+  else if(App.view==='mytasks') renderMyTasks();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
   else if(App.view==='clients') renderClients();
@@ -4428,38 +4563,61 @@ function chatSetTab(tab){ App._chat.tab=tab; if(tab==='direct') App._chat.dm=nul
 function chatOpenChannel(ch){ App._chat.channel=ch; renderChat(); }
 function chatOpenDM(id){ App._chat.tab='direct'; App._chat.dm=String(id); renderChat(); }
 function chatBack(){ App._chat.dm=null; renderChat(); }
-function chatMsgHTML(list){
+var AV_HUES=['#8e7bff','#4f7cff','#0fb47f','#f59e0b','#ef4444','#8b5cf6','#e11d84','#0891b2','#6aa8ff'];
+function avatarHTML(name, cls){ var ch=(name||'?').charAt(0).toUpperCase(); var seed=0; var nm=String(name||''); for(var i=0;i<nm.length;i++) seed+=nm.charCodeAt(i); return '<div class="cp-av '+(cls||'')+'" style="background:'+AV_HUES[seed%AV_HUES.length]+'">'+esc(ch)+'</div>'; }
+function relTime(iso){ var t=new Date(iso).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(iso); }
+function presenceOf(userId){ var m=(App._userMeta||{})[String(userId)]||{}; if(m.lastActive && (Date.now()-new Date(m.lastActive).getTime())<180000) return {online:true, text:'online now'}; if(m.lastActive) return {online:false, text:'last seen '+relTime(m.lastActive)}; return {online:false, text:''}; }
+function lastOpenedText(userId){ var m=(App._userMeta||{})[String(userId)]||{}; return m.lastOpened? ('opened '+relTime(m.lastOpened)) : ''; }
+function dmSeen(otherId, msgCreated){ var m=(App._userMeta||{})[String(otherId)]||{}; var r=(m.dmRead||{})[String(App.identity.employeeId)]; return !!(r && new Date(r).getTime()>=new Date(msgCreated).getTime()); }
+function dmLastTime(otherId){ var conv=(App.dms||[]).filter(function(d){return otherParty(d)===String(otherId);}); return conv.length? new Date(conv[conv.length-1].created).getTime() : 0; }
+function dayLabel(iso){ var d=new Date(iso); if(isNaN(d)) return ''; var now=new Date(); var y=new Date(now); y.setDate(y.getDate()-1); if(d.toDateString()===now.toDateString()) return 'Today'; if(d.toDateString()===y.toDateString()) return 'Yesterday'; return fmtDate(iso); }
+function markDmReadServer(otherId){ App._dmReadSent=App._dmReadSent||{}; var now=Date.now(); if(App._dmReadSent[otherId] && now-App._dmReadSent[otherId]<4000) return; App._dmReadSent[otherId]=now; apiCall('markDmRead',{otherId:otherId}).catch(function(){}); }
+function chatMsgHTML(list, isDM, otherId){
   if(!list.length) return '<div class="chat-empty">No messages yet. Say hello 👋</div>';
-  var me=String(App.identity.employeeId);
-  return list.map(function(m){
+  var me=String(App.identity.employeeId); var out=''; var lastDay='';
+  list.forEach(function(m){
     App._chatMsgMap[m.id]=m;
+    var day=dayLabel(m.created); if(day && day!==lastDay){ out+='<div class="chat-daydiv"><span>'+esc(day)+'</span></div>'; lastDay=day; }
     var mine=String(m.fromId)===me;
     var ref=(m.taskRef&&m.taskRef.uid)?'<button class="chat-taskchip" data-action="chat-open-taskref" data-id="'+esc(m.id)+'">↪ '+esc(m.taskRef.client||'task')+(m.taskRef.cat?' · '+esc(m.taskRef.cat):'')+'</button>':'';
-    var priv=!mine?'<button class="chat-reply" data-action="chat-reply-private" data-id="'+esc(m.id)+'">↩︎ reply privately</button>':'';
-    return '<div class="chat-msg'+(mine?' mine':'')+'">'+(mine?'':'<div class="chat-from">'+esc(m.fromName||'')+'</div>')+ref+'<div class="chat-bubble">'+esc(m.text)+'</div><div class="chat-time">'+esc(chatTime(m.created))+'</div>'+priv+'</div>';
-  }).join('');
+    var tick = (mine && isDM) ? '<span class="chat-tick'+(dmSeen(otherId,m.created)?' seen':'')+'">'+(dmSeen(otherId,m.created)?'✓✓':'✓')+'</span>' : '';
+    var priv=(!mine && !isDM)?'<button class="chat-reply" data-action="chat-reply-private" data-id="'+esc(m.id)+'">↩︎ reply privately</button>':'';
+    out+='<div class="chat-row'+(mine?' mine':'')+'">'+(!mine?avatarHTML(m.fromName,'sm'):'')+
+      '<div class="chat-col"><div class="chat-msg'+(mine?' mine':'')+'">'+((!mine&&!isDM)?'<div class="chat-from">'+esc(m.fromName||'')+'</div>':'')+ref+'<div class="chat-bubble">'+esc(m.text)+'</div><div class="chat-meta"><span class="chat-time">'+esc(chatTime(m.created))+'</span>'+tick+'</div></div>'+(priv?'<div class="chat-rowact">'+priv+'</div>':'')+'</div></div>';
+  });
+  return out;
 }
 function renderChat(){
   var panel=document.getElementById('chat-panel'); if(!panel) return;
   var st=App._chat;
-  if(st.tab==='channels') markRead(st.channel); else if(st.tab==='direct'&&st.dm) markRead('dm:'+st.dm);
-  var h='<div class="chat-topbar"><div class="chat-title">💬 Team Chat</div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
-  h+='<div class="chat-tabrow"><button class="chat-tab'+(st.tab==='channels'?' on':'')+'" data-action="chat-tab" data-tab="channels">Channels</button><button class="chat-tab'+(st.tab==='direct'?' on':'')+'" data-action="chat-tab" data-tab="direct">Direct'+(dmUnreadTotal()?'<span class="chat-dot"></span>':'')+'</button></div>';
+  if(st.tab==='channels') markRead(st.channel); else if(st.tab==='direct'&&st.dm){ markRead('dm:'+st.dm); markDmReadServer(st.dm); }
+  var inDM = st.tab==='direct' && st.dm;
+  var other = inDM ? ((App.members||[]).find(function(m){return String(m.userId)===String(st.dm);})||{name:'Direct'}) : null;
+  // Header: normal team header, or a WhatsApp-style contact header when inside a DM
+  var h;
+  if(inDM){
+    var pr=presenceOf(st.dm); var op=lastOpenedText(st.dm);
+    h='<div class="chat-topbar dmbar"><button class="chat-back" data-action="chat-back" aria-label="Back">‹</button>'+avatarHTML(other.name,'md')+'<div class="dmbar-info"><div class="dmbar-name">'+esc(other.name||'')+'</div><div class="dmbar-sub">'+(pr.online?'<span class="pr-dot on"></span> online':(pr.text?esc(pr.text):'🔒 private'))+(op?' · '+esc(op):'')+'</div></div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
+  } else {
+    h='<div class="chat-topbar"><div class="chat-title">💬 Team Chat</div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
+    h+='<div class="chat-tabrow"><button class="chat-tab'+(st.tab==='channels'?' on':'')+'" data-action="chat-tab" data-tab="channels"># Channels</button><button class="chat-tab'+(st.tab==='direct'?' on':'')+'" data-action="chat-tab" data-tab="direct">✉ Direct'+(dmUnreadTotal()?'<span class="chat-dot"></span>':'')+'</button></div>';
+  }
   var showCompose=false;
   if(st.tab==='channels'){
     h+='<div class="chat-chips">'+chatChannels().map(function(c){ var u=channelUnread(c.key); return '<button class="chat-chip'+(st.channel===c.key?' on':'')+'" data-action="chat-open-channel" data-ch="'+esc(c.key)+'">'+esc(c.label)+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</button>'; }).join('')+'</div>';
-    h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.chat||[]).filter(function(m){return m.channel===st.channel;}))+'</div>';
+    h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.chat||[]).filter(function(m){return m.channel===st.channel;}), false)+'</div>';
     showCompose=true;
+  } else if(!inDM){
+    // Direct tab: WhatsApp-style conversation list, most-recent first
+    var ppl=(App.members||[]).filter(function(m){return String(m.userId)!==String(App.identity.employeeId);});
+    ppl.sort(function(a,b){ var ta=dmLastTime(a.userId), tb=dmLastTime(b.userId); if(tb!==ta) return tb-ta; return String(a.name).localeCompare(String(b.name)); });
+    h+='<div class="chat-body" id="chat-scroll"><div class="chat-people">'+(ppl.length?ppl.map(function(p){
+      var u=channelUnread('dm:'+p.userId); var last=lastDM(p.userId); var lt=dmLastTime(p.userId); var pr=presenceOf(p.userId);
+      return '<button class="chat-person" data-action="chat-open-dm" data-id="'+esc(p.userId)+'"><div class="cp-avwrap">'+avatarHTML(p.name)+(pr.online?'<span class="pr-dot on ring"></span>':'')+'</div><div class="cp-main"><div class="cp-top"><span class="cp-name">'+esc(p.name)+(p.role&&p.role!=='Staff'?' <span class="cp-role">'+esc(p.role)+'</span>':'')+'</span>'+(lt?'<span class="cp-time">'+esc(chatTime(new Date(lt).toISOString()))+'</span>':'')+'</div><div class="cp-bot"><span class="cp-last">'+(last?esc(last):'<span class="cp-none">Tap to start chatting</span>')+'</span>'+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</div></div></button>';
+    }).join(''):'<div class="chat-empty">No teammates yet.</div>')+'</div></div>';
   } else {
-    if(!st.dm){
-      var ppl=(App.members||[]).filter(function(m){return String(m.userId)!==String(App.identity.employeeId);});
-      h+='<div class="chat-body" id="chat-scroll"><div class="chat-people">'+(ppl.length?ppl.map(function(p){ var u=channelUnread('dm:'+p.userId); var last=lastDM(p.userId); return '<button class="chat-person" data-action="chat-open-dm" data-id="'+esc(p.userId)+'"><div class="cp-av">'+esc((p.name||'?').charAt(0).toUpperCase())+'</div><div class="cp-main"><div class="cp-name">'+esc(p.name)+(p.role&&p.role!=='Staff'?' <span class="cp-role">'+esc(p.role)+'</span>':'')+'</div><div class="cp-last">'+(last?esc(last):'<span class="cp-none">No messages yet</span>')+'</div></div>'+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</button>'; }).join(''):'<div class="chat-empty">No teammates yet.</div>')+'</div></div>';
-    } else {
-      var other=(App.members||[]).find(function(m){return String(m.userId)===String(st.dm);})||{name:'Direct'};
-      h+='<div class="chat-dmhead"><button class="chat-back" data-action="chat-back">‹</button><span>'+esc(other.name||'')+'</span><span class="cp-lock">🔒 private</span></div>';
-      h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.dms||[]).filter(function(d){return otherParty(d)===String(st.dm);}))+'</div>';
-      showCompose=true;
-    }
+    h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.dms||[]).filter(function(d){return otherParty(d)===String(st.dm);}), true, st.dm)+'</div>';
+    showCompose=true;
   }
   if(showCompose){
     var ref=App._chatRef?'<div class="chat-refbar">↪ '+esc(App._chatRef.client||'task')+(App._chatRef.cat?' · '+esc(App._chatRef.cat):'')+' <button data-action="chat-clear-ref" title="Remove">&times;</button></div>':'';
@@ -4643,6 +4801,7 @@ document.addEventListener('click', function(e){
     case 'dept-add-create': deptAddCreate(el); break;
     case 'dept-del': deptDelete(el.getAttribute('data-name')); break;
     case 'dash-filter': App.dashFilter=el.getAttribute('data-filter'); renderDashboard(); break;
+    case 'mytask-filter': myTaskFilter(el.getAttribute('data-f')); break;
     case 'dismiss-banner': App._bannerDismissed=true; var nb=document.getElementById('notif-banner'); if(nb)nb.style.display='none'; break;
     case 'add-reminder-row': addReminderRow(el.getAttribute('data-target')); break;
     case 'del-reminder-row': var rr=el.closest('.rem-row'); if(rr&&rr.parentNode) rr.parentNode.removeChild(rr); break;
