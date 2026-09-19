@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="e-diary-app" content="1"><!-- marker: tells the voice extension to hide its ball here (the app has its own) -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600;1,700&display=swap" rel="stylesheet">
 <title>E-Diary — Private Work Diary</title>
@@ -78,7 +79,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .nav-link.active{background:rgba(59,130,246,.18);color:#93c5fd;font-weight:600;box-shadow:inset 3px 0 0 #3b82f6}
 .nav-ico{width:19px;height:19px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .nav-ico svg{width:18px;height:18px}
-.nav-badge{margin-left:auto;background:rgba(59,130,246,.22);color:#93c5fd;font-size:.7rem;font-weight:700;padding:1px 8px;border-radius:11px;min-width:22px;text-align:center}
+.nav-badge{margin-left:auto;background:#4f7cff;color:#fff;font-size:.7rem;font-weight:800;padding:1px 8px;border-radius:11px;min-width:22px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.28)}
 /* Department header (big + highlighted + collapsible) */
 .dept-group{margin:6px 10px 2px}
 .dept-header{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;border:none;border-radius:10px;background:rgba(255,255,255,.05);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;letter-spacing:-.01em;cursor:pointer;transition:background .15s}
@@ -86,7 +87,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .dept-header .chev{width:16px;height:16px;transition:transform .2s;flex-shrink:0;color:#94a3b8}
 .dept-header.collapsed .chev{transform:rotate(-90deg)}
 .dept-header .dept-name{flex:1;text-align:left}
-.dept-header .dept-count{background:rgba(59,130,246,.28);color:#bfdbfe;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:11px;min-width:22px;text-align:center}
+.dept-header .dept-count{background:#f5b301;color:#231a00;font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:11px;min-width:22px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.28)}
 .dept-cats{overflow:hidden;padding:3px 0 6px}
 .dept-cats .nav-link{padding-left:30px;font-size:.83rem}
 .dept-cats .nav-link .nav-ico{width:14px}
@@ -240,6 +241,38 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .d-status.pending{background:var(--warning-bg);color:var(--warning-dark)}
 .d-status.done{background:rgba(148,163,184,.15);color:var(--text-muted)}
 .d-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ===== Detail drawer — clean bordered layout ===== */
+.det-statusbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+.det-statusbar .d-status{padding:7px 14px;border-radius:999px;font-size:.82rem;box-shadow:0 4px 12px -4px rgba(80,72,150,.28);border:1px solid rgba(255,255,255,.5)}
+.det-statusbar .d-status.ip{box-shadow:0 4px 12px -4px rgba(245,158,11,.4)}
+.det-statusbar .d-status.done{box-shadow:0 3px 9px -3px rgba(148,163,184,.4)}
+.det-facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.fact{border:1px solid var(--border);border-radius:14px;padding:11px 13px;background:var(--bg-card)}
+.fact-lbl{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:5px}
+.fact-val{font-size:.9rem;font-weight:600;color:var(--text);line-height:1.4;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fact-muted{color:var(--text-muted);font-weight:500}
+.det-block{border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px;background:var(--bg-card)}
+.det-block-lbl{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px}
+.det-block-val{font-size:.9rem;color:var(--text);line-height:1.55;white-space:pre-wrap}
+.det-hint{font-size:.8rem;color:var(--text-sec);background:var(--accent-soft);border-radius:11px;padding:10px 12px;margin:2px 0 14px;line-height:1.45}
+.det-taskid{font-size:.72rem;color:var(--text-muted);margin-top:14px;letter-spacing:.02em;text-align:right}
+/* Remarks list */
+.rmk-wrap{border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:6px 0 12px;background:var(--bg-card)}
+.rmk-head{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-sec);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.rmk-count{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 8px;font-size:.72rem}
+.rmk-item{border-left:3px solid var(--accent);padding:2px 0 2px 11px;margin-bottom:11px}
+.rmk-item:last-child{margin-bottom:0}
+.rmk-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:3px}
+.rmk-act{font-size:.72rem;font-weight:700;color:var(--accent)}
+.rmk-by{font-size:.78rem;font-weight:600;color:var(--text)}
+.rmk-at{font-size:.7rem;color:var(--text-muted);margin-left:auto}
+.rmk-text{font-size:.86rem;color:var(--text);line-height:1.5;white-space:pre-wrap}
+/* Remark modal error */
+.remark-err{display:none;font-size:.78rem;color:var(--danger-dark);background:var(--danger-bg);border-radius:9px;padding:8px 11px;margin-top:9px}
+.remark-err.show{display:block}
+#remark-modal .confirm-box{text-align:left}
+#remark-modal #remark-text{margin-top:2px}
 
 /* Settings */
 .set-sec{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
@@ -719,16 +752,11 @@ body[data-theme="dark"]{ background:
 .arch-main{ flex:1; min-width:0; }
 .arch-text{ font-size:.9rem; word-break:break-word; }
 .arch-meta{ font-size:.72rem; color:var(--text-muted); margin-top:2px; }
-/* Sidebar collapse-to-rail + hover-expand (desktop only) */
+/* Desktop: sidebar is always fully expanded and sits beside the content (no hover-overlay). */
 .nav-ico{ font-size:1.02rem; }
-@media(min-width:900px){
-  #sidebar{ width:72px; z-index:120; transition:width .26s cubic-bezier(.2,.7,.3,1), box-shadow .26s; }
-  #sidebar:hover{ width:var(--sb-width); box-shadow:0 24px 60px -18px rgba(80,72,150,.4); }
-  #main{ margin-left:72px; }
-  #sidebar:not(:hover) .nav-link, #sidebar:not(:hover) .dept-header{ font-size:0; }
-  #sidebar:not(:hover) .sb-brand{ opacity:0; }
-  #sidebar:not(:hover) .dept-cats{ display:none; }
-  #sidebar:not(:hover) .bell-badge{ display:none; }
+@media(min-width:861px){
+  #sidebar{ width:var(--sb-width); }
+  #main{ margin-left:var(--sb-width); }
 }
 
 /* ---- Voice assistant ---- */
@@ -913,6 +941,21 @@ body[data-theme="dark"]{ background:
   </div>
 </div>
 
+<!-- REMARK MODAL (mandatory note on any status change) -->
+<div id="remark-modal" class="overlay hidden">
+  <div class="modal confirm-box">
+    <div class="confirm-ico" id="remark-ico">📝</div>
+    <h3 id="remark-title">Add a remark</h3>
+    <div class="confirm-body" id="remark-sub" style="margin-bottom:10px">A remark is required to continue.</div>
+    <textarea id="remark-text" class="f-area" rows="3" maxlength="600" placeholder="Type your remark… (required)"></textarea>
+    <div id="remark-err" class="remark-err">Please add a remark to continue.</div>
+    <div class="confirm-foot">
+      <button class="btn btn-ghost" data-action="close-modal" data-modal="remark-modal">Cancel</button>
+      <button class="btn btn-primary" id="remark-ok" data-action="remark-ok">Save &amp; continue</button>
+    </div>
+  </div>
+</div>
+
 <!-- COMMAND PALETTE -->
 <div id="cmdk" class="overlay hidden">
   <div class="cmdk-box">
@@ -1057,6 +1100,7 @@ var FB = (function(){
             var patch={ lastUpdatedTimestamp:nowISO() };
             ['clientName','department','category','details','dueDate','status','reminders','repeat'].forEach(function(k){ if(b[k]!==undefined) patch[k]=b[k]; });
             if(b.status==='Completed'){ patch.completedTimestamp=nowISO(); }
+            if(b.remark){ var _rk=Array.isArray(t.remarks)?t.remarks.slice():[]; _rk.push({ by:me().name, byId:me().userId, at:nowISO(), action:b.remarkAction||'Update', text:String(b.remark).slice(0,600) }); patch.remarks=_rk; }
             return col('tasks').doc(String(b.uid)).set(patch,{merge:true})
               .then(function(){ if(String(t.ownerId)!==String(me().userId)) return addNotif(t.ownerId, me().name, me().name+' updated: '+(b.clientName||t.clientName), t.uid, 'status'); })
               .then(function(){ return logAudit('Edited shared task', t.uid, b.clientName||t.clientName, ''); })
@@ -1477,20 +1521,22 @@ var Data = {
     var note=moved?('Moved to '+f.department+' › '+f.category):(renamed?'Renamed & edited':'Edited');
     return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'EDITED',t.status,t.status,note); Sync.afterChange(); });
   },
-  setStatus:function(taskId,status){
+  setStatus:function(taskId,status,remark){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
-    t.status=status;
+    var oldS=t.status; t.status=status;
     if(status==='Completed'){ t.completedTimestamp=nowISO(); t.completedBy=App.identity.employeeName; }
     else { t.completedTimestamp=''; t.completedBy=''; }
+    pushRemark(t, status==='In Progress'?'Marked In Progress':'Set to Pending', remark);
     t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
-    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'STATUS',t.status,status,status); Sync.afterChange(); });
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'STATUS',oldS,status,remark||status); Sync.afterChange(); });
   },
-  complete:function(taskId){
+  complete:function(taskId,remark){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
     if(t.status==='Completed') return Promise.reject(new Error('Already completed.'));
     var ts=nowISO(); t.status='Completed'; t.completedTimestamp=ts; t.lastUpdatedTimestamp=ts; t.completedBy=App.identity.employeeName;
+    pushRemark(t, 'Completed', remark);
     t.syncStatus='PENDING_SYNC';
-    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'COMPLETED','Pending','Completed',t.clientName); Sync.afterChange(); if(t.repeat) return Data.spawnRecurrence(t); });
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'COMPLETED','Pending','Completed',remark||t.clientName); Sync.afterChange(); if(t.repeat) return Data.spawnRecurrence(t); });
   },
   spawnRecurrence:function(t){
     if(!t||!t.repeat) return Promise.resolve();
@@ -1508,15 +1554,21 @@ var Data = {
       return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending','Recurring ('+t.repeat+') · '+t.clientName); Sync.afterChange(); return task; });
     });
   },
-  reopen:function(taskId){
+  reopen:function(taskId,remark){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
     var ts=nowISO(); t.status='Pending'; t.completedTimestamp=''; t.completedBy=''; t.lastUpdatedTimestamp=ts;
+    pushRemark(t, 'Reopened', remark);
     t.syncStatus='PENDING_SYNC';
-    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'REOPENED','Completed','Pending','Reopened'); Sync.afterChange(); });
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'REOPENED','Completed','Pending',remark||'Reopened'); Sync.afterChange(); });
   },
   log:function(taskId,action,oldS,newS,note){
     var id='LOG-'+Date.now()+'-'+Math.floor(Math.random()*1000);
     Store.put('activityLog',id,{logId:id,taskId:taskId,employeeId:App.identity?App.identity.employeeId:'',employeeName:App.identity?App.identity.employeeName:'',action:action,oldStatus:oldS,newStatus:newS,timestamp:nowISO(),note:note||''});
+  },
+  addRemarkOnly:function(taskId,remark){
+    var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
+    pushRemark(t, 'Remark', remark); t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'REMARK',t.status,t.status,remark||''); Sync.afterChange(); });
   },
   saveDepartments:function(){ return Store.put('kv','departments',App.departments); },
   saveCategoryMaster:function(){ return Store.put('kv','categoryMaster',App.categoryMaster); },
@@ -2188,8 +2240,10 @@ function bulkCard(t){ var isDone=t.status==='Completed'; if(!App._bulk) return t
 function switchTab(tab){ App.tab=tab; renderCategory(); }
 function toggleBulk(taskId, el){ App._bulkSel=App._bulkSel||{}; if(App._bulkSel[taskId]){ delete App._bulkSel[taskId]; el.classList.remove('bulk-on'); } else { App._bulkSel[taskId]=true; el.classList.add('bulk-on'); } var n=Object.keys(App._bulkSel).length; var c=document.getElementById('bulk-count'); if(c) c.textContent=n+' selected'; }
 function bulkComplete(){ var ids=Object.keys(App._bulkSel||{}); if(!ids.length){ toast('Select some tasks first.','info'); return; }
-  var jobs=ids.map(function(id){ var t=App.tasks.find(function(x){return x.taskId===id;}); return (t && t.status!=='Completed') ? Data.complete(id) : Promise.resolve(); });
-  Promise.all(jobs).then(function(){ toast('✓ Completed '+ids.length+' task(s)','success'); App._bulk=false; App._bulkSel={}; buildSidebar(); renderCategory(); });
+  askRemark({title:'Complete '+ids.length+' task(s)',sub:'This remark will be saved on each selected task.',okLabel:'✓ Complete all',ico:'✅'}, function(rk){
+    var jobs=ids.map(function(id){ var t=App.tasks.find(function(x){return x.taskId===id;}); return (t && t.status!=='Completed') ? Data.complete(id,rk) : Promise.resolve(); });
+    Promise.all(jobs).then(function(){ toast('✓ Completed '+ids.length+' task(s)','success'); App._bulk=false; App._bulkSel={}; buildSidebar(); renderCategory(); });
+  });
 }
 function bulkDelete(){ var ids=Object.keys(App._bulkSel||{}); if(!ids.length){ toast('Select some tasks first.','info'); return; }
   openConfirm({ icon:'🗑️', title:'Delete '+ids.length+' task(s)?', body:'This permanently deletes the selected tasks. Cannot be undone.', okLabel:'Delete', okClass:'btn-danger', onOk:function(){
@@ -2249,10 +2303,16 @@ function boardMove(taskId,target){
   if(cur===target) return;
   var done=function(m){ toast(m,'success'); buildSidebar(); renderBoard(); };
   var fail=function(e){ toast((e&&e.message)||'Could not move.','error'); renderBoard(); };
-  if(target==='Completed'){ Data.complete(taskId).then(function(){ done('✓ Completed'); }).catch(fail); }
-  else if(target==='In Progress'){ Data.setStatus(taskId,'In Progress').then(function(){ done('⚙ In Progress'); }).catch(fail); }
-  else if(t.status==='Completed'){ Data.reopen(taskId).then(function(){ done('Reopened'); }).catch(fail); }
-  else { Data.setStatus(taskId,'Pending').then(function(){ done('Set to Pending'); }).catch(fail); }
+  // Every move is a status change → require a remark. Snap the card back if cancelled.
+  var titleMap={ 'Completed':'Complete this task', 'In Progress':'Mark In Progress', 'Pending':'Set to Pending' };
+  askRemark({title:titleMap[target]||'Update status',sub:'Add a remark for this status change.',okLabel:'Save & update',ico:'📝'}, function(rk){
+    if(target==='Completed'){ Data.complete(taskId,rk).then(function(){ done('✓ Completed'); }).catch(fail); }
+    else if(target==='In Progress'){ Data.setStatus(taskId,'In Progress',rk).then(function(){ done('⚙ In Progress'); }).catch(fail); }
+    else if(t.status==='Completed'){ Data.reopen(taskId,rk).then(function(){ done('Reopened'); }).catch(fail); }
+    else { Data.setStatus(taskId,'Pending',rk).then(function(){ done('Set to Pending'); }).catch(fail); }
+  });
+  // Re-render immediately so the board reflects the true state until the remark is saved.
+  renderBoard();
 }
 
 /* ================================================================
@@ -2877,6 +2937,33 @@ function submitAdd(){
 /* ================================================================
    TASK DETAIL MODAL
    ================================================================ */
+/* ===== Remarks (mandatory note on every status change) ===== */
+function pushRemark(t, action, text){
+  if(!text) return;
+  if(!Array.isArray(t.remarks)) t.remarks=[];
+  t.remarks.push({ by:App.identity?App.identity.employeeName:'', byId:App.identity?App.identity.employeeId:'', at:nowISO(), action:action||'', text:String(text).slice(0,600) });
+}
+function askRemark(opts, onOk){
+  opts=opts||{};
+  App._remarkFn=onOk;
+  document.getElementById('remark-title').textContent=opts.title||'Add a remark';
+  document.getElementById('remark-sub').textContent=opts.sub||'A remark is required to continue.';
+  document.getElementById('remark-ico').textContent=opts.ico||'📝';
+  document.getElementById('remark-ok').textContent=opts.okLabel||'Save & continue';
+  var ta=document.getElementById('remark-text'); ta.value='';
+  document.getElementById('remark-err').classList.remove('show');
+  openModal('remark-modal');
+  setTimeout(function(){ try{ ta.focus(); }catch(e){} }, 60);
+}
+function factCell(lbl,val){ return '<div class="fact"><div class="fact-lbl">'+lbl+'</div><div class="fact-val">'+val+'</div></div>'; }
+function remarksBlock(t){
+  var r=Array.isArray(t.remarks)?t.remarks:[]; if(!r.length) return '';
+  var h='<div class="rmk-wrap"><div class="rmk-head">📝 Remarks <span class="rmk-count">'+r.length+'</span></div>';
+  r.slice().reverse().forEach(function(x){
+    h+='<div class="rmk-item"><div class="rmk-meta"><span class="rmk-act">'+esc(x.action||'Remark')+'</span><span class="rmk-by">'+esc(x.by||'—')+'</span><span class="rmk-at">'+esc(fmtDateTime(x.at))+'</span></div><div class="rmk-text">'+esc(x.text||'')+'</div></div>';
+  });
+  h+='</div>'; return h;
+}
 function openTask(taskId, editMode){
   var t=App.tasks.find(function(x){return x.taskId===taskId;});
   if(!t){ toast('Task not found.','error'); return; }
@@ -2911,19 +2998,28 @@ function openTask(taskId, editMode){
     h+='<div class="d-row"><div class="d-lbl">Task ID</div><div class="d-val" style="font-size:.8rem;color:var(--text-muted)">'+esc(t.taskId)+'</div></div>';
   } else {
     var stPill = t.status==='Completed' ? '<span class="d-status done">'+ico('check')+' Completed</span>' : (t.status==='In Progress' ? '<span class="d-status ip">&#9881; In Progress</span>' : '<span class="d-status pending">&#9679; Pending</span>');
-    h+='<div class="d-grid"><div class="d-row"><div class="d-lbl">Department</div><div class="d-val">'+esc(t.department)+'</div></div>';
-    h+='<div class="d-row"><div class="d-lbl">Category</div><div class="d-val">'+esc(t.category)+'</div></div>';
-    h+='<div class="d-row"><div class="d-lbl">Priority</div><div class="d-val">'+prioTag(t.priority)+'</div></div>';
-    h+='<div class="d-row"><div class="d-lbl">Created</div><div class="d-val">'+esc(fmtDateTime(t.createdTimestamp))+'</div></div>';
-    h+='<div class="d-row"><div class="d-lbl">'+(active?'Status':'Completed')+'</div><div class="d-val">'+(active?stPill:esc(fmtDateTime(t.completedTimestamp)))+'</div></div></div>';
-    if(t.dueDate) h+='<div class="d-row"><div class="d-lbl">Due</div><div class="d-val">'+esc(fmtDue(t.dueDate))+(active&&dueInfo(t)?' <span class="due '+dueInfo(t).cls+'">'+dueInfo(t).label+'</span>':'')+'</div></div>';
-    if(t.reminders && t.reminders.length) h+='<div class="d-row"><div class="d-lbl">Reminders</div><div class="d-val" style="font-size:.82rem">'+t.reminders.map(function(r){return esc(fmtDue(r.at))+(r.message?' — '+esc(r.message):'');}).join('<br>')+'</div></div>';
-    h+='<div class="d-row"><div class="d-lbl">Details</div><div class="d-val">'+(t.details?esc(t.details):'—')+'</div></div>';
-    h+='<div class="d-row"><div class="d-lbl">Task ID</div><div class="d-val" style="font-size:.8rem;color:var(--text-muted)">'+esc(t.taskId)+'</div></div>';
-    if(shared && active) h+='<div class="c-muted" style="margin-top:6px">You can update the status &amp; comment. Only the person who assigned this can edit the task.</div>';
-    else if(canEdit) h+='<div class="c-muted" style="margin-top:6px">This is a committed task. Mark it In Progress / Complete as you work. Tap ✏️ Edit to change its details.</div>';
+    // Lifted status pill up top so the current state reads at a glance.
+    h+='<div class="det-statusbar">'+stPill+(t.priority?prioTag(t.priority):'')+'</div>';
+    // Bordered fact cards — each label clearly owns its value.
+    h+='<div class="det-facts">';
+    h+=factCell('Department', esc(t.department));
+    h+=factCell('Category', esc(t.category));
+    h+=factCell('Created', esc(fmtDateTime(t.createdTimestamp)));
+    if(active){
+      if(t.dueDate) h+=factCell('Due', esc(fmtDue(t.dueDate))+(dueInfo(t)?' <span class="due '+dueInfo(t).cls+'">'+dueInfo(t).label+'</span>':''));
+      else h+=factCell('Due', '<span class="fact-muted">No due date</span>');
+    } else {
+      h+=factCell('Completed', esc(fmtDateTime(t.completedTimestamp)));
+    }
+    h+='</div>';
+    if(t.reminders && t.reminders.length) h+='<div class="det-block"><div class="det-block-lbl">Reminders</div><div class="det-block-val" style="font-size:.84rem">'+t.reminders.map(function(r){return esc(fmtDue(r.at))+(r.message?' — '+esc(r.message):'');}).join('<br>')+'</div></div>';
+    h+='<div class="det-block"><div class="det-block-lbl">Details</div><div class="det-block-val">'+(t.details?esc(t.details):'<span class="fact-muted">—</span>')+'</div></div>';
+    if(shared && active) h+='<div class="det-hint">You can update the status &amp; comment. Only the person who assigned this can edit the task.</div>';
+    else if(canEdit) h+='<div class="det-hint">This is a committed task. Mark it In Progress / Complete as you work — each update asks for a remark. Tap ✏️ Edit to change its details.</div>';
     h+=checklistBlock(t);
     h+=linksBlock(t);
+    h+=remarksBlock(t);
+    h+='<div class="det-taskid">Task ID · '+esc(t.taskId)+'</div>';
   }
   if(shared && t.uid) h+=historyBlock(t.uid);
   if(shared && t.uid) h+=commentsBlock(t.uid);
@@ -2971,18 +3067,18 @@ function saveTask(taskId,btn){
   }).then(function(){ App._saveBusy=false; toast('✓ Changes saved','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
   .catch(function(e){ App._saveBusy=false; btn.disabled=false; btn.textContent='Save Changes'; toast('Could not save. '+(e.message||''),'error'); });
 }
-function setStatusUI(taskId,status,btn){
+function setStatusUI(taskId,status,remark,btn){
   if(App._ssBusy) return; App._ssBusy=true;
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
-  Data.setStatus(taskId,status).then(function(){ App._ssBusy=false; toast(status==='In Progress'?'⚙ Marked In Progress':'Set to Pending','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
+  Data.setStatus(taskId,status,remark).then(function(){ App._ssBusy=false; toast(status==='In Progress'?'⚙ Marked In Progress':'Set to Pending','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
   .catch(function(e){ App._ssBusy=false; if(btn)btn.disabled=false; toast(e.message||'Could not update.','error'); });
 }
-function completeTask(taskId,btn){
+function completeTask(taskId,remark,btn){
   var card = (btn && btn.closest) ? btn.closest('.card,.priority-card') : null;
   var run=function(){
-    Data.complete(taskId).then(function(){
+    Data.complete(taskId,remark).then(function(){
       buildSidebar();
-      if(card){ toastAction('✓ Completed','Undo',function(){ Data.reopen(taskId).then(function(){ buildSidebar(); refreshView(); }); },'success'); }
+      if(card){ toastAction('✓ Completed','Undo',function(){ Data.reopen(taskId,'Undone').then(function(){ buildSidebar(); refreshView(); }); },'success'); }
       else { toast('✓ Marked as completed','success'); }
       closeModal('detail-modal'); refreshView();
     }).catch(function(e){
@@ -2994,8 +3090,8 @@ function completeTask(taskId,btn){
   if(card && !_reduceMotion){ card.classList.add('completing'); setTimeout(run,300); }
   else { if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; } run(); }
 }
-function reopenTask(taskId){
-  Data.reopen(taskId).then(function(){ toast('Task reopened','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
+function reopenTask(taskId,remark){
+  Data.reopen(taskId,remark).then(function(){ toast('Task reopened','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
   .catch(function(e){ toast(e.message||'Could not reopen.','error'); });
 }
 /* ===== #10 CALENDAR (month view) ===== */
@@ -3691,6 +3787,7 @@ function openManagedTask(t){
     h+='<div class="d-row"><div class="d-lbl">Status</div><div class="d-val"><span class="d-status '+(isDone?'done':'pending')+'">'+(isDone?ico('check')+' Completed':'&#9679; '+esc(t.status))+'</span></div></div>';
     h+='<div class="d-row"><div class="d-lbl">Details</div><div class="d-val">'+(t.details?esc(t.details):'—')+'</div></div></div>';
   }
+  h+=remarksBlock(t);
   h+=historyBlock(t.uid);
   h+=commentsBlock(t.uid);
   document.getElementById('det-body').innerHTML=h;
@@ -3726,10 +3823,10 @@ function saveSharedTask(uid,btn){
     toast('✓ Changes saved','success'); closeModal('detail-modal'); refreshManagedView();
   }).catch(function(e){ App._ssaveBusy=false; if(btn){btn.disabled=false;btn.textContent='Save Changes';} toast(e.message||'Could not save.','error'); });
 }
-function sharedStatus(uid,status,btn){
+function sharedStatus(uid,status,remark,btn){
   if(App._ssBusy) return; App._ssBusy=true;
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
-  apiCall('updateSharedTask',{uid:uid,status:status}).then(function(res){
+  apiCall('updateSharedTask',{uid:uid,status:status,remark:remark,remarkAction:status==='Completed'?'Completed':'Reopened'}).then(function(res){
     App._ssBusy=false;
     if(!res||!res.ok){ if(btn)btn.disabled=false; toast(res&&res.error?res.error:'Could not update.','error'); return; }
     toast(status==='Completed'?'✓ Completed':'Reopened','success'); closeModal('detail-modal'); refreshManagedView();
@@ -3897,6 +3994,7 @@ document.addEventListener('click', function(e){
     case 'raise-reminder': submitReminder(el.getAttribute('data-id')); break;
     case 'open-assign': openAssign(el.getAttribute('data-dept'), el.getAttribute('data-cat')); break;
     case 'confirm-ok': var _cf=App._confirmFn; closeModal('confirm-modal'); if(_cf) setTimeout(_cf,10); break;
+    case 'remark-ok': { var _ta=document.getElementById('remark-text'); var _txt=(_ta.value||'').trim(); if(!_txt){ document.getElementById('remark-err').classList.add('show'); try{_ta.focus();}catch(_e){} break; } var _rf=App._remarkFn; App._remarkFn=null; closeModal('remark-modal'); if(_rf) setTimeout(function(){ _rf(_txt); },10); break; }
     case 'slate-click': slateClick(e); break;
     case 'slate-new': slateNew(); break;
     case 'slate-done': slateDone(el.getAttribute('data-id')); break;
@@ -3956,7 +4054,7 @@ document.addEventListener('click', function(e){
     case 'open-shared': openShared(el.getAttribute('data-uid')); break;
     case 'open-admin-task': openAdminTask(el.getAttribute('data-uid')); break;
     case 'save-shared-task': saveSharedTask(el.getAttribute('data-uid'), el); break;
-    case 'shared-status': sharedStatus(el.getAttribute('data-uid'), el.getAttribute('data-status'), el); break;
+    case 'shared-status': { var _shu=el.getAttribute('data-uid'),_sht=el.getAttribute('data-status'),_she=el; askRemark({title:_sht==='Completed'?'Complete this task':'Reopen this task',sub:'Add a remark for this update.',okLabel:_sht==='Completed'?'✓ Complete':'Reopen',ico:_sht==='Completed'?'✅':'↩️'}, function(rk){ sharedStatus(_shu,_sht,rk,_she); }); break; }
     case 'open-audit': renderActivityLog(); break;
     case 'add-comment': addCommentUI(el.getAttribute('data-uid')); break;
     case 'admin-act': adminAct(el.getAttribute('data-uid'), el.getAttribute('data-status'), el); break;
@@ -3969,14 +4067,14 @@ document.addEventListener('click', function(e){
     case 'submit-add': submitAdd(); break;
     case 'close-modal': closeModal(el.getAttribute('data-modal')); break;
     case 'open-task': openTask(el.getAttribute('data-id')); break;
-    case 'complete-task': completeTask(el.getAttribute('data-id'), el); break;
+    case 'complete-task': { var _cti=el.getAttribute('data-id'),_cte=el; askRemark({title:'Complete this task',sub:'Add a closing remark before marking it complete.',okLabel:'✓ Complete',ico:'✅'}, function(rk){ completeTask(_cti, rk, _cte); }); break; }
     case 'switch-tab': switchTab(el.getAttribute('data-tab')); break;
     case 'save-task': saveTask(el.getAttribute('data-id'), el); break;
     case 'edit-task-inline': openTask(el.getAttribute('data-id'), true); break;
     case 'open-task-view': openTask(el.getAttribute('data-id'), false); break;
-    case 'set-status': setStatusUI(el.getAttribute('data-id'), el.getAttribute('data-status'), el); break;
-    case 'complete-from-detail': completeTask(el.getAttribute('data-id'), el); break;
-    case 'reopen-task': reopenTask(el.getAttribute('data-id')); break;
+    case 'set-status': { var _ssi=el.getAttribute('data-id'),_sst=el.getAttribute('data-status'),_sse=el; askRemark({title:_sst==='In Progress'?'Mark In Progress':'Set to Pending',sub:'Add a remark about this update.',okLabel:'Save & update',ico:'📝'}, function(rk){ setStatusUI(_ssi,_sst,rk,_sse); }); break; }
+    case 'complete-from-detail': { var _cfi=el.getAttribute('data-id'),_cfe=el; askRemark({title:'Complete this task',sub:'Add a closing remark before marking it complete.',okLabel:'✓ Complete',ico:'✅'}, function(rk){ completeTask(_cfi, rk, _cfe); }); break; }
+    case 'reopen-task': { var _rti=el.getAttribute('data-id'); askRemark({title:'Reopen this task',sub:'Add a remark about why you are reopening it.',okLabel:'Reopen',ico:'↩️'}, function(rk){ reopenTask(_rti, rk); }); break; }
     case 'pick': pickSugg(el.getAttribute('data-input'), parseInt(el.getAttribute('data-idx'),10)); break;
     case 'toggle-theme': toggleTheme(); break;
     case 'reset-diary': resetDiary(); break;
@@ -4003,7 +4101,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); cancelSlateInput(); try{voiceClose();}catch(_){} }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); cancelSlateInput(); try{voiceClose();}catch(_){} }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
