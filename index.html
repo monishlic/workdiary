@@ -476,6 +476,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .an-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
 .an-legend i.an-done{background:#16a34a}.an-legend i.an-pend{background:#f59e0b}
 @media(max-width:640px){.an-row{grid-template-columns:100px 1fr;gap:8px}.an-val{grid-column:2;text-align:left}}
+.an-seg.an-dep{background:#0ea5e9}
+/* Performance view */
+.perf-sec-t{font-size:1.05rem;font-weight:800;color:var(--text);margin:22px 0 12px;display:flex;align-items:center;gap:8px}
+.perf-sec-t:first-of-type{margin-top:6px}
+.perf-row{padding:9px 0;border-bottom:1px solid var(--border)}
+.perf-row:last-child{border-bottom:none}
+.perf-name{font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.perf-tag{font-size:.66rem;font-weight:800;padding:2px 7px;border-radius:999px}
+.perf-tag.fast{background:var(--success-bg);color:var(--success-dark)}
+.perf-tag.slow{background:var(--warning-bg);color:var(--warning-dark)}
+.perf-ot{height:9px;background:rgba(148,163,184,.2);border-radius:6px;overflow:hidden;margin-bottom:5px}
+.perf-ot>span{display:block;height:100%;background:linear-gradient(90deg,#4f7cff,#7166f0);border-radius:6px}
+.perf-ot.done>span{background:linear-gradient(90deg,#0fb47f,#22c55e)}
+.perf-nums{font-size:.76rem;color:var(--text-sec)}
+.perf-nums b{color:var(--text)}
+.chart-wrap{width:100%;overflow-x:auto}
+.chart-wrap svg{display:block}
 .due-today{background:var(--warning-bg);color:var(--warning-dark)}
 .due-up{background:var(--accent-soft);color:var(--accent)}
 .d-status.ip{background:var(--warning-bg);color:var(--warning-dark)}
@@ -2175,9 +2192,9 @@ var FBLive = {
         qs.forEach(function(d){ var t=d.data(); if(t.uid){ App._allTasks.push(t); App._adminTaskCache[t.uid]=t; } });
         App._teamCache=null; App._analyticsCache=null; App._staffCache={}; App._lbCache=null;
         if(App.view==='team') renderTeam();
-        else if(App.view==='analytics') renderAnalytics();
+        else if(App.view==='performance') paintPerformance(App._lbCache||[]);
         else if(App.view==='staff' && App._staffView) openStaff(App._staffView.id, App._staffView.name);
-        else if(App.view==='leaderboard') renderLeaderboard();
+        else if(App.view==='weekly') renderWeekly();
         else if(App.view==='search'){ var _si=document.getElementById('search'); if(_si) renderSearch(_si.value); }
       }, function(){});
       db.collection('audit').onSnapshot(function(){
@@ -2287,11 +2304,9 @@ function buildSidebar(){
   h+='<div class="sb-foot">';
   h+='<button class="nav-link'+((App.view==='list'&&App.listFilter==='completed')?' active':'')+'" data-action="show-list" data-filter="completed"><span class="nav-ico">'+ico('check')+'</span> Completed</button>';
   h+='<button class="nav-link'+(App.view==='assigned'?' active':'')+'" data-action="nav" data-view="assigned"><span class="nav-ico">'+ico('assigned')+'</span> Assigned by Me</button>';
-  h+='<button class="nav-link'+(App.view==='search'?' active':'')+'" data-action="nav" data-view="search"><span class="nav-ico">'+ico('search')+'</span> Search</button>';
   if(App.identity && isBoss()){
     h+='<button class="nav-link'+((App.view==='team'||App.view==='staff')?' active':'')+'" data-action="nav" data-view="team"><span class="nav-ico">'+ico('team')+'</span> Team</button>';
-    h+='<button class="nav-link'+(App.view==='analytics'?' active':'')+'" data-action="nav" data-view="analytics"><span class="nav-ico">📊</span> Analytics</button>';
-    h+='<button class="nav-link'+(App.view==='leaderboard'?' active':'')+'" data-action="nav" data-view="leaderboard"><span class="nav-ico">🏆</span> Leaderboard</button>';
+    h+='<button class="nav-link'+((App.view==='performance'||App.view==='analytics'||App.view==='leaderboard')?' active':'')+'" data-action="nav" data-view="performance"><span class="nav-ico">📈</span> Performance</button>';
     h+='<button class="nav-link'+(App.view==='weekly'?' active':'')+'" data-action="nav" data-view="weekly"><span class="nav-ico">🗓️</span> Weekly Report</button>';
   }
   h+='<button class="nav-link'+(App.view==='settings'?' active':'')+'" data-action="nav" data-view="settings"><span class="nav-ico">'+ico('gear')+'</span> Settings</button>';
@@ -2378,11 +2393,10 @@ function navigate(view,dept,cat){
     else if(view==='search') renderSearch('');
     else if(view==='settings') renderSettings();
     else if(view==='team') renderTeam();
-    else if(view==='analytics') renderAnalytics();
+    else if(view==='performance'||view==='analytics'||view==='leaderboard') renderPerformance();
     else if(view==='assigned') renderAssignedByMe();
     else if(view==='audit') renderActivityLog();
     else if(view==='calendar') renderCalendar();
-    else if(view==='leaderboard') renderLeaderboard();
     else if(view==='weekly') renderWeekly();
   });
   window.scrollTo(0,0);
@@ -3700,6 +3714,80 @@ function renderMyTasks(){
 }
 function myTaskFilter(f){ App._myFilter=f; renderMyTasks(); }
 
+/* ===== PERFORMANCE (Leaderboard + Analytics merged) ===== */
+function fmtDur(ms){ if(!ms||ms<0) return '—'; if(ms<3600000) return Math.max(1,Math.round(ms/60000))+'m'; var h=ms/3600000; if(h<48) return Math.round(h)+'h'; return Math.round(h/24)+'d'; }
+function last7Days(){ var out=[]; for(var i=6;i>=0;i--){ var d=new Date(); d.setDate(d.getDate()-i); out.push({key:toLocalInput(d).slice(0,10), label:d.toLocaleDateString('en-GB',{weekday:'short'})}); } return out; }
+function completedPerDay(tasks){ var days=last7Days(), map={}; days.forEach(function(d){map[d.key]=0;}); (tasks||[]).forEach(function(t){ if(t.status==='Completed'&&t.completedTimestamp){ var k=toLocalInput(new Date(t.completedTimestamp)).slice(0,10); if(k in map) map[k]++; } }); return days.map(function(d){ return {label:d.label, value:map[d.key]}; }); }
+function svgBarChart(data, color){
+  var n=data.length||1, w=Math.max(240, n*46), h=140, padX=16, padTop=22, padBot=26;
+  var max=Math.max(1, data.reduce(function(m,d){return Math.max(m,d.value);},0));
+  var slot=(w-padX*2)/n, bw=Math.min(30, slot-14);
+  var bars=data.map(function(d,i){ var bh=Math.round((d.value/max)*(h-padTop-padBot)); var x=padX+i*slot+(slot-bw)/2; var y=h-padBot-bh;
+    return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(3,bh)+'" rx="5" fill="'+color+'"/>'+
+      '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#5b6675">'+d.value+'</text>'+
+      '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(h-8)+'" text-anchor="middle" font-size="10" fill="#98a2b3">'+esc(d.label)+'</text>';
+  }).join('');
+  return '<div class="chart-wrap"><svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="xMidYMid meet">'+bars+'</svg></div>';
+}
+function renderPerformance(){
+  App.view='performance'; buildSidebar();
+  var c=document.getElementById('content');
+  if(!isBoss()){ c.innerHTML='<div class="cat-head"><div class="cat-title">Performance</div><div class="cat-sub">Admins & managers only.</div></div>'; return; }
+  if(App._lbCache) paintPerformance(App._lbCache); else c.innerHTML=skelHead('Performance')+skelList(5);
+  apiCall('teamStats',{}).then(function(res){ if(res&&res.ok){ App._lbCache=res.staff||[]; if(App.view==='performance') paintPerformance(App._lbCache); } else if(!App._lbCache) showContentError_((res&&res.error)||'Could not load.'); }).catch(function(e){ if(!App._lbCache) showContentError_(e.message||'Could not load.'); });
+}
+function paintPerformance(staff){
+  var c=document.getElementById('content'); if(!c) return;
+  var tasks=App._allTasks||[]; var now=Date.now();
+  var avgById={}, cntById={}, clientLoad={}, deptLoad={}, totOnTime=0, totOverdue=0, totCompleted=0;
+  tasks.forEach(function(t){
+    clientLoad[t.clientName||'—']=(clientLoad[t.clientName||'—']||0)+1;
+    deptLoad[t.department||'—']=(deptLoad[t.department||'—']||0)+1;
+    if(t.status==='Completed'){ totCompleted++;
+      if(t.createdTimestamp&&t.completedTimestamp){ var ms=new Date(t.completedTimestamp)-new Date(t.createdTimestamp); if(ms>=0){ avgById[t.ownerId]=(avgById[t.ownerId]||0)+ms; cntById[t.ownerId]=(cntById[t.ownerId]||0)+1; } }
+      if(t.dueDate&&t.completedTimestamp && new Date(t.completedTimestamp)<=new Date(t.dueDate)) totOnTime++;
+    } else if(t.dueDate && new Date(t.dueDate).getTime()<now && t.status!=='Completed'){ totOverdue++; }
+  });
+  var rows=staff.slice().map(function(s){ s._score=Math.round(scoreOf(s)); s._otRate=s.completed?Math.round(s.onTime/s.completed*100):0; s._avg=cntById[s.userId]?(avgById[s.userId]/cntById[s.userId]):0; return s; }).sort(function(a,b){return b._score-a._score;});
+  var maxS=Math.max(1, rows.reduce(function(m,s){return Math.max(m,s._score);},0));
+  var h='<div class="cat-head"><div class="cat-title">📈 Performance</div><div class="cat-sub">Team ranking, delivery quality & workload — live</div></div>';
+  // 1 — LEADERBOARD
+  h+='<div class="perf-sec-t">🏆 Leaderboard</div>';
+  if(rows.length>=3){ var top=rows.slice(0,3); var order=[top[1],top[0],top[2]];
+    h+='<div class="podium">'+order.map(function(s){ var place=(s===top[0]?1:(s===top[1]?2:3)); return '<div class="pod pod'+place+'"><div class="pod-medal">'+(place===1?'🥇':place===2?'🥈':'🥉')+'</div><div class="pod-av">'+esc(initials(s.name))+'</div><div class="pod-name">'+esc(s.name)+'</div><div class="pod-score">'+s._score+'<small> pts</small></div><div class="pod-sub">'+s.completed+' done · '+s._otRate+'% on-time</div></div>'; }).join('')+'</div>';
+  }
+  h+='<div class="lb-list">';
+  rows.forEach(function(s,i){ var medal=i===0?'🥇':(i===1?'🥈':(i===2?'🥉':'<span class="lb-rank">'+(i+1)+'</span>')); var band=i<Math.ceil(rows.length/3)?'good':(i>=Math.floor(rows.length*2/3)?'low':'mid'); var recent=s.lastActive&&(Date.now()-new Date(s.lastActive).getTime())<3*86400000;
+    h+='<div class="lb-card '+band+'"><div class="lb-medal">'+medal+'</div><div class="lb-main"><div class="lb-name">'+esc(s.name)+' <span class="lb-role">'+esc(s.role)+'</span>'+(recent?'<span class="lb-live">● active</span>':'')+'</div><div class="lb-bar"><span style="width:'+Math.round(s._score/maxS*100)+'%"></span></div><div class="lb-metrics"><span>✅ '+s.completed+' done</span><span>⏱ '+s._otRate+'% on-time</span><span>⚡ '+(s._avg?('avg '+fmtDur(s._avg)):'—')+'</span>'+(s.overdue?'<span class="lb-over">🚩 '+s.overdue+' overdue</span>':'')+'</div></div><div class="lb-score">'+s._score+'<small>pts</small></div></div>';
+  });
+  h+='</div>';
+  // 2 — DELIVERY & QUALITY
+  h+='<div class="perf-sec-t">📊 Delivery & quality</div>';
+  var otPct = totCompleted? Math.round(totOnTime/totCompleted*100):0;
+  var fastest=rows.filter(function(s){return s._avg;}).sort(function(a,b){return a._avg-b._avg;})[0];
+  var slowest=rows.filter(function(s){return s._avg;}).sort(function(a,b){return b._avg-a._avg;})[0];
+  h+='<div class="stats">';
+  h+='<div class="stat st-done"><div class="stat-v">'+totCompleted+'</div><div class="stat-l">Completed</div></div>';
+  h+='<div class="stat st-total"><div class="stat-v">'+otPct+'%</div><div class="stat-l">On-time</div></div>';
+  h+='<div class="stat st-over"><div class="stat-v">'+totOverdue+'</div><div class="stat-l">Overdue now</div></div>';
+  h+='<div class="stat st-pending"><div class="stat-v" style="font-size:.95rem;line-height:1.3">'+(fastest?esc(fastest.name.split(' ')[0]):'—')+'</div><div class="stat-l">Fastest closer</div></div>';
+  h+='</div>';
+  h+='<div class="an-card"><div class="an-h">Who delivers — on-time %, speed & overdue</div>';
+  if(!rows.length) h+='<div class="an-empty">No staff data yet.</div>';
+  rows.forEach(function(s){
+    h+='<div class="perf-row"><div class="perf-name">'+esc(s.name)+(String(slowest&&slowest.userId)===String(s.userId)&&rows.length>1&&s._avg?' <span class="perf-tag slow">🐢 slowest</span>':'')+(String(fastest&&fastest.userId)===String(s.userId)&&s._avg?' <span class="perf-tag fast">⚡ fastest</span>':'')+'</div><div class="perf-ot"><span style="width:'+s._otRate+'%"></span></div><div class="perf-nums"><b>'+s._otRate+'%</b> on-time <span class="mt-sep">·</span> '+s.completed+' done <span class="mt-sep">·</span> ⚡'+(s._avg?fmtDur(s._avg):'—')+(s.overdue?' <span class="lb-over">🚩'+s.overdue+'</span>':'')+'</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="an-card"><div class="an-h">📈 Completed — last 7 days</div>'+svgBarChart(completedPerDay(tasks), '#0fb47f')+'</div>';
+  // 3 — BUSIEST
+  h+='<div class="perf-sec-t">👥 Busiest</div>';
+  var clients=Object.keys(clientLoad).map(function(k){return {n:k,c:clientLoad[k]};}).sort(function(a,b){return b.c-a.c;}).slice(0,10);
+  if(clients.length){ var maxC=Math.max(1,clients[0].c); h+='<div class="an-card"><div class="an-h">Busiest clients</div>'; clients.forEach(function(cl){ h+='<div class="an-row"><div class="an-name">'+esc(cl.n)+'</div><div class="an-track"><span class="an-seg an-cli" style="width:'+Math.round(cl.c/maxC*100)+'%"></span></div><div class="an-val">'+cl.c+'</div></div>'; }); h+='</div>'; }
+  var depts=Object.keys(deptLoad).map(function(k){return {n:k,c:deptLoad[k]};}).sort(function(a,b){return b.c-a.c;}).slice(0,10);
+  if(depts.length){ var maxD=Math.max(1,depts[0].c); h+='<div class="an-card"><div class="an-h">Busiest departments</div>'; depts.forEach(function(cl){ h+='<div class="an-row"><div class="an-name">'+esc(cl.n)+'</div><div class="an-track"><span class="an-seg an-dep" style="width:'+Math.round(cl.c/maxD*100)+'%"></span></div><div class="an-val">'+cl.c+'</div></div>'; }); h+='</div>'; }
+  c.innerHTML=h;
+}
+
 /* ===== #16 LEADERBOARD ===== */
 function renderLeaderboard(){
   App.view='leaderboard'; buildSidebar();
@@ -3743,13 +3831,28 @@ function renderWeekly(){
 function paintWeekly(staff){
   var c=document.getElementById('content'); if(!c) return;
   var rows=staff.slice().sort(function(a,b){return b.completed7-a.completed7;});
-  var tc=0,ta=0,to=0; rows.forEach(function(s){ tc+=s.completed7; ta+=s.assigned7; to+=s.overdue; });
+  var tc=0,ta=0,to=0,ot7=0; rows.forEach(function(s){ tc+=s.completed7; ta+=s.assigned7; to+=s.overdue; ot7+=s.onTime7||0; });
+  var teamOt = tc? Math.round(ot7/tc*100):0;
+  var star = rows[0];
   var today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  var txt='📋 WEEKLY REPORT · '+today+' (last 7 days)\n\nTeam: '+tc+' completed · '+ta+' newly assigned · '+to+' currently overdue\n\n';
-  var h='<div class="cat-head"><div class="cat-title">🗓️ Weekly Report</div><div class="cat-sub">Last 7 days · '+tc+' completed · '+ta+' assigned · '+to+' overdue now</div><div class="cat-actions"><button class="btn btn-primary btn-sm" data-action="copy-weekly">Copy report</button></div></div>';
+  var perDay=completedPerDay(App._allTasks||[]); var busiestDay=perDay.slice().sort(function(a,b){return b.value-a.value;})[0];
+  var txt='📋 WEEKLY REPORT · '+today+' (last 7 days)\n\nTeam: '+tc+' completed · '+ta+' newly assigned · '+teamOt+'% on-time · '+to+' currently overdue\n'+(star?'Top performer: '+star.name+' ('+star.completed7+' completed)\n':'')+'\n';
+  var h='<div class="cat-head"><div class="cat-title">🗓️ Weekly Report</div><div class="cat-sub">Last 7 days · a snapshot of team output</div><div class="cat-actions"><button class="btn btn-primary btn-sm" data-action="copy-weekly">Copy report</button></div></div>';
+  // KPI row
+  h+='<div class="stats">';
+  h+='<div class="stat st-done"><div class="stat-v">'+tc+'</div><div class="stat-l">Completed</div></div>';
+  h+='<div class="stat st-total"><div class="stat-v">'+teamOt+'%</div><div class="stat-l">On-time</div></div>';
+  h+='<div class="stat st-pending"><div class="stat-v">'+ta+'</div><div class="stat-l">New assigned</div></div>';
+  h+='<div class="stat st-over"><div class="stat-v">'+to+'</div><div class="stat-l">Overdue now</div></div>';
+  h+='</div>';
+  // Chart
+  h+='<div class="an-card"><div class="an-h">📈 Completed each day'+(busiestDay&&busiestDay.value?' · busiest: '+esc(busiestDay.label):'')+'</div>'+svgBarChart(perDay,'#0fb47f')+'</div>';
+  // Per-staff bars
+  var maxDone=Math.max(1, rows.reduce(function(m,s){return Math.max(m,s.completed7);},0));
   h+='<div class="an-card"><div class="an-h">Per staff (last 7 days)</div>';
-  rows.forEach(function(s){ var line=s.name+': '+s.completed7+' done, '+s.assigned7+' assigned, '+(s.completed?Math.round(s.onTime7/Math.max(1,s.completed7)*100):0)+'% on-time'+(s.overdue?', '+s.overdue+' overdue':''); txt+='• '+line+'\n';
-    h+='<div class="an-row"><div class="an-name">'+esc(s.name)+(s.overdue?' <span class="esc-tag">🚩'+s.overdue+'</span>':'')+'</div><div class="an-val" style="grid-column:2/4">✅ '+s.completed7+' done · 📤 '+s.assigned7+' assigned · ⏱ '+(s.completed7?Math.round(s.onTime7/s.completed7*100):0)+'% on-time</div></div>';
+  if(!rows.length) h+='<div class="an-empty">No staff data yet.</div>';
+  rows.forEach(function(s){ var ot=s.completed7?Math.round(s.onTime7/s.completed7*100):0; txt+='• '+s.name+': '+s.completed7+' done, '+s.assigned7+' assigned, '+ot+'% on-time'+(s.overdue?', '+s.overdue+' overdue':'')+'\n';
+    h+='<div class="perf-row"><div class="perf-name">'+esc(s.name)+(s===star&&s.completed7?' <span class="perf-tag fast">⭐ top</span>':'')+(s.overdue?' <span class="lb-over">🚩'+s.overdue+'</span>':'')+'</div><div class="perf-ot done"><span style="width:'+Math.round(s.completed7/maxDone*100)+'%"></span></div><div class="perf-nums"><b>'+s.completed7+'</b> done <span class="mt-sep">·</span> 📤 '+s.assigned7+' assigned <span class="mt-sep">·</span> ⏱ '+ot+'% on-time</div></div>';
   });
   h+='</div>';
   App._weeklyTxt=txt;
@@ -3766,7 +3869,8 @@ function refreshView(){
   else if(App.view==='list') renderList();
   else if(App.view==='search') renderSearch(document.getElementById('search').value);
   else if(App.view==='settings') renderSettings();
-  else if(App.view==='analytics') renderAnalytics();
+  else if(App.view==='performance') renderPerformance();
+  else if(App.view==='weekly') renderWeekly();
   else if(App.view==='calendar') renderCalendar();
 }
 
