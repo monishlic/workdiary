@@ -273,6 +273,24 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .remark-err.show{display:block}
 #remark-modal .confirm-box{text-align:left}
 #remark-modal #remark-text{margin-top:2px}
+/* Snooze modal */
+#snooze-modal .confirm-box{ text-align:left; }
+.snooze-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.snooze-opts .btn{ justify-content:space-between; display:flex; align-items:center; width:100%; font-weight:600; }
+.snooze-opts .sz-sub{ color:var(--text-muted); font-weight:500; font-size:.8rem; }
+.snooze-custom{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:12px; }
+.snooze-custom .sz-or{ font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); width:100%; }
+.snooze-custom .dt-row{ flex:1; min-width:0; }
+.d-status.snz{ background:#e7e9ff; color:#4b3fd8; }
+/* Aging heat on task cards */
+.card.hot{ box-shadow:-4px 0 0 rgba(239,68,68,calc(.32 + var(--heat,0)*.68)) inset; background-image:linear-gradient(90deg, rgba(239,68,68,calc(var(--heat,0)*.09)), transparent 42%); }
+.card.done.hot{ box-shadow:none; background-image:none; }
+/* Zero-pending streak chip */
+.streak-chip{ display:inline-block; margin-left:10px; background:rgba(255,255,255,.20); color:#fff; font-weight:700; font-size:.76rem; padding:3px 11px; border-radius:999px; vertical-align:middle; }
+/* Confetti */
+.confetti-layer{ position:fixed; inset:0; pointer-events:none; z-index:3000; overflow:hidden; }
+.confetti-bit{ position:absolute; top:-16px; border-radius:2px; opacity:.92; animation-name:confFall; animation-timing-function:cubic-bezier(.3,.6,.5,1); animation-fill-mode:forwards; }
+@keyframes confFall{ 0%{ transform:translateY(0) rotate(0deg); } 100%{ transform:translateY(106vh) rotate(680deg); opacity:.5; } }
 
 /* Settings */
 .set-sec{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
@@ -321,8 +339,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .pill-stat.pend{background:var(--accent-soft);color:var(--accent)}
 .pill-stat.don{background:var(--success-bg);color:var(--success-dark)}
 .btn-sm{padding:6px 12px;font-size:.76rem}
-.rem-item{padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;background:var(--bg-card)}
-.rem-item.read{opacity:.55}
+.rem-item{padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;background:var(--bg-card);display:flex;gap:10px;align-items:flex-start}
+.rem-item.read{opacity:.62}
+.rem-main{flex:1;min-width:0}
+.rem-dot{width:9px;height:9px;border-radius:50%;background:transparent;flex:0 0 auto;margin-top:6px}
+.rem-dot.on{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.rem-foot{margin-top:8px}
+.rem-toggle{background:none;border:none;color:var(--text-muted);font:inherit;font-size:.76rem;font-weight:600;cursor:pointer;padding:2px 0}
+.rem-toggle:hover{color:var(--accent)}
+.rem-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.rem-count{font-size:.82rem;font-weight:700;color:var(--text-sec)}
 .rem-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:10px}
 .rem-from{font-size:.82rem;font-weight:700}
 .rem-time{font-size:.72rem;color:var(--text-muted);white-space:nowrap}
@@ -505,9 +531,11 @@ body{ -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; lett
   body[data-theme="dark"] #header{ background:rgba(21,29,46,.72); }
 }
 
-/* Sidebar: inset pills + refined active state */
-.nav-link{ border-radius:11px; margin:2px 10px; padding:9px 14px; width:auto; }
-.nav-link.active{ background:rgba(255,255,255,.12); color:#fff; box-shadow:inset 2px 0 0 var(--accent); }
+/* Sidebar: lifted, full-width-clickable pills */
+.nav-link{ border-radius:12px; margin:3px 8px; padding:10px 14px; width:calc(100% - 16px); box-sizing:border-box; transition:background .13s,color .13s,transform .14s,box-shadow .18s; }
+.nav-link:hover{ transform:translateY(-1px); box-shadow:0 7px 16px -7px rgba(0,0,0,.45); }
+.nav-link.active{ background:rgba(255,255,255,.13); color:#fff; box-shadow:0 9px 22px -8px rgba(59,130,246,.6); }
+.dept-header{ box-shadow:0 4px 12px -8px rgba(0,0,0,.5); }
 
 /* Modals: frosted overlay + refined entrance */
 .overlay{ background:rgba(11,18,32,.34); -webkit-backdrop-filter:blur(10px) saturate(120%); backdrop-filter:blur(10px) saturate(120%); }
@@ -744,6 +772,17 @@ body[data-theme="dark"]{ background:
 .slate-input{ cursor:text; z-index:30; box-shadow:0 18px 36px -10px rgba(80,72,150,.5); user-select:text; -webkit-user-select:text; }
 .slate-input textarea{ width:100%; border:none; background:transparent; resize:none; font:inherit; font-size:.9rem; color:#3a3552; outline:none; }
 .slate-note.sn-removing{ animation:snPeel .26s ease forwards; }
+/* Slate multi-select mode */
+.slate-board.selmode .slate-note{ cursor:pointer; }
+.slate-board.selmode .slate-note .sn-actions{ display:none; }
+.slate-note .sn-check{ display:none; position:absolute; top:6px; left:6px; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.9); border:2px solid var(--accent); color:var(--accent); align-items:center; justify-content:center; font-size:.72rem; font-weight:800; line-height:1; box-shadow:0 2px 6px rgba(80,72,150,.25); }
+.slate-board.selmode .slate-note .sn-check{ display:flex; }
+.slate-note.sel{ box-shadow:0 0 0 3px var(--accent), 0 14px 26px -8px rgba(80,72,150,.45); }
+.slate-note.sel .sn-check{ background:var(--accent); color:#fff; }
+.sel-bar{ position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:160; display:flex; align-items:center; gap:8px; background:var(--glass-strong); -webkit-backdrop-filter:blur(20px) saturate(180%); backdrop-filter:blur(20px) saturate(180%); border:1px solid var(--glass-brd); border-radius:16px; padding:9px 11px; box-shadow:var(--shadow-md); animation:selBarIn .2s cubic-bezier(.2,.7,.3,1) both; }
+.sel-bar .sel-n{ font-weight:700; font-size:.88rem; color:var(--text); padding:0 6px; }
+@keyframes selBarIn{ from{ opacity:0; transform:translate(-50%,14px); } to{ opacity:1; transform:translate(-50%,0); } }
+@media(max-width:620px){ .sel-bar{ left:12px; right:12px; bottom:14px; transform:none; justify-content:center; } @keyframes selBarIn{ from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:none;} } }
 @keyframes snPop{ from{ opacity:0; transform:rotate(var(--rot,0deg)) scale(.7); } to{ opacity:1; transform:rotate(var(--rot,0deg)) scale(1); } }
 @keyframes snPeel{ to{ opacity:0; transform:rotate(var(--rot,0deg)) scale(.55) translateY(-10px); } }
 /* Archive list */
@@ -752,16 +791,28 @@ body[data-theme="dark"]{ background:
 .arch-main{ flex:1; min-width:0; }
 .arch-text{ font-size:.9rem; word-break:break-word; }
 .arch-meta{ font-size:.72rem; color:var(--text-muted); margin-top:2px; }
-/* Desktop: sidebar is always fully expanded and sits beside the content (no hover-overlay). */
+/* Desktop: collapsed icon rail that expands on hover and closes when the cursor leaves. */
 .nav-ico{ font-size:1.02rem; }
 @media(min-width:861px){
-  #sidebar{ width:var(--sb-width); }
-  #main{ margin-left:var(--sb-width); }
+  #sidebar{ width:74px; z-index:120; transition:width .24s cubic-bezier(.2,.7,.3,1), box-shadow .24s; }
+  #sidebar:hover{ width:var(--sb-width); box-shadow:24px 0 60px -22px rgba(80,72,150,.5); }
+  #main{ margin-left:74px; }
+  /* Collapsed rail: icons only, full-row click target, labels/badges hidden */
+  #sidebar:not(:hover) .sb-brand{ opacity:0; }
+  #sidebar:not(:hover) .nav-link{ font-size:0; justify-content:center; margin:3px 6px; width:calc(100% - 12px); padding:11px 0; }
+  #sidebar:not(:hover) .nav-link .nav-ico{ font-size:1.18rem; }
+  #sidebar:not(:hover) .nav-badge{ display:none; }
+  #sidebar:not(:hover) .dept-group{ margin:6px 6px 2px; }
+  #sidebar:not(:hover) .dept-header{ justify-content:center; padding:11px 0; }
+  #sidebar:not(:hover) .dept-header .dept-name, #sidebar:not(:hover) .dept-header .dept-count, #sidebar:not(:hover) .dept-header .chev{ display:none; }
+  #sidebar:not(:hover) .dept-cats{ display:none; }
 }
 
 /* ---- Voice assistant ---- */
-.assistant{ position:fixed; right:24px; bottom:24px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
-.asst-ball{ width:58px; height:58px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#8e7bff,#6aa8ff); color:#fff; font-size:1.5rem; box-shadow:0 16px 34px -8px rgba(124,108,246,.75); transition:transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s; align-self:flex-end; }
+/* Container itself lets clicks pass through — only the ball and the OPEN menu are clickable.
+   (Otherwise its tall invisible box above the ball swallowed clicks on nearby buttons.) */
+.assistant{ position:fixed; right:24px; bottom:24px; z-index:150; display:flex; flex-direction:column; align-items:flex-end; gap:10px; pointer-events:none; }
+.asst-ball{ width:58px; height:58px; border-radius:50%; border:none; cursor:pointer; pointer-events:auto; background:linear-gradient(135deg,#8e7bff,#6aa8ff); color:#fff; font-size:1.5rem; box-shadow:0 16px 34px -8px rgba(124,108,246,.75); transition:transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .2s; align-self:flex-end; }
 .asst-ball:hover{ transform:translateY(-2px) scale(1.05); }
 .asst-ball:active{ transform:scale(.95); }
 .asst-menu{ display:flex; flex-direction:column; gap:8px; opacity:0; transform:translateY(12px) scale(.94); pointer-events:none; transition:opacity .18s ease, transform .2s cubic-bezier(.2,.7,.3,1); }
@@ -770,6 +821,74 @@ body[data-theme="dark"]{ background:
 .asst-item:hover{ transform:translateX(-3px); box-shadow:var(--shadow-md); }
 .asst-item .ai{ font-size:1.05rem; }
 @media(max-width:620px){ .assistant{ right:16px; bottom:16px; } }
+/* ===== Team chat ===== */
+body.slate-selecting .assistant, body.slate-selecting .chat-fab{ display:none; }
+.chat-fab{ position:fixed; right:92px; bottom:24px; z-index:150; width:52px; height:52px; border-radius:50%; border:none; cursor:pointer; background:linear-gradient(135deg,#4f7cff,#7166f0); color:#fff; font-size:1.35rem; box-shadow:0 14px 30px -8px rgba(79,124,255,.7); transition:transform .16s cubic-bezier(.2,.7,.3,1); }
+.chat-fab:hover{ transform:translateY(-2px) scale(1.06); }
+.chat-fab-badge{ position:absolute; top:-3px; right:-3px; min-width:19px; height:19px; padding:0 5px; border-radius:10px; background:var(--danger); color:#fff; font-size:.66rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,.3); }
+@media(max-width:620px){ .chat-fab{ right:16px; bottom:84px; } }
+.chat-panel{ position:fixed; top:0; right:0; bottom:0; width:380px; max-width:92vw; z-index:170; background:var(--glass-strong); -webkit-backdrop-filter:blur(26px) saturate(180%); backdrop-filter:blur(26px) saturate(180%); border-left:1px solid var(--glass-brd); box-shadow:-24px 0 60px -24px rgba(80,72,150,.5); display:flex; flex-direction:column; animation:chatIn .24s cubic-bezier(.2,.8,.3,1) both; }
+.chat-panel.hidden{ display:none; }
+@keyframes chatIn{ from{ transform:translateX(30px); opacity:.4; } to{ transform:none; opacity:1; } }
+.chat-topbar{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; }
+.chat-title{ font-weight:800; font-size:1.05rem; color:var(--text); }
+.chat-x{ background:rgba(120,110,175,.12); border:none; color:var(--text); width:30px; height:30px; border-radius:9px; font-size:20px; cursor:pointer; }
+.chat-tabrow{ display:flex; gap:6px; padding:0 14px 8px; }
+.chat-tab{ flex:1; border:1px solid var(--glass-line); background:rgba(255,255,255,.5); border-radius:10px; padding:7px; font:inherit; font-size:.84rem; font-weight:700; color:var(--text-sec); cursor:pointer; position:relative; }
+.chat-tab.on{ background:var(--accent-soft); color:var(--accent); border-color:transparent; }
+.chat-tab .chat-dot{ position:absolute; top:6px; right:10px; width:8px; height:8px; border-radius:50%; background:var(--danger); }
+.chat-chips{ display:flex; gap:6px; overflow-x:auto; padding:2px 14px 10px; }
+.chat-chip{ flex:0 0 auto; border:1px solid var(--glass-line); background:rgba(255,255,255,.55); border-radius:999px; padding:5px 11px; font:inherit; font-size:.78rem; font-weight:600; color:var(--text-sec); cursor:pointer; display:flex; align-items:center; gap:6px; }
+.chat-chip.on{ background:var(--accent); color:#fff; border-color:transparent; }
+.chat-badge2{ background:var(--danger); color:#fff; border-radius:999px; font-size:.66rem; font-weight:800; min-width:16px; height:16px; padding:0 4px; display:inline-flex; align-items:center; justify-content:center; }
+.chat-chip.on .chat-badge2{ background:rgba(255,255,255,.9); color:var(--accent); }
+.chat-body{ flex:1; overflow-y:auto; padding:8px 14px 12px; display:flex; flex-direction:column; gap:2px; }
+.chat-empty{ color:var(--text-muted); text-align:center; padding:30px 12px; font-size:.88rem; }
+.chat-msg{ max-width:82%; align-self:flex-start; margin-bottom:9px; }
+.chat-msg.mine{ align-self:flex-end; text-align:right; }
+.chat-from{ font-size:.72rem; font-weight:700; color:var(--accent); margin-bottom:2px; padding-left:4px; }
+.chat-bubble{ display:inline-block; background:#fff; border:1px solid var(--glass-line); padding:8px 12px; border-radius:14px; border-top-left-radius:5px; font-size:.9rem; color:var(--text); line-height:1.4; white-space:pre-wrap; word-break:break-word; text-align:left; }
+.chat-msg.mine .chat-bubble{ background:linear-gradient(135deg,#4f7cff,#7166f0); color:#fff; border-color:transparent; border-radius:14px; border-top-right-radius:5px; }
+.chat-time{ font-size:.66rem; color:var(--text-muted); margin-top:3px; padding:0 4px; }
+.chat-taskchip{ display:inline-block; margin-bottom:4px; background:var(--warning-bg); color:var(--warning-dark); border:1px solid rgba(245,158,11,.35); border-radius:9px; padding:3px 9px; font-size:.74rem; font-weight:700; cursor:pointer; }
+.chat-reply{ background:none; border:none; color:var(--text-muted); font-size:.68rem; font-weight:600; cursor:pointer; padding:2px 4px; }
+.chat-reply:hover{ color:var(--accent); }
+.chat-people{ display:flex; flex-direction:column; gap:4px; }
+.chat-person{ display:flex; align-items:center; gap:10px; width:100%; border:none; background:rgba(255,255,255,.5); border-radius:12px; padding:9px 11px; cursor:pointer; text-align:left; }
+.chat-person:hover{ background:rgba(255,255,255,.85); }
+.cp-av{ width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#8e7bff,#6aa8ff); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.cp-main{ flex:1; min-width:0; }
+.cp-name{ font-weight:700; font-size:.9rem; color:var(--text); }
+.cp-role{ font-size:.68rem; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:6px; }
+.cp-last{ font-size:.78rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cp-none{ font-style:italic; }
+.cp-lock{ margin-left:auto; font-size:.7rem; color:var(--text-muted); }
+.chat-dmhead{ display:flex; align-items:center; gap:8px; padding:2px 14px 8px; font-weight:700; color:var(--text); }
+.chat-back{ background:rgba(120,110,175,.12); border:none; width:28px; height:28px; border-radius:8px; font-size:18px; cursor:pointer; color:var(--text); }
+.chat-compose{ border-top:1px solid var(--glass-line); padding:10px 12px; background:rgba(255,255,255,.45); }
+.chat-refbar{ background:var(--warning-bg); color:var(--warning-dark); border-radius:9px; padding:5px 9px; font-size:.76rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.chat-refbar button{ margin-left:auto; background:none; border:none; color:var(--warning-dark); font-size:16px; cursor:pointer; }
+.chat-inrow{ display:flex; align-items:center; gap:8px; }
+.chat-attach{ background:rgba(120,110,175,.12); border:none; width:38px; height:38px; border-radius:11px; font-size:1.1rem; cursor:pointer; flex:0 0 auto; }
+.chat-inrow input{ flex:1; min-width:0; border:1px solid var(--glass-line); border-radius:11px; padding:10px 12px; font:inherit; font-size:.9rem; background:#fff; color:var(--text); outline:none; }
+.chat-send{ background:linear-gradient(135deg,#4f7cff,#7166f0); color:#fff; border:none; width:40px; height:40px; border-radius:11px; font-size:1.05rem; cursor:pointer; flex:0 0 auto; }
+.taskpick-list{ max-height:52vh; overflow-y:auto; display:flex; flex-direction:column; gap:4px; }
+.tp-item{ text-align:left; width:100%; border:1px solid var(--border); background:var(--bg-card); border-radius:11px; padding:9px 12px; cursor:pointer; }
+.tp-item:hover{ border-color:var(--accent); background:var(--accent-soft); }
+.tp-c{ font-weight:700; font-size:.9rem; color:var(--text); }
+.tp-m{ font-size:.76rem; color:var(--text-muted); margin-top:2px; }
+select[multiple].f-input{ height:auto; padding:4px; }
+select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
+#assign-repeat-detail{ border-left:2px solid var(--accent-soft); padding-left:10px; margin-top:4px; }
+/* Admin: manage departments */
+.dept-manage{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.dm-row{ display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.5); border:1px solid var(--border); border-radius:10px; padding:8px 11px; }
+.dm-name{ font-weight:700; font-size:.9rem; color:var(--text); flex:1; }
+.dm-cats{ font-size:.74rem; color:var(--text-muted); }
+.vis-list{ display:flex; flex-direction:column; gap:2px; max-height:40vh; overflow-y:auto; }
+[data-theme="dark"] .chat-bubble{ background:#1b2536; }
+[data-theme="dark"] .dm-row{ background:rgba(255,255,255,.06); }
+[data-theme="dark"] .chat-person,[data-theme="dark"] .chat-tab,[data-theme="dark"] .chat-chip{ background:rgba(255,255,255,.06); }
 /* Voice overlay */
 #voice-ov.overlay{ align-items:flex-start; justify-content:center; padding-top:12vh; }
 .voice-box{ background:var(--glass-strong); -webkit-backdrop-filter:blur(26px) saturate(180%); backdrop-filter:blur(26px) saturate(180%); border:1px solid var(--glass-brd); width:100%; max-width:560px; border-radius:20px; box-shadow:0 34px 90px -24px rgba(80,72,150,.55); padding:18px; }
@@ -835,10 +954,9 @@ body[data-theme="dark"]{ background:
     <div class="modal-h"><h3>Add Client</h3><button class="modal-x" data-action="close-modal" data-modal="add-modal">&times;</button></div>
     <div class="modal-b">
       <div class="row2">
-        <div class="combo">
+        <div>
           <label class="f-label">Department <span class="req">*</span></label>
-          <input type="text" id="add-dept" class="f-input combo-input" data-combo-type="dept" data-box="dept-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60">
-          <div id="dept-sugg" class="sugg hidden"></div>
+          <select id="add-dept" class="f-input"></select>
         </div>
         <div class="combo">
           <label class="f-label">Category <span class="req">*</span></label>
@@ -871,14 +989,14 @@ body[data-theme="dark"]{ background:
       <label class="f-label">Assign to <span class="req">*</span></label>
       <select id="assign-to" class="f-input"></select>
       <div class="row2" style="margin-top:4px">
-        <div class="combo"><label class="f-label">Department <span class="req">*</span></label><input type="text" id="assign-dept" class="f-input combo-input" data-combo-type="dept" data-box="assign-dept-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-dept-sugg" class="sugg hidden"></div></div>
+        <div><label class="f-label">Department <span class="req">*</span></label><select id="assign-dept" class="f-input"></select></div>
         <div class="combo"><label class="f-label">Category <span class="req">*</span></label><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
       </div>
       <label class="f-label">Client Name <span class="req">*</span></label>
       <input type="text" id="assign-client" class="f-input" maxlength="120" placeholder="e.g. Raul Shah" autocomplete="off">
       <label class="f-label">Priority</label>
       <select id="assign-priority" class="f-input"><option value="high">🔴 High / Urgent</option><option value="medium" selected>🟠 Medium</option><option value="low">🟢 Low</option></select>
-      <label class="f-label" style="margin-top:12px">Due Date &amp; Time <span class="opt">(optional)</span></label>
+      <label class="f-label" id="assign-due-label" style="margin-top:12px">Due Date &amp; Time <span class="opt">(optional)</span></label>
       <div class="dt-row"><input type="date" id="assign-due-d" class="f-input"><input type="time" id="assign-due-t" class="f-input"></div>
       <div class="due-presets">
         <button type="button" data-action="due-preset" data-when="today18">Today 6 PM</button>
@@ -889,6 +1007,14 @@ body[data-theme="dark"]{ background:
       </div>
       <label class="f-label" style="margin-top:12px">Repeat <span class="opt">(optional — a fresh copy appears when this one is completed)</span></label>
       <select id="assign-repeat" class="f-input"><option value="">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
+      <div id="assign-repeat-detail" style="display:none">
+        <div id="rp-weekly" style="display:none;margin-top:8px"><label class="f-label">Repeat on</label><select id="assign-repeat-dow" class="f-input"><option value="1">Every Monday</option><option value="2">Every Tuesday</option><option value="3">Every Wednesday</option><option value="4">Every Thursday</option><option value="5">Every Friday</option><option value="6">Every Saturday</option><option value="0">Every Sunday</option></select></div>
+        <div id="rp-monthly" style="display:none;margin-top:8px"><label class="f-label">Day of the month</label><select id="assign-repeat-dom" class="f-input"></select></div>
+        <label class="f-label" style="margin-top:10px">Repeat until <span class="opt">(the series ends after this date)</span></label>
+        <div class="dt-row"><input type="date" id="assign-repeat-end-d" class="f-input"><input type="time" id="assign-repeat-end-t" class="f-input"></div>
+      </div>
+      <label class="f-label" style="margin-top:12px">Loop others in <span class="opt">(optional — they get notified on updates &amp; completion)</span></label>
+      <select id="assign-loop" class="f-input" multiple size="4"></select>
       <label class="f-label" style="margin-top:12px">Reminders <span class="opt">(optional — pings the assignee at each time)</span></label>
       <div id="assign-reminders"></div>
       <button type="button" class="btn btn-ghost btn-sm" style="margin-top:6px" data-action="add-reminder-row" data-target="assign-reminders">+ Add reminder</button>
@@ -956,6 +1082,43 @@ body[data-theme="dark"]{ background:
   </div>
 </div>
 
+<!-- SNOOZE MODAL -->
+<div id="snooze-modal" class="overlay hidden">
+  <div class="modal confirm-box">
+    <div class="confirm-ico">😴</div>
+    <h3 id="snooze-title">Snooze task</h3>
+    <div class="confirm-body" style="margin-bottom:12px">Hide it now — it comes back on your list at the time you pick.</div>
+    <div class="snooze-opts">
+      <button class="btn btn-ghost" data-action="snooze-set" data-when="3h">🕒 Later today<span class="sz-sub">in 3 hours</span></button>
+      <button class="btn btn-ghost" data-action="snooze-set" data-when="tom9">🌅 Tomorrow<span class="sz-sub">9:00 AM</span></button>
+      <button class="btn btn-ghost" data-action="snooze-set" data-when="week">📅 Next week<span class="sz-sub">Mon 9:00 AM</span></button>
+    </div>
+    <div class="snooze-custom"><span class="sz-or">or pick a time</span><div class="dt-row"><input type="date" id="sz-d" class="f-input"><input type="time" id="sz-t" class="f-input"></div><button class="btn btn-primary btn-sm" data-action="snooze-set" data-when="custom">Set</button></div>
+    <div class="confirm-foot">
+      <button class="btn btn-ghost" data-action="close-modal" data-modal="snooze-modal">Cancel</button>
+      <button class="btn btn-ghost" id="sz-wake" data-action="snooze-wake" style="display:none">⏰ Wake now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD DEPARTMENT MODAL (admin) -->
+<div id="deptadd-modal" class="overlay hidden">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-h"><h3>Add department</h3><button class="modal-x" data-action="close-modal" data-modal="deptadd-modal">&times;</button></div>
+    <div class="modal-b">
+      <label class="f-label">Department name</label>
+      <input id="deptadd-name" class="f-input" placeholder="e.g. Health Insurance" maxlength="60" autocomplete="off" style="margin-bottom:14px">
+      <label class="f-label">Show it in the sidebar for…</label>
+      <div class="set-desc" style="margin:2px 0 8px">Everyone can still assign tasks to it. This only controls whose <b>sidebar</b> shows it.</div>
+      <div id="deptadd-staff" class="vis-list"></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" data-action="close-modal" data-modal="deptadd-modal">Cancel</button>
+      <button class="btn btn-primary" data-action="dept-add-create">Create department</button>
+    </div>
+  </div>
+</div>
+
 <!-- COMMAND PALETTE -->
 <div id="cmdk" class="overlay hidden">
   <div class="cmdk-box">
@@ -1014,9 +1177,9 @@ var FB = (function(){
   function isOverseer(){ var r=me().role; return (r==='Admin'||r==='Manager'); }
   function docsToArr(qs){ var out=[]; qs.forEach(function(d){ out.push(d.data()); }); return out; }
 
-  function addNotif(forUserId, fromName, message, taskUid, type){
+  function addNotif(forUserId, fromName, message, taskUid, type, link){
     var id=newId('N');
-    return col('notifs').doc(id).set({ reminderId:id, forUserId:String(forUserId), fromName:String(fromName||''), message:String(message||''), taskUid:String(taskUid||''), created:nowISO(), read:false, type:String(type||'reminder') });
+    return col('notifs').doc(id).set({ reminderId:id, forUserId:String(forUserId), fromName:String(fromName||''), message:String(message||''), taskUid:String(taskUid||''), created:nowISO(), read:false, type:String(type||'reminder'), link:String(link||'') });
   }
   function logAudit(action, taskId, client, detail){
     var id=newId('A'); var u=me();
@@ -1047,10 +1210,17 @@ var FB = (function(){
               var old=snap.exists?snap.data():null;
               t.ownerId=u.userId; t.ownerName=u.name;
               batch.set(col('tasks').doc(String(t.uid)), t, {merge:false});
-              if(t.assignedById && String(t.assignedById)!==String(t.ownerId)){
-                var oldStatus=old?old.status:'';
-                if(t.status==='Completed' && oldStatus!=='Completed') notifs.push([t.assignedById,u.name,u.name+' completed: '+t.clientName+' ('+t.category+')',t.uid,'completed']);
-                else if(t.status==='In Progress' && oldStatus!=='In Progress') notifs.push([t.assignedById,u.name,u.name+' started working on: '+t.clientName+' ('+t.category+')',t.uid,'status']);
+              var oldStatus=old?old.status:'';
+              var msg='', typ='';
+              if(t.status==='Completed' && oldStatus!=='Completed'){ msg=u.name+' completed: '+t.clientName+' ('+t.category+')'; typ='completed'; }
+              else if(t.status==='In Progress' && oldStatus!=='In Progress'){ msg=u.name+' started working on: '+t.clientName+' ('+t.category+')'; typ='status'; }
+              if(msg){
+                // Notify the assigner + everyone looped into the task (never the person who did it, never the owner-doer twice).
+                var recips={};
+                if(t.assignedById && String(t.assignedById)!==String(t.ownerId)) recips[String(t.assignedById)]=1;
+                (Array.isArray(t.loop)?t.loop:[]).forEach(function(id){ if(String(id)!==String(t.ownerId)) recips[String(id)]=1; });
+                delete recips[String(u.userId)];
+                Object.keys(recips).forEach(function(rid){ notifs.push([rid,u.name,msg,t.uid,typ]); });
               }
             });
           })).then(function(){ return batch.commit(); }).then(function(){
@@ -1068,11 +1238,11 @@ var FB = (function(){
           return col('users').doc(String(b.assigneeId)).get().then(function(s){
             if(!s.exists) throw new Error('Assignee not found.');
             var a=s.data(); var ts=nowISO(); var uid=genUid();
-            var task={ uid:uid, taskId:'AS-'+Date.now(), ownerId:a.userId, ownerName:a.name,
+            var task={ uid:uid, taskId:'AS-'+Date.now()+'-'+String(uid).slice(-5), ownerId:a.userId, ownerName:a.name,
               department:b.department, category:b.category, clientName:b.clientName, details:b.details||'',
               status:'Pending', dueDate:b.dueDate||'', followUpDate:b.followUpDate||'',
-              reminders:Array.isArray(b.reminders)?b.reminders:[], repeat:b.repeat||'', priority:b.priority||'medium',
-              checklist:Array.isArray(b.checklist)?b.checklist:[], links:Array.isArray(b.links)?b.links:[],
+              reminders:Array.isArray(b.reminders)?b.reminders:[], repeat:b.repeat||'', repeatDay:(b.repeatDay!=null?b.repeatDay:''), repeatUntil:b.repeatUntil||'', priority:b.priority||'medium',
+              checklist:Array.isArray(b.checklist)?b.checklist:[], links:Array.isArray(b.links)?b.links:[], loop:Array.isArray(b.loop)?b.loop:[],
               createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
               createdById:u.userId, createdByName:u.name, assignedById:u.userId, assignedByName:u.name, syncStatus:'SYNCED' };
             return col('tasks').doc(uid).set(task)
@@ -1123,11 +1293,80 @@ var FB = (function(){
           });
         }
 
+        case 'sendChat': {
+          if(!b.channel || !b.text) throw new Error('Missing message.');
+          var uc=me(); var mid=newId('M');
+          var msg={ id:mid, channel:String(b.channel), text:String(b.text).slice(0,2000), fromId:uc.userId, fromName:uc.name, taskRef:(b.taskRef||null), created:nowISO() };
+          return col('chat').doc(mid).set(msg).then(function(){
+            // Smart push: only a message that references a task pings that task's owner + assigner.
+            if(b.taskRef && b.taskRef.uid){
+              var tg={}; if(b.taskRef.ownerId) tg[String(b.taskRef.ownerId)]=1; if(b.taskRef.assignedById) tg[String(b.taskRef.assignedById)]=1; delete tg[String(uc.userId)];
+              return Promise.all(Object.keys(tg).map(function(tid){ return addNotif(tid, uc.name, uc.name+' asked about '+(b.taskRef.client||'a task')+': '+String(b.text).slice(0,80), b.taskRef.uid, 'chat', 'chan:'+b.channel); }));
+            }
+          }).then(function(){ return {ok:true, msg:msg}; });
+        }
+        case 'sendDM': {
+          if(!b.toId || !b.text) throw new Error('Missing message.');
+          var ud=me(); var did=newId('D');
+          return col('users').doc(String(b.toId)).get().then(function(s){
+            var toName=(s.exists?s.data().name:'')||b.toName||'';
+            var parties=[String(ud.userId), String(b.toId)].sort();
+            var dm={ id:did, text:String(b.text).slice(0,2000), fromId:ud.userId, fromName:ud.name, toId:String(b.toId), toName:toName, taskRef:(b.taskRef||null), created:nowISO(), parties:parties };
+            return col('dms').doc(did).set(dm)
+              .then(function(){ return addNotif(b.toId, ud.name, '💬 '+ud.name+': '+String(b.text).slice(0,90), (b.taskRef&&b.taskRef.uid)||'', 'chat', 'dm:'+ud.userId); })
+              .then(function(){ return {ok:true, dm:dm}; });
+          });
+        }
+
         case 'teamMembers': {
           return col('users').get().then(function(qs){
             var arr=docsToArr(qs).filter(function(u){ return u.active!==false; }).map(function(u){ return {userId:u.userId,name:u.name,role:u.role}; });
             return {ok:true, members:arr};
           });
+        }
+
+        case 'saveDepartments': {
+          if(!Array.isArray(b.departments)) throw new Error('Bad payload.');
+          return col('config').doc('app').set({ departments:b.departments, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
+        }
+        case 'addDepartment': {
+          if(!isOverseer()) throw new Error('Admins only.');
+          var dnm=String(b.name||'').trim(); if(!dnm) throw new Error('Department name is required.');
+          var grant=(Array.isArray(b.grantIds)?b.grantIds:[]).map(String);
+          return col('config').doc('app').get().then(function(s){
+            var c=s.exists?s.data():{}; var deps=Array.isArray(c.departments)?c.departments.slice():[];
+            if(deps.some(function(d){ return String(d.department).toLowerCase()===dnm.toLowerCase(); })) throw new Error('That department already exists.');
+            var allNames=deps.map(function(d){ return d.department; });
+            deps.push({department:dnm, categories:[]});
+            return col('users').get().then(function(us){
+              var batch=db.batch();
+              us.forEach(function(ud){ var u=ud.data(); if(u.active===false) return;
+                var allowed=Array.isArray(u.allowedDepartments)?u.allowedDepartments.slice():null;
+                if(!allowed || !allowed.length) allowed=allNames.slice();   // seed "see-all" staff to an explicit list of current depts
+                if(grant.indexOf(String(u.userId))!==-1 && allowed.indexOf(dnm)===-1) allowed.push(dnm);
+                batch.set(col('users').doc(String(u.userId)), {allowedDepartments:allowed}, {merge:true});
+              });
+              batch.set(col('config').doc('app'), {departments:deps, visSeeded:true, updated:nowISO()}, {merge:true});
+              return batch.commit();
+            });
+          }).then(function(){ return {ok:true}; });
+        }
+        case 'deleteDepartment': {
+          if(!isOverseer()) throw new Error('Admins only.');
+          var ddn=String(b.name||''); if(!ddn) throw new Error('Missing department.');
+          return col('tasks').where('department','==',ddn).get().then(function(qs){
+            var open=false; qs.forEach(function(d){ if(d.data().status!=='Completed') open=true; });
+            if(open) throw new Error('“'+ddn+'” still has open tasks. Complete or move them first.');
+            return col('config').doc('app').get();
+          }).then(function(s){
+            var c=s.exists?s.data():{}; var deps=(Array.isArray(c.departments)?c.departments:[]).filter(function(d){ return d.department!==ddn; });
+            return col('users').get().then(function(us){
+              var batch=db.batch();
+              us.forEach(function(ud){ var u=ud.data(); if(Array.isArray(u.allowedDepartments) && u.allowedDepartments.indexOf(ddn)!==-1){ batch.set(col('users').doc(String(u.userId)), {allowedDepartments:u.allowedDepartments.filter(function(x){return x!==ddn;})}, {merge:true}); } });
+              batch.set(col('config').doc('app'), {departments:deps, updated:nowISO()}, {merge:true});
+              return batch.commit();
+            });
+          }).then(function(){ return {ok:true}; });
         }
 
         case 'getReminders': {
@@ -1144,6 +1383,16 @@ var FB = (function(){
         case 'markReminderRead': {
           if(!b.reminderId) return {ok:true};
           return col('notifs').doc(String(b.reminderId)).set({read:true},{merge:true}).then(function(){ return {ok:true}; });
+        }
+        case 'markReminderUnread': {
+          if(!b.reminderId) return {ok:true};
+          return col('notifs').doc(String(b.reminderId)).set({read:false},{merge:true}).then(function(){ return {ok:true}; });
+        }
+        case 'markAllRemindersRead': {
+          return col('notifs').where('forUserId','==',String(me().userId)).get().then(function(qs){
+            var batch=db.batch(), n=0; qs.forEach(function(d){ if(d.data().read!==true){ batch.set(d.ref,{read:true},{merge:true}); n++; } });
+            if(!n) return {ok:true}; return batch.commit().then(function(){ return {ok:true}; });
+          });
         }
 
         case 'deleteMyTasks': {
@@ -1342,6 +1591,7 @@ var App = {
   departments:[], categoryMaster:[], prefs:{theme:'light',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
   reminders:[], staffCache:null, members:[], _staffView:null, _notifSeen:{}, dashFilter:'all', templates:[], slateNotes:[], _slateView:null,
+  chat:[], dms:[], chatRead:{}, _chat:{open:false, tab:'channels', channel:'team', dm:null}, _chatRef:null, _chatMsgMap:{},
   _sugg:{}, nudgeIdx:0, nudgeTimer:null
 };
 
@@ -1410,10 +1660,20 @@ function fmtDate(iso){ if(!iso)return''; try{ return new Date(iso).toLocaleDateS
 function fmtTime(iso){ if(!iso)return''; try{ return new Date(iso).toLocaleTimeString('en-US',{timeZone:'Asia/Kolkata',hour:'numeric',minute:'2-digit',hour12:true}); }catch(e){ return ''; } }
 function fmtDateTime(iso){ if(!iso)return''; return fmtDate(iso)+', '+fmtTime(iso); }
 function daysSince(iso){ if(!iso)return 0; return Math.floor((Date.now()-new Date(iso).getTime())/86400000); }
-function nextRepeatDate(base, repeat){
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function nextRepeatDate(base, repeat, repeatDay){
   var d=new Date(base.getTime());
-  var bump=function(){ if(repeat==='weekly') d.setDate(d.getDate()+7); else if(repeat==='monthly') d.setMonth(d.getMonth()+1); else d.setDate(d.getDate()+1); };
-  bump(); var g=0; while(d.getTime()<Date.now() && g<500){ bump(); g++; } return d;
+  var bump=function(){
+    if(repeat==='weekly'){
+      if(repeatDay!=null && repeatDay!==''){ do{ d.setDate(d.getDate()+1); }while(d.getDay()!==Number(repeatDay)); }
+      else d.setDate(d.getDate()+7);
+    } else if(repeat==='monthly'){
+      d.setDate(1); d.setMonth(d.getMonth()+1);
+      var dom = (repeatDay!=null&&repeatDay!=='') ? Number(repeatDay) : base.getDate();
+      d.setDate(Math.min(dom, daysInMonth(d.getFullYear(), d.getMonth())));
+    } else d.setDate(d.getDate()+1);
+  };
+  bump(); var g=0; while(d.getTime()<Date.now() && g<800){ bump(); g++; } return d;
 }
 function shiftReminders(rems, oldDue, nd){
   if(!Array.isArray(rems)||!rems.length||!oldDue) return [];
@@ -1422,6 +1682,22 @@ function shiftReminders(rems, oldDue, nd){
 }
 function overdueDays(t){ if(!t||!t.dueDate||t.status==='Completed') return 0; var due=new Date(t.dueDate).getTime(); if(isNaN(due)||due>=Date.now()) return 0; return Math.floor((Date.now()-due)/86400000); }
 function isActive(t){ return t.status!=='Completed'; }
+function isSnoozed(t){ if(!t || t.status==='Completed' || !t.snoozedUntil) return false; var d=new Date(t.snoozedUntil).getTime(); return !isNaN(d) && d>Date.now(); }
+function isVisiblePending(t){ return isActive(t) && !isSnoozed(t); }   // pending AND not snoozed away
+function taskHeat(t){ if(!t || t.status==='Completed' || isSnoozed(t)) return 0; var od=overdueDays(t); var age=daysSince(t.createdTimestamp); var h1=od>0?Math.min(1,od/4):0; var h2=Math.min(1,Math.max(0,(age-2))/8); return Math.max(h1,h2); }
+/* Zero-pending streak (kept per-user in prefs) */
+function streakDays(){ var st=App.prefs&&App.prefs.streak; if(!st||!st.count) return 0; var today=fmtDate(nowISO()); var y=new Date(); y.setDate(y.getDate()-1); var yest=fmtDate(y.toISOString()); return (st.last===today||st.last===yest)?st.count:0; }
+function bumpStreak(){ if(!App.prefs) App.prefs={}; var st=App.prefs.streak||{count:0,last:''}; var today=fmtDate(nowISO()); if(st.last===today) return st.count; var y=new Date(); y.setDate(y.getDate()-1); var yest=fmtDate(y.toISOString()); st.count=(st.last===yest)?(st.count+1):1; st.last=today; App.prefs.streak=st; try{Data.savePrefs();}catch(e){} return st.count; }
+function confettiBurst(){ if(_reduceMotion) return; var c=document.createElement('div'); c.className='confetti-layer'; document.body.appendChild(c); var colors=['#7166f0','#4f7cff','#f5b301','#0fb47f','#ef4444','#8b5cf6']; for(var i=0;i<90;i++){ var p=document.createElement('i'); p.className='confetti-bit'; p.style.left=(Math.random()*100)+'vw'; p.style.background=colors[i%colors.length]; p.style.animationDelay=(Math.random()*0.35)+'s'; p.style.animationDuration=(1.8+Math.random()*1.5)+'s'; var sz=6+Math.random()*8; p.style.width=sz+'px'; p.style.height=(sz*0.5)+'px'; c.appendChild(p); } setTimeout(function(){ if(c.parentNode) c.parentNode.removeChild(c); }, 3600); }
+function celebrateIfClear(){
+  var left=(App.tasks||[]).filter(isVisiblePending).length;
+  if(left>0){ App._celebrated=false; return; }
+  if(App._celebrated) return;                 // fire once until something is pending again
+  App._celebrated=true;
+  var s=bumpStreak();
+  confettiBurst();
+  toast('🎉 Diary cleared!'+(s>1?('  🔥 '+s+'-day streak'):'  Nicely done.'),'success');
+}
 function localToISO(v){ if(!v) return ''; var d=new Date(v); return isNaN(d.getTime())?'':d.toISOString(); }
 function isoToLocalInput(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; var p=function(n){return String(n).padStart(2,'0');}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
 function fmtDue(iso){ if(!iso) return ''; try{ var d=new Date(iso); if(isNaN(d.getTime())) return iso; return d.toLocaleString('en-GB',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',hour:'numeric',minute:'2-digit',hour12:true}); }catch(e){ return ''; } }
@@ -1483,7 +1759,7 @@ var Data = {
       var task={ uid:genUid(), taskId:taskId, employeeId:App.identity.employeeId, employeeName:App.identity.employeeName,
         department:d.department, category:d.category, clientName:d.clientName, details:d.details||'',
         status:'Pending', dueDate:d.dueDate||'', followUpDate:d.followUpDate||'', reminders:Array.isArray(d.reminders)?d.reminders:[],
-        repeat:d.repeat||'', priority:d.priority||'medium', checklist:Array.isArray(d.checklist)?d.checklist:[], links:Array.isArray(d.links)?d.links:[],
+        repeat:d.repeat||'', repeatDay:(d.repeatDay!=null?d.repeatDay:''), repeatUntil:d.repeatUntil||'', priority:d.priority||'medium', checklist:Array.isArray(d.checklist)?d.checklist:[], links:Array.isArray(d.links)?d.links:[], loop:Array.isArray(d.loop)?d.loop:[],
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:App.identity.employeeName, completedBy:'', assignedById:d.assignedById||'', assignedByName:d.assignedByName||'', syncStatus:'PENDING_SYNC' };
       return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending',d.clientName+' → '+d.category); Sync.afterChange(); return task; });
@@ -1540,19 +1816,25 @@ var Data = {
   },
   spawnRecurrence:function(t){
     if(!t||!t.repeat) return Promise.resolve();
+    var oldDue = t.dueDate ? new Date(t.dueDate) : new Date();
+    var nd = nextRepeatDate(oldDue, t.repeat, (t.repeatDay!=null?t.repeatDay:''));
+    if(t.repeatUntil && nd.getTime() > new Date(t.repeatUntil).getTime()) return Promise.resolve();   // series has ended
     return Data.nextTaskId().then(function(taskId){
       var ts=nowISO();
-      var oldDue = t.dueDate ? new Date(t.dueDate) : new Date();
-      var nd = nextRepeatDate(oldDue, t.repeat);
       var task={ uid:genUid(), taskId:taskId, employeeId:t.employeeId, employeeName:t.employeeName,
         department:t.department, category:t.category, clientName:t.clientName, details:t.details||'',
         status:'Pending', dueDate: t.dueDate? nd.toISOString():'', followUpDate:'',
-        reminders:shiftReminders(t.reminders, t.dueDate, nd), repeat:t.repeat,
+        reminders:shiftReminders(t.reminders, t.dueDate, nd), repeat:t.repeat, repeatDay:(t.repeatDay!=null?t.repeatDay:''), repeatUntil:t.repeatUntil||'', priority:t.priority||'medium', loop:Array.isArray(t.loop)?t.loop:[],
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:t.createdBy||App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
       if(t.assignedById){ task.assignedById=t.assignedById; task.assignedByName=t.assignedByName; task.createdById=t.createdById; task.createdByName=t.createdByName; }
       return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending','Recurring ('+t.repeat+') · '+t.clientName); Sync.afterChange(); return task; });
     });
+  },
+  setSnooze:function(taskId,iso){
+    var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
+    t.snoozedUntil=iso||''; t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId, iso?'SNOOZED':'UNSNOOZED', t.status, t.status, iso?('until '+fmtDateTime(iso)):'woken'); Sync.afterChange(); });
   },
   reopen:function(taskId,remark){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
@@ -1570,7 +1852,7 @@ var Data = {
     pushRemark(t, 'Remark', remark); t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
     return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'REMARK',t.status,t.status,remark||''); Sync.afterChange(); });
   },
-  saveDepartments:function(){ return Store.put('kv','departments',App.departments); },
+  saveDepartments:function(){ Store.put('kv','departments',App.departments); if(Sync.online()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} } return Promise.resolve(); },
   saveCategoryMaster:function(){ return Store.put('kv','categoryMaster',App.categoryMaster); },
   savePrefs:function(){ return Store.put('kv','prefs',App.prefs); },
   saveTemplates:function(){ return Store.put('kv','templates',App.templates); }
@@ -1661,8 +1943,9 @@ var Sync = {
 document.addEventListener('DOMContentLoaded', init);
 function init(){
   Store.ready().then(function(){
-    return Promise.all([ Store.get('kv','auth'), Store.get('kv','departments'), Store.get('kv','prefs'), Store.get('kv','categoryMaster'), Sync.load(), Store.get('kv','notifSeen'), Store.get('kv','templates'), Store.get('kv','slateNotes') ]);
+    return Promise.all([ Store.get('kv','auth'), Store.get('kv','departments'), Store.get('kv','prefs'), Store.get('kv','categoryMaster'), Sync.load(), Store.get('kv','notifSeen'), Store.get('kv','templates'), Store.get('kv','slateNotes'), Store.get('kv','chatRead') ]);
   }).then(function(r){
+    App.chatRead=r[8]||{};
     App.auth=r[0]||null;
     if(App.auth && App.auth.url!=='firebase'){ App.auth=null; }   // old Sheets session → force a clean Firebase login with the new key
     App.templates=r[6]||[];
@@ -1722,17 +2005,23 @@ var FBLive = {
   // tasks up by taskId, so a collision would open the wrong task. uid is always unique,
   // so we re-stamp the newer duplicate with a uid-based suffix and persist it.
   healDupIds:function(){
-    var seen={}, dups=[];
+    var seen={}, fixed=false;
     (App.tasks||[]).slice().sort(function(a,b){ return new Date(a.createdTimestamp||0)-new Date(b.createdTimestamp||0); })
-      .forEach(function(t){ var id=String(t.taskId||''); if(!id) return; if(seen[id]) dups.push(t); else seen[id]=true; });
-    if(!dups.length) return false;
-    dups.forEach(function(t){
-      t.taskId = String(t.taskId)+'-'+String(t.uid||genUid()).slice(-4);
-      t.lastUpdatedTimestamp=nowISO();
-      try{ Store.put('tasks',t.uid,t); }catch(e){}
-      try{ FB.col('tasks').doc(String(t.uid)).set({taskId:t.taskId, lastUpdatedTimestamp:t.lastUpdatedTimestamp},{merge:true}); }catch(e){}
-    });
-    return true;
+      .forEach(function(t){
+        var id=String(t.taskId||'');
+        // Repair a runaway id from the old buggy healer (e.g. "AS-…-I4kw-I4kw-I4kw…") or a duplicate.
+        var runaway = id.length>44 || /(-[A-Za-z0-9]{2,8})\1{2,}/.test(id);
+        if(runaway || (id && seen[id])){
+          var nid='TID-'+String(t.uid||genUid());     // uid is globally unique → stable & idempotent (never re-processed)
+          if(nid!==id){
+            t.taskId=nid; t.lastUpdatedTimestamp=nowISO(); fixed=true;
+            try{ Store.put('tasks',t.uid,t); }catch(e){}
+            try{ FB.col('tasks').doc(String(t.uid)).set({taskId:nid, lastUpdatedTimestamp:t.lastUpdatedTimestamp},{merge:true}); }catch(e){}
+          }
+          seen[t.taskId]=true;
+        } else if(id){ seen[id]=true; }
+      });
+    return fixed;
   },
   start:function(){
     if(FBLive.started) return; FBLive.started=true;
@@ -1771,6 +2060,25 @@ var FBLive = {
       list.sort(function(a,c){ return new Date(c.created)-new Date(a.created); });
       App.reminders=list; updateBell(); FBLive._seeded=true;
     }, function(){});
+
+    // Team + department chat (one collection, all channels; small office → last 250 msgs)
+    try{ db.collection('chat').orderBy('created').limitToLast(80).onSnapshot(function(qs){
+      App.chat=[]; qs.forEach(function(d){ App.chat.push(d.data()); });
+      onChatData();
+    }, function(){}); }catch(e){}
+    // My direct messages (private — only the two parties can read)
+    try{ db.collection('dms').where('parties','array-contains',uid).onSnapshot(function(qs){
+      App.dms=[]; qs.forEach(function(d){ App.dms.push(d.data()); });
+      App.dms.sort(function(a,b){ return new Date(a.created)-new Date(b.created); });
+      onChatData();
+    }, function(){}); }catch(e){}
+
+    // Shared department list + visibility seed flag (admin-controlled, live to everyone)
+    try{ db.collection('config').doc('app').onSnapshot(function(s){
+      if(s.exists){ var c=s.data(); App._visSeeded=!!c.visSeeded;
+        if(Array.isArray(c.departments) && c.departments.length){ App.departments=c.departments; try{ Store.put('kv','departments',App.departments); }catch(e){} buildSidebar(); if(App.view==='settings') renderSettings(); else if(App.view==='dashboard') renderDashboard(); }
+      } else if(isBoss()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} }
+    }, function(){}); }catch(e){}
 
     // Team members — keep the assign dropdown & Team list live as staff are added/changed
     db.collection('users').onSnapshot(function(qs){
@@ -1844,8 +2152,8 @@ function bootApp(){
 /* ================================================================
    COUNTS + ICONS
    ================================================================ */
-function pendingCount(dept,cat){ return App.tasks.filter(function(t){ return isActive(t)&&t.department===dept&&t.category===cat; }).length; }
-function deptPending(dept){ return App.tasks.filter(function(t){ return isActive(t)&&t.department===dept; }).length; }
+function pendingCount(dept,cat){ return App.tasks.filter(function(t){ return isVisiblePending(t)&&t.department===dept&&t.category===cat; }).length; }
+function deptPending(dept){ return App.tasks.filter(function(t){ return isVisiblePending(t)&&t.department===dept; }).length; }
 function ico(name){
   var m={
     dash:'<path d="M3 12l9-9 9 9"/><path d="M9 21V9h6v12"/>',
@@ -1916,7 +2224,9 @@ function toggleDept(dept){ App.prefs.expanded[dept]=!App.prefs.expanded[dept]; D
    ================================================================ */
 var _reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 function withVT(fn){
-  try{ if(document.startViewTransition && !_reduceMotion){ document.startViewTransition(fn); return; } }catch(e){}
+  // View transitions can leave ghost snapshots of the previous view stacked on the new one
+  // when navigations happen quickly (and they spam the console on abort). Render directly —
+  // instant and always clean. The skeleton loaders already make navigation feel smooth.
   fn();
 }
 
@@ -1970,6 +2280,7 @@ function cmdkExec(i){
 }
 function navigate(view,dept,cat){
   App._slateView=null;
+  App._slateSel=false; App._slateSelIds={}; var _sb=document.getElementById('slate-sel-bar'); if(_sb) _sb.remove();  // leave Slate select mode cleanly
   App.view=view; App.dept=dept||null; App.cat=cat||null; App.tab='pending';
   App._bulk=false; App._bulkSel={};
   if(view==='calendar'){ var _cn=new Date(); App._cal={y:_cn.getFullYear(),m:_cn.getMonth()}; App._calSel=toLocalInput(_cn).slice(0,10); }   // always open on the current month
@@ -2073,7 +2384,9 @@ function startNudgeCycle(){
 }
 function stopNudgeCycle(){ if(App.nudgeTimer){ clearInterval(App.nudgeTimer); App.nudgeTimer=null; } }
 function renderDashboard(){
-  var pending=App.tasks.filter(function(t){return isActive(t);});
+  var pending=App.tasks.filter(isVisiblePending);
+  var snoozedCount=App.tasks.filter(isSnoozed).length;
+  var streak=streakDays();
   var completed=App.tasks.filter(function(t){return t.status==='Completed';});
   var today=fmtDate(nowISO());
   var addedToday=App.tasks.filter(function(t){return fmtDate(t.createdTimestamp)===today;}).length;
@@ -2087,8 +2400,8 @@ function renderDashboard(){
   // HERO
   var heroLine = pending.length ? (pending.length+' open item'+(pending.length!==1?'s':'')) : "You're all clear ✨";
   var heroSub = pending.length ? (overdue? (overdue+' overdue — best to clear those first.') : 'Nothing overdue. Keep the streak going.') : 'Nothing pending right now. Add your next task when you\'re ready.';
-  var h='<div class="dash-hero"><div class="hero-eyebrow">'+greet+', '+esc(App.identity.employeeName.split(' ')[0])+'</div><h2>'+heroLine+'</h2><p>'+heroSub+'</p>';
-  h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="board">▤ Board</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button></div></div>';
+  var h='<div class="dash-hero"><div class="hero-eyebrow">'+greet+', '+esc(App.identity.employeeName.split(' ')[0])+(streak>0?'<span class="streak-chip">🔥 '+streak+'-day clear streak</span>':'')+'</div><h2>'+heroLine+'</h2><p>'+heroSub+'</p>';
+  h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="board">▤ Board</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button>'+(snoozedCount?'<button class="hero-btn" data-action="show-list" data-filter="snoozed">😴 '+snoozedCount+' snoozed</button>':'')+'</div></div>';
 
   // Escalation banner — anything overdue by 3+ days
   var escalated=pending.filter(function(t){return overdueDays(t)>=3;}).length;
@@ -2176,7 +2489,8 @@ function refreshChecklist(t){ var w=document.getElementById('cl-wrap'); if(!w) r
 function linksBlock(t){ var ls=t.links||[]; if(!ls.length) return ''; var h='<div class="det-sec"><div class="det-sec-h">📎 Attachments</div>'; ls.forEach(function(l){ h+='<a class="det-link" href="'+esc(l.url)+'" target="_blank" rel="noopener noreferrer">🔗 '+esc(l.label||l.url)+'</a>'; }); return h+'</div>'; }
 function prioRank(p){ return p==='high'?0:(p==='low'?2:1); }
 function taskCard(t,isDone,showCat){
-  var h='<div class="card'+(isDone?' done':'')+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
+  var heat=isDone?0:taskHeat(t);
+  var h='<div class="card'+(isDone?' done':'')+(heat>=0.08?' hot':'')+'" style="--heat:'+heat.toFixed(2)+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
   var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
   var tags='';
   if(!isDone) tags+=prioTag(t.priority);
@@ -2210,7 +2524,7 @@ function taskCard(t,isDone,showCat){
    ================================================================ */
 function renderCategory(){
   var all=App.tasks.filter(function(t){return t.department===App.dept&&t.category===App.cat;});
-  var pend=all.filter(function(t){return isActive(t);}).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
+  var pend=all.filter(isVisiblePending).sort(function(a,b){return new Date(a.createdTimestamp)-new Date(b.createdTimestamp);});
   var done=all.filter(function(t){return t.status==='Completed';}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);});
 
   var h='<div class="cat-head"><div class="crumb">'+esc(App.dept)+'</div><div class="cat-title">'+esc(App.cat)+'</div>';
@@ -2242,7 +2556,7 @@ function toggleBulk(taskId, el){ App._bulkSel=App._bulkSel||{}; if(App._bulkSel[
 function bulkComplete(){ var ids=Object.keys(App._bulkSel||{}); if(!ids.length){ toast('Select some tasks first.','info'); return; }
   askRemark({title:'Complete '+ids.length+' task(s)',sub:'This remark will be saved on each selected task.',okLabel:'✓ Complete all',ico:'✅'}, function(rk){
     var jobs=ids.map(function(id){ var t=App.tasks.find(function(x){return x.taskId===id;}); return (t && t.status!=='Completed') ? Data.complete(id,rk) : Promise.resolve(); });
-    Promise.all(jobs).then(function(){ toast('✓ Completed '+ids.length+' task(s)','success'); App._bulk=false; App._bulkSel={}; buildSidebar(); renderCategory(); });
+    Promise.all(jobs).then(function(){ toast('✓ Completed '+ids.length+' task(s)','success'); App._bulk=false; App._bulkSel={}; buildSidebar(); renderCategory(); celebrateIfClear(); });
   });
 }
 function bulkDelete(){ var ids=Object.keys(App._bulkSel||{}); if(!ids.length){ toast('Select some tasks first.','info'); return; }
@@ -2261,8 +2575,8 @@ function renderBoard(){
   App.view='board';
   var me=String(App.identity.employeeId);
   var cols=[
-    {key:'Pending',label:'Pending',dot:'var(--text-muted)',match:function(t){return isActive(t)&&t.status!=='In Progress';}},
-    {key:'In Progress',label:'In Progress',dot:'var(--warning)',match:function(t){return t.status==='In Progress';}},
+    {key:'Pending',label:'Pending',dot:'var(--text-muted)',match:function(t){return isActive(t)&&t.status!=='In Progress'&&!isSnoozed(t);}},
+    {key:'In Progress',label:'In Progress',dot:'var(--warning)',match:function(t){return t.status==='In Progress'&&!isSnoozed(t);}},
     {key:'Completed',label:'Completed',dot:'var(--success)',match:function(t){return t.status==='Completed';}}
   ];
   var h='<div class="cat-head"><div class="cat-title">Board</div><div class="cat-sub">Drag a card between columns to change its status</div><div class="cat-actions"><button class="add-btn" data-action="open-assign">'+plusIco()+'New Task</button></div></div>';
@@ -2301,7 +2615,7 @@ function boardMove(taskId,target){
   var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return;
   var cur = t.status==='Completed'?'Completed':(t.status==='In Progress'?'In Progress':'Pending');
   if(cur===target) return;
-  var done=function(m){ toast(m,'success'); buildSidebar(); renderBoard(); };
+  var done=function(m){ toast(m,'success'); buildSidebar(); renderBoard(); if(target==='Completed') celebrateIfClear(); };
   var fail=function(e){ toast((e&&e.message)||'Could not move.','error'); renderBoard(); };
   // Every move is a status change → require a remark. Snap the card back if cancelled.
   var titleMap={ 'Completed':'Complete this task', 'In Progress':'Mark In Progress', 'Pending':'Set to Pending' };
@@ -2415,9 +2729,11 @@ function renderSlate(){
   if(ro){
     h+='<div class="cat-head"><div class="crumb"><span data-action="open-staff" data-id="'+esc(App._slateView.id)+'" data-name="'+esc(App._slateView.name)+'" style="cursor:pointer;color:var(--accent);font-weight:600">← '+esc(App._slateView.name)+'</span></div><div class="cat-title">'+esc(App._slateView.name)+'’s Slate</div><div class="cat-sub">Read-only · '+all.filter(function(n){return !n.done;}).length+' note(s)</div></div>';
   } else {
+    App._slateSel=false; App._slateSelIds={}; updateSelBar();   // always start clean when the Slate (re)opens
     h+='<div class="slate-head-row"><div><div class="cat-title">Slate</div><div class="cat-sub" id="slate-summary"></div></div>';
     h+='<div class="slate-tools">';
     h+='<input id="slate-search" class="slate-search" placeholder="Search notes…" autocomplete="off" value="'+esc(App._slateQuery||'')+'">';
+    h+='<button class="btn btn-ghost btn-sm" data-action="slate-select-toggle" title="Select notes to complete or delete">☑ Select</button>';
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-tidy" title="Auto-arrange">✨ Tidy</button>';
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">🗄 Archive<span id="arch-count">'+(archived.length?' ('+archived.length+')':'')+'</span></button>';
     h+='<button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button>';
@@ -2446,6 +2762,7 @@ function paintSlate(){
   var html = notes.map(function(n){ return slateNoteHTML(n,ro); }).join('');
   if(!notes.length) html += '<div class="slate-empty">'+(ro?'This slate is empty.':'Your slate is clear — click anywhere and start typing.')+'</div>';
   board.innerHTML = html;
+  board.classList.toggle('selmode', !ro && !!App._slateSel);
   if(!ro) attachSlateDnD();
 }
 function slateNoteHTML(n, ro){
@@ -2456,7 +2773,10 @@ function slateNoteHTML(n, ro){
   var dim=(!ro && q && String(n.text).toLowerCase().indexOf(q)<0)?' dim':'';
   var badge=n.taskRef ? '<span class="sn-tasked" data-action="slate-open-task" data-id="'+esc(n.id)+'" title="Tasked — find it">✓ task</span>' : '';
   var actions = ro ? '' : '<button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Archive (done)">✓</button>';
-  return '<div class="slate-note'+dim+(anger>0.05?' angry':'')+'" data-note="'+esc(n.id)+'" style="left:'+Math.max(2,n.x||10)+'px;top:'+Math.max(2,n.y||10)+'px;background:'+esc(n.color||'#fff3b0')+';--rot:'+rot+'deg;--anger:'+anger.toFixed(2)+'">'+
+  var seld=(!ro && App._slateSelIds && App._slateSelIds[n.id])?' sel':'';
+  var check=ro ? '' : '<div class="sn-check">✓</div>';
+  return '<div class="slate-note'+dim+seld+(anger>0.05?' angry':'')+'" data-note="'+esc(n.id)+'" style="left:'+Math.max(2,n.x||10)+'px;top:'+Math.max(2,n.y||10)+'px;background:'+esc(n.color||'#fff3b0')+';--rot:'+rot+'deg;--anger:'+anger.toFixed(2)+'">'+
+    check+
     '<div class="sn-actions">'+actions+'</div>'+
     '<div class="sn-text">'+esc(n.text)+'</div>'+
     '<div class="sn-foot">'+badge+'<span class="sn-age">'+esc(noteAge(n.created))+'</span></div>'+
@@ -2465,6 +2785,7 @@ function slateNoteHTML(n, ro){
 function slateNew(){ var board=document.getElementById('slate-board'); var active=(App.slateNotes||[]).filter(function(n){return !n.done;}); var pad=20,colW=192,rowH=124; var cols=board?Math.max(1,Math.floor((board.clientWidth-pad)/colW)):5; var i=active.length; spawnNoteInput(pad+(i%cols)*colW, pad+Math.floor(i/cols)*rowH); }
 function slateClick(e){
   if(App._slateView) return;
+  if(App._slateSel) return;   // in select mode, clicking empty space does nothing (don't spawn a note)
   var board=document.getElementById('slate-board'); if(!board || e.target!==board) return;
   var rect=board.getBoundingClientRect();
   var x=Math.round(e.clientX-rect.left+board.scrollLeft-78);
@@ -2502,6 +2823,8 @@ function attachOneNoteDnD(el){
   el.addEventListener('pointerdown', function(e){
     if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked')) return;
     var id=el.getAttribute('data-note');
+    // In select mode a tap toggles selection instead of dragging.
+    if(App._slateSel){ e.preventDefault(); slateSelNote(id); return; }
     var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
     e.preventDefault();
     var startX=e.clientX, startY=e.clientY, origX=n.x||10, origY=n.y||10, moved=false;
@@ -2567,6 +2890,50 @@ function openArchive(){
 function closeArch(){ var ov=document.getElementById('arch-ov'); if(ov) ov.remove(); }
 function slateRestore(id){ var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return; Slate.restore(n); openArchive(); if(App.view==='slate'&&!App._slateView) renderSlate(); }
 function slateDelPermanent(id){ var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return; Slate.remove(n); openArchive(); }
+/* ===== Slate multi-select (bulk complete / delete) ===== */
+function slateSelToggle(){
+  App._slateSel = !App._slateSel;
+  document.body.classList.toggle('slate-selecting', App._slateSel);   // hides the floating ball/chat button so the select bar never collides on mobile
+  if(!App._slateSel) App._slateSelIds={};
+  var btn=document.querySelector('[data-action="slate-select-toggle"]');
+  if(btn) btn.innerHTML = App._slateSel ? '✕ Cancel' : '☑ Select';
+  paintSlate();
+  updateSelBar();
+}
+function slateSelNote(id){
+  if(!App._slateSelIds) App._slateSelIds={};
+  if(App._slateSelIds[id]) delete App._slateSelIds[id]; else App._slateSelIds[id]=true;
+  var el=document.querySelector('.slate-note[data-note="'+String(id).replace(/"/g,'\\"')+'"]');
+  if(el) el.classList.toggle('sel', !!App._slateSelIds[id]);
+  updateSelBar();
+}
+function selCount(){ return Object.keys(App._slateSelIds||{}).length; }
+function updateSelBar(){
+  var bar=document.getElementById('slate-sel-bar');
+  if(!App._slateSel){ if(bar) bar.remove(); return; }
+  if(!bar){ bar=document.createElement('div'); bar.id='slate-sel-bar'; bar.className='sel-bar'; document.body.appendChild(bar); }
+  var n=selCount(), dis=n?'':' disabled';
+  bar.innerHTML='<span class="sel-n">'+n+' selected</span>'+
+    '<button class="btn btn-success btn-sm" data-action="slate-sel-complete"'+dis+'>✓ Complete</button>'+
+    '<button class="btn btn-danger btn-sm" data-action="slate-sel-delete"'+dis+'>🗑 Delete</button>'+
+    '<button class="btn btn-ghost btn-sm" data-action="slate-select-toggle">Done</button>';
+}
+function slateSelComplete(){
+  var ids=Object.keys(App._slateSelIds||{}); if(!ids.length) return;
+  ids.forEach(function(id){ var nn=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(nn && !nn.done) Slate.archive(nn); });
+  App._slateSelIds={};
+  toast('🗄 Archived '+ids.length+' note'+(ids.length!==1?'s':''),'success');
+  paintSlate(); refreshSlateMeta(); updateSelBar();
+}
+function slateSelDelete(){
+  var ids=Object.keys(App._slateSelIds||{}); if(!ids.length) return;
+  openConfirm({ icon:'🗑️', title:'Delete '+ids.length+' note'+(ids.length!==1?'s':'')+'?', body:'This permanently deletes the selected notes. This cannot be undone.', okLabel:'Delete', okClass:'btn-danger', onOk:function(){
+    ids.forEach(function(id){ var nn=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(nn) Slate.remove(nn); });
+    App._slateSelIds={};
+    toast('Deleted '+ids.length+' note'+(ids.length!==1?'s':''),'success');
+    paintSlate(); refreshSlateMeta(); updateSelBar();
+  }});
+}
 function openStaffSlate(id,name){
   if(!Sync.online()){ toast('Viewing a slate needs an internet connection.','warn'); return; }
   document.getElementById('content').innerHTML=skelHead(name+'’s Slate')+skelList(3);
@@ -2592,6 +2959,17 @@ function initAssistant(){
     '</div>'+
     '<button class="asst-ball" data-action="asst-toggle" aria-label="Assistant">✨</button>';
   document.body.appendChild(a);
+  // Team chat: button beside the ball + slide-in panel + task-reference picker
+  if(!document.getElementById('chat-fab')){
+    var cf=document.createElement('button'); cf.id='chat-fab'; cf.className='chat-fab'; cf.setAttribute('data-action','chat-toggle'); cf.title='Team chat';
+    cf.innerHTML='💬<span class="chat-fab-badge" id="chat-fab-badge" style="display:none">0</span>';
+    document.body.appendChild(cf);
+    var cp=document.createElement('div'); cp.id='chat-panel'; cp.className='chat-panel hidden'; document.body.appendChild(cp);
+    var tp=document.createElement('div'); tp.id='taskpick-modal'; tp.className='overlay hidden';
+    tp.innerHTML='<div class="modal" style="max-width:460px"><div class="modal-h"><h3>📎 Refer a task</h3><button class="modal-x" data-action="taskpick-close">&times;</button></div><div class="modal-b"><input id="taskpick-q" class="f-input" placeholder="Search client, category…" autocomplete="off" style="margin-bottom:10px"><div id="taskpick-list" class="taskpick-list"></div></div></div>';
+    document.body.appendChild(tp);
+    updateChatBadge();
+  }
   if(!document.getElementById('voice-ov')){
     var v=document.createElement('div'); v.id='voice-ov'; v.className='overlay hidden';
     v.innerHTML='<div class="voice-box">'+
@@ -2818,7 +3196,8 @@ function renderList(){
   else if(f==='today-added'){ title='Added Today'; list=App.tasks.filter(function(t){return fmtDate(t.createdTimestamp)===fmtDate(nowISO());}).sort(function(a,b){return new Date(b.createdTimestamp)-new Date(a.createdTimestamp);}); desc=list.length+' added today'; }
   else if(f==='today-done'){ title='Cleared Today'; list=App.tasks.filter(function(t){return t.status==='Completed'&&fmtDate(t.completedTimestamp)===fmtDate(nowISO());}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);}); desc=list.length+' cleared today'; }
   else if(f==='completed'){ title='Completed Work'; list=App.tasks.filter(function(t){return t.status==='Completed';}).sort(function(a,b){return new Date(b.completedTimestamp)-new Date(a.completedTimestamp);}); desc=list.length+' completed item'+(list.length!==1?'s':''); }
-  else if(f==='overdue'){ title='Overdue'; var _n=Date.now(); list=pending.filter(function(t){return t.dueDate && new Date(t.dueDate).getTime()<_n;}).sort(function(a,b){return new Date(a.dueDate)-new Date(b.dueDate);}); desc=list.length+' overdue item'+(list.length!==1?'s':''); }
+  else if(f==='overdue'){ title='Overdue'; var _n=Date.now(); list=pending.filter(function(t){return !isSnoozed(t) && t.dueDate && new Date(t.dueDate).getTime()<_n;}).sort(function(a,b){return new Date(a.dueDate)-new Date(b.dueDate);}); desc=list.length+' overdue item'+(list.length!==1?'s':''); }
+  else if(f==='snoozed'){ title='😴 Snoozed'; list=App.tasks.filter(isSnoozed).sort(function(a,b){return new Date(a.snoozedUntil)-new Date(b.snoozedUntil);}); desc=list.length+' snoozed — hidden from your lists until their time. Open one to wake it early.'; }
   else { title='All Work'; list=App.tasks.slice().sort(function(a,b){return new Date(b.createdTimestamp)-new Date(a.createdTimestamp);}); desc=list.length+' item'+(list.length!==1?'s':''); }
 
   var h='<div class="cat-head"><div class="crumb">'+(f==='completed'?'History':'Overview')+'</div><div class="cat-title">'+title+'</div><div class="cat-sub">'+desc+'</div></div>';
@@ -2860,7 +3239,7 @@ function renderSearch(q){
    ADD CLIENT MODAL — with type-ahead comboboxes
    ================================================================ */
 function openAdd(dept,cat){
-  document.getElementById('add-dept').value=dept||App.dept||'';
+  fillDeptSelect('add-dept', dept||App.dept||'');
   document.getElementById('add-cat').value=cat||App.cat||'';
   document.getElementById('add-client').value='';
   document.getElementById('add-details').value='';
@@ -2901,12 +3280,48 @@ function pickSugg(inputId,idx){
   var box=document.getElementById(el.getAttribute('data-box')); if(box) box.classList.add('hidden');
 }
 
+function openDeptAdd(){
+  document.getElementById('deptadd-name').value='';
+  var staff=(App.members||[]).slice();
+  var box=document.getElementById('deptadd-staff');
+  box.innerHTML = staff.length ? staff.map(function(m){ return '<label class="vis-item"><input type="checkbox" class="da-cb" value="'+esc(m.userId)+'" checked> '+esc(m.name)+(m.role&&m.role!=='Staff'?' <span class="cp-role">'+esc(m.role)+'</span>':'')+'</label>'; }).join('') : '<div class="set-sub">No staff yet.</div>';
+  openModal('deptadd-modal');
+  setTimeout(function(){ document.getElementById('deptadd-name').focus(); },60);
+}
+function deptAddCreate(btn){
+  var name=(document.getElementById('deptadd-name').value||'').trim();
+  if(!name){ toast('Enter a department name.','error'); return; }
+  if((App.departments||[]).some(function(d){return d.department.toLowerCase()===name.toLowerCase();})){ toast('That department already exists.','error'); return; }
+  var grant=[].slice.call(document.querySelectorAll('#deptadd-staff .da-cb:checked')).map(function(c){return c.value;});
+  if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  apiCall('addDepartment',{name:name, grantIds:grant}).then(function(res){
+    if(btn){ btn.disabled=false; btn.textContent='Create department'; }
+    if(!res||!res.ok){ toast((res&&res.error)||'Could not add.','error'); return; }
+    closeModal('deptadd-modal'); toast('✓ “'+name+'” added','success');
+  }).catch(function(e){ if(btn){btn.disabled=false;btn.textContent='Create department';} toast(e.message||'Could not add.','error'); });
+}
+function deptDelete(name){
+  openConfirm({ icon:'🗑️', title:'Delete “'+name+'”?', body:'This removes the department for everyone and from their sidebars. Blocked if it still has open tasks.', okLabel:'Delete', okClass:'btn-danger', onOk:function(){
+    apiCall('deleteDepartment',{name:name}).then(function(res){
+      if(!res||!res.ok){ toast((res&&res.error)||'Could not delete.','error'); return; }
+      toast('Department deleted.','success');
+    }).catch(function(e){ toast(e.message||'Could not delete.','error'); });
+  }});
+}
+function fillDeptSelect(id, selected){
+  var s=document.getElementById(id); if(!s) return; var deps=App.departments||[];
+  s.innerHTML=deps.map(function(d){ return '<option value="'+esc(d.department)+'">'+esc(d.department)+'</option>'; }).join('');
+  if(selected && deps.some(function(d){return d.department===selected;})) s.value=selected;
+  else if(deps.length) s.value=deps[0].department;
+}
 function ensureDeptCat(dept,cat){
+  // Departments are admin-controlled: staff can only pick an existing one (never create).
+  var d=App.departments.find(function(x){return x.department.toLowerCase()===String(dept||'').toLowerCase();});
+  if(!d) return Promise.reject(new Error('Please pick a department from the list.'));
+  dept=d.department;
   var changedD=false, changedM=false;
-  var d=App.departments.find(function(x){return x.department.toLowerCase()===dept.toLowerCase();});
-  if(!d){ d={department:dept,categories:[]}; App.departments.push(d); changedD=true; } else { dept=d.department; }
   var existing=d.categories.find(function(c){return c.toLowerCase()===cat.toLowerCase();});
-  if(existing){ cat=existing; } else { d.categories.push(cat); changedD=true; }
+  if(existing){ cat=existing; } else { d.categories.push(cat); changedD=true; }   // staff may still add a category under a department
   if(!App.categoryMaster.some(function(c){return c.toLowerCase()===cat.toLowerCase();})){ App.categoryMaster.push(cat); changedM=true; }
   var jobs=[];
   if(changedD) jobs.push(Data.saveDepartments());
@@ -2955,6 +3370,36 @@ function askRemark(opts, onOk){
   openModal('remark-modal');
   setTimeout(function(){ try{ ta.focus(); }catch(e){} }, 60);
 }
+/* ===== Snooze ===== */
+function openSnooze(taskId){
+  App._snoozeId=taskId;
+  var t=App.tasks.find(function(x){return x.taskId===taskId;});
+  var snz=t&&isSnoozed(t);
+  document.getElementById('snooze-title').textContent=snz?('Snoozed until '+fmtDateTime(t.snoozedUntil)):'Snooze task';
+  document.getElementById('sz-wake').style.display=snz?'':'none';
+  var d=new Date(); d.setDate(d.getDate()+1); d.setHours(9,0,0,0);
+  setDT('sz-d','sz-t',d.toISOString());
+  openModal('snooze-modal');
+}
+function snoozeCompute(when){
+  var d=new Date();
+  if(when==='3h'){ d.setHours(d.getHours()+3,d.getMinutes(),0,0); }
+  else if(when==='tom9'){ d.setDate(d.getDate()+1); d.setHours(9,0,0,0); }
+  else if(when==='week'){ var day=d.getDay(); var add=((8-day)%7)||7; d.setDate(d.getDate()+add); d.setHours(9,0,0,0); }
+  else if(when==='custom'){ return combineDT('sz-d','sz-t')||''; }
+  return d.toISOString();
+}
+function snoozeSet(when){
+  var id=App._snoozeId; if(!id) return;
+  var iso=snoozeCompute(when);
+  if(!iso){ toast('Pick a date & time.','error'); return; }
+  if(new Date(iso).getTime()<=Date.now()){ toast('Pick a time in the future.','error'); return; }
+  Data.setSnooze(id,iso).then(function(){ closeModal('snooze-modal'); closeModal('detail-modal'); toast('😴 Snoozed until '+fmtDateTime(iso),'success'); buildSidebar(); refreshView(); });
+}
+function snoozeWake(){
+  var id=App._snoozeId; if(!id) return;
+  Data.setSnooze(id,'').then(function(){ closeModal('snooze-modal'); closeModal('detail-modal'); toast('⏰ Back on your list','success'); buildSidebar(); refreshView(); });
+}
 function factCell(lbl,val){ return '<div class="fact"><div class="fact-lbl">'+lbl+'</div><div class="fact-val">'+val+'</div></div>'; }
 function remarksBlock(t){
   var r=Array.isArray(t.remarks)?t.remarks:[]; if(!r.length) return '';
@@ -2995,11 +3440,11 @@ function openTask(taskId, editMode){
     h+='<label class="f-label" style="margin-top:12px">Attachment links <span class="opt">(Label | https://…)</span></label><textarea class="f-area" id="det-links" rows="2">'+esc((t.links||[]).map(function(x){return (x.label&&x.label!==x.url?x.label+' | ':'')+x.url;}).join('\n'))+'</textarea>';
     h+='<div class="d-grid" style="margin-top:16px"><div class="d-row"><div class="d-lbl">Created</div><div class="d-val">'+esc(fmtDateTime(t.createdTimestamp))+'</div></div>';
     h+='<div class="d-row"><div class="d-lbl">Ageing</div><div class="d-val">'+daysSince(t.createdTimestamp)+' day(s) pending</div></div></div>';
-    h+='<div class="d-row"><div class="d-lbl">Task ID</div><div class="d-val" style="font-size:.8rem;color:var(--text-muted)">'+esc(t.taskId)+'</div></div>';
   } else {
     var stPill = t.status==='Completed' ? '<span class="d-status done">'+ico('check')+' Completed</span>' : (t.status==='In Progress' ? '<span class="d-status ip">&#9881; In Progress</span>' : '<span class="d-status pending">&#9679; Pending</span>');
     // Lifted status pill up top so the current state reads at a glance.
-    h+='<div class="det-statusbar">'+stPill+(t.priority?prioTag(t.priority):'')+'</div>';
+    h+='<div class="det-statusbar">'+stPill+(t.priority?prioTag(t.priority):'')+(isSnoozed(t)?'<span class="d-status snz">😴 Snoozed</span>':'')+'</div>';
+    if(isSnoozed(t)) h+='<div class="det-hint">😴 Snoozed until '+esc(fmtDateTime(t.snoozedUntil))+' — hidden from your lists until then. Use 😴 Snoozed → ⏰ Wake now to bring it back early.</div>';
     // Bordered fact cards — each label clearly owns its value.
     h+='<div class="det-facts">';
     h+=factCell('Department', esc(t.department));
@@ -3019,7 +3464,6 @@ function openTask(taskId, editMode){
     h+=checklistBlock(t);
     h+=linksBlock(t);
     h+=remarksBlock(t);
-    h+='<div class="det-taskid">Task ID · '+esc(t.taskId)+'</div>';
   }
   if(shared && t.uid) h+=historyBlock(t.uid);
   if(shared && t.uid) h+=commentsBlock(t.uid);
@@ -3036,6 +3480,7 @@ function openTask(taskId, editMode){
     // Committed task — update status & complete. Only the owner/assigner can Edit its details.
     f+='<button class="btn btn-ghost" data-action="close-modal" data-modal="detail-modal">Close</button>';
     if(canEdit) f+='<button class="btn btn-ghost" data-action="edit-task-inline" data-id="'+esc(t.taskId)+'">✏️ Edit</button>';
+    f+='<button class="btn btn-ghost" data-action="open-snooze" data-id="'+esc(t.taskId)+'">'+(isSnoozed(t)?'😴 Snoozed':'😴 Snooze')+'</button>';
     if(t.status==='In Progress') f+='<button class="btn btn-ghost" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="Pending">Set Pending</button>';
     else f+='<button class="btn btn-primary" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="In Progress">&#9881; In Progress</button>';
     f+='<button class="btn btn-success" data-action="complete-from-detail" data-id="'+esc(t.taskId)+'">'+ico('check')+' Complete</button>';
@@ -3070,7 +3515,7 @@ function saveTask(taskId,btn){
 function setStatusUI(taskId,status,remark,btn){
   if(App._ssBusy) return; App._ssBusy=true;
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="mini-spin"></span>'; }
-  Data.setStatus(taskId,status,remark).then(function(){ App._ssBusy=false; toast(status==='In Progress'?'⚙ Marked In Progress':'Set to Pending','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); })
+  Data.setStatus(taskId,status,remark).then(function(){ App._ssBusy=false; toast(status==='In Progress'?'⚙ Marked In Progress':'Set to Pending','success'); closeModal('detail-modal'); buildSidebar(); refreshView(); if(status==='Completed') celebrateIfClear(); })
   .catch(function(e){ App._ssBusy=false; if(btn)btn.disabled=false; toast(e.message||'Could not update.','error'); });
 }
 function completeTask(taskId,remark,btn){
@@ -3080,7 +3525,7 @@ function completeTask(taskId,remark,btn){
       buildSidebar();
       if(card){ toastAction('✓ Completed','Undo',function(){ Data.reopen(taskId,'Undone').then(function(){ buildSidebar(); refreshView(); }); },'success'); }
       else { toast('✓ Marked as completed','success'); }
-      closeModal('detail-modal'); refreshView();
+      closeModal('detail-modal'); refreshView(); celebrateIfClear();
     }).catch(function(e){
       if(card) card.classList.remove('completing');
       if(btn){ btn.disabled=false; btn.innerHTML=ico('check')+' Complete'; }
@@ -3211,7 +3656,14 @@ function renderSettings(){
   h+='<div class="set-field"><div><div class="set-k">Last synced</div><div class="set-sub">'+(Sync.lastSyncedAt?esc(fmtDateTime(Sync.lastSyncedAt)):'—')+'</div></div></div>';
   h+='<div class="set-field"><div><div class="set-k">Log out</div><div class="set-sub">End your session and return to login for another account. Your tasks stay saved.</div></div><button class="btn btn-ghost" data-action="log-out">Log out</button></div></div>';
   h+='<div class="set-sec"><h3>🛠️ Admin</h3><div class="set-desc">Data & categories.</div>';
-  h+='<div class="set-field"><div><div class="set-k">Categories & departments</div><div class="set-sub">'+App.departments.length+' departments · '+App.categoryMaster.length+' categories in library. New ones you type while adding a client are saved automatically.</div></div></div>';
+  if(isBoss()){
+    h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Departments</div><div class="set-sub">Only admins add or remove departments. Staff pick from these when assigning (a new category can still be added by staff under a department). Deleting is blocked while a department has open tasks.</div>';
+    h+='<div class="dept-manage">';
+    App.departments.forEach(function(d){ h+='<div class="dm-row"><span class="dm-name">'+esc(d.department)+'</span><span class="dm-cats">'+((d.categories&&d.categories.length)||0)+' categories</span><button class="btn btn-ghost btn-sm" data-action="dept-del" data-name="'+esc(d.department)+'">🗑</button></div>'; });
+    h+='</div><button class="btn btn-primary btn-sm" data-action="dept-add-open" style="margin-top:10px">'+plusIco()+'Add department</button></div></div>';
+  } else {
+    h+='<div class="set-field"><div><div class="set-k">Categories & departments</div><div class="set-sub">'+App.departments.length+' departments · '+App.categoryMaster.length+' categories. Departments are set by your admin; you can add a new category under a department when assigning.</div></div></div>';
+  }
   h+='<div class="set-field"><div><div class="set-k">Export backup</div><div class="set-sub">Download all your tasks as a JSON file.</div></div><button class="btn btn-ghost" data-action="export-data">Export</button></div>';
   if(App.identity.role==='Admin'){ h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset my tasks &amp; activity</div><div class="set-sub">Clears all your own tasks and activity (here and in the cloud) and starts fresh. You stay logged in. Cannot be undone.</div></div><button class="btn btn-danger" data-action="reset-diary">Reset</button></div>'; }
   h+='</div>';
@@ -3391,19 +3843,30 @@ function notifIcon(type){ return type==='assignment'?'📌':(type==='completed'?
 function openReminders(){
   App._bannerDismissed=true; var nbEl=document.getElementById('notif-banner'); if(nbEl) nbEl.style.display='none';
   var body=document.getElementById('reminders-body');
-  if(!App.reminders.length){ body.innerHTML='<div class="empty" style="padding:30px"><div class="empty-ico">🔔</div><div class="empty-t">No notifications</div><div class="empty-s">You\'re all caught up.</div></div>'; }
-  else {
-    body.innerHTML=App.reminders.map(function(r){
-      var clk = r.taskUid ? ' data-action="notif-open" data-uid="'+esc(r.taskUid)+'" style="cursor:pointer"' : '';
-      return '<div class="rem-item'+(r.read?' read':'')+'"'+clk+'><div class="rem-top"><span class="rem-from">'+notifIcon(r.type)+' '+esc(r.fromName)+'</span><span class="rem-time">'+esc(r.created)+'</span></div><div class="rem-msg">'+esc(r.message)+'</div>'+(r.read?'':'<button class="btn btn-ghost btn-sm" data-action="mark-reminder" data-id="'+esc(r.reminderId)+'" style="margin-top:9px">Mark as read</button>')+'</div>';
-    }).join('');
-  }
+  if(!App.reminders.length){ body.innerHTML='<div class="empty" style="padding:30px"><div class="empty-ico">🔔</div><div class="empty-t">No notifications</div><div class="empty-s">You\'re all caught up.</div></div>'; openModal('reminders-modal'); return; }
+  var unread=App.reminders.filter(function(r){return !r.read;}).length;
+  var top='<div class="rem-actions"><span class="rem-count">'+(unread?unread+' unread':'All read')+'</span>'+(unread?'<button class="btn btn-ghost btn-sm" data-action="mark-all-read">✓ Mark all as read</button>':'')+'</div>';
+  var items=App.reminders.map(function(r){
+    var clk = r.taskUid ? ' data-action="notif-open" data-uid="'+esc(r.taskUid)+'" style="cursor:pointer"' : '';
+    var toggle = r.read
+      ? '<button class="rem-toggle" data-action="mark-unread" data-id="'+esc(r.reminderId)+'">Mark unread</button>'
+      : '<button class="rem-toggle" data-action="mark-reminder" data-id="'+esc(r.reminderId)+'">Mark read</button>';
+    return '<div class="rem-item'+(r.read?' read':'')+'"'+clk+'><span class="rem-dot'+(r.read?'':' on')+'"></span><div class="rem-main"><div class="rem-top"><span class="rem-from">'+notifIcon(r.type)+' '+esc(r.fromName)+'</span><span class="rem-time">'+esc(r.created)+'</span></div><div class="rem-msg">'+esc(r.message)+'</div><div class="rem-foot">'+toggle+'</div></div></div>';
+  }).join('');
+  body.innerHTML=top+items;
   openModal('reminders-modal');
 }
 function markReminderRead(id){
-  apiCall('markReminderRead',{reminderId:id}).then(function(res){
-    if(res&&res.ok){ App.reminders.forEach(function(r){ if(r.reminderId===id) r.read=true; }); updateBell(); openReminders(); }
-  }).catch(function(){});
+  App.reminders.forEach(function(r){ if(r.reminderId===id) r.read=true; }); updateBell(); openReminders();   // optimistic
+  apiCall('markReminderRead',{reminderId:id}).catch(function(){});
+}
+function markReminderUnread(id){
+  App.reminders.forEach(function(r){ if(r.reminderId===id) r.read=false; }); updateBell(); openReminders();
+  apiCall('markReminderUnread',{reminderId:id}).catch(function(){});
+}
+function markAllRemindersRead(){
+  App.reminders.forEach(function(r){ r.read=true; }); updateBell(); openReminders();
+  apiCall('markAllRemindersRead',{}).catch(function(){});
 }
 
 /* ================================================================
@@ -3442,6 +3905,13 @@ function deleteTemplate(id){
   App.templates=App.templates.filter(function(t){return t.id!==id;});
   Data.saveTemplates().then(function(){ if(App.view==='settings') renderSettings(); });
 }
+function onRepeatChange(){
+  var v=(document.getElementById('assign-repeat')||{}).value||'';
+  var det=document.getElementById('assign-repeat-detail'); if(det) det.style.display = v?'block':'none';
+  var w=document.getElementById('rp-weekly'); if(w) w.style.display = v==='weekly'?'block':'none';
+  var m=document.getElementById('rp-monthly'); if(m) m.style.display = v==='monthly'?'block':'none';
+  var lbl=document.getElementById('assign-due-label'); if(lbl) lbl.innerHTML = v ? 'Start Date &amp; Time <span class="opt">(first occurrence)</span>' : 'Due Date &amp; Time <span class="opt">(optional)</span>';
+}
 function openAssign(dept,cat){
   var render=function(){
     var sel=document.getElementById('assign-to');
@@ -3449,11 +3919,15 @@ function openAssign(dept,cat){
     App.members.forEach(function(m){ if(m.userId!==App.identity.employeeId) opts.push({userId:m.userId, name:m.name+' ('+m.role+')'}); });
     sel.innerHTML=opts.map(function(o){ return '<option value="'+esc(o.userId)+'">'+esc(o.name)+'</option>'; }).join('');
     sel.value=App.identity.employeeId;   // default: assign to myself
-    document.getElementById('assign-dept').value=dept||App.dept||'';
+    fillDeptSelect('assign-dept', dept||App.dept||'');
     document.getElementById('assign-cat').value=cat||App.cat||'';
     document.getElementById('assign-client').value=''; document.getElementById('assign-details').value='';
     setDT('assign-due-d','assign-due-t',''); document.getElementById('assign-reminders').innerHTML='';
     var _rp=document.getElementById('assign-repeat'); if(_rp) _rp.value='';
+    var _dom=document.getElementById('assign-repeat-dom'); if(_dom && !_dom.options.length){ var _oo=''; for(var _i=1;_i<=31;_i++) _oo+='<option value="'+_i+'">'+_i+'</option>'; _dom.innerHTML=_oo; }
+    setDT('assign-repeat-end-d','assign-repeat-end-t','');
+    var _lp=document.getElementById('assign-loop'); if(_lp){ _lp.innerHTML=(App.members||[]).filter(function(m){return String(m.userId)!==String(App.identity.employeeId);}).map(function(m){return '<option value="'+esc(m.userId)+'">'+esc(m.name)+(m.role&&m.role!=='Staff'?' ('+m.role+')':'')+'</option>';}).join(''); }
+    onRepeatChange();
     var _pr=document.getElementById('assign-priority'); if(_pr) _pr.value='medium';
     var _cl=document.getElementById('assign-checklist'); if(_cl) _cl.value='';
     var _lk=document.getElementById('assign-links'); if(_lk) _lk.value='';
@@ -3476,6 +3950,9 @@ function submitAssign(){
   var details=(document.getElementById('assign-details').value||'').trim();
   var due=combineDT('assign-due-d','assign-due-t');
   var repeat=(document.getElementById('assign-repeat')||{}).value||'';
+  var repeatDay = repeat==='weekly' ? ((document.getElementById('assign-repeat-dow')||{}).value||'') : (repeat==='monthly' ? ((document.getElementById('assign-repeat-dom')||{}).value||'') : '');
+  var repeatUntil = repeat ? combineDT('assign-repeat-end-d','assign-repeat-end-t') : '';
+  var _lpEl=document.getElementById('assign-loop'); var loop=_lpEl ? Array.prototype.slice.call(_lpEl.selectedOptions||[]).map(function(o){return o.value;}) : [];
   var priority=(document.getElementById('assign-priority')||{}).value||'medium';
   var checklist=parseChecklist((document.getElementById('assign-checklist')||{}).value||'');
   var links=parseLinks((document.getElementById('assign-links')||{}).value||'');
@@ -3495,7 +3972,7 @@ function submitAssign(){
   };
   ensureDeptCat(dept,cat).then(function(n){
     if(isSelf){
-      return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,reminders:reminders,repeat:repeat,priority:priority,checklist:checklist,links:links,assignedById:App.identity.employeeId,assignedByName:App.identity.employeeName}).then(function(){
+      return Data.createTask({department:n.dept,category:n.cat,clientName:client,details:details,dueDate:due,reminders:reminders,repeat:repeat,repeatDay:repeatDay,repeatUntil:repeatUntil,loop:loop,priority:priority,checklist:checklist,links:links,assignedById:App.identity.employeeId,assignedByName:App.identity.employeeName}).then(function(){
         App._asBusy=false; closeModal('assign-modal'); finishCommon(n.dept,n.cat);
         toast('✓ '+client+' added to your diary','success'); buildSidebar(); navigate('category',n.dept,n.cat);
       });
@@ -3507,7 +3984,7 @@ function submitAssign(){
     var prov={ uid:'prov-'+Date.now(), taskId:'AS-'+Date.now(), clientName:client, department:n.dept, category:n.cat, details:details, status:'Pending', dueDate:due||'', createdTimestamp:nowISO(), lastUpdatedTimestamp:nowISO(), assignedById:App.identity.employeeId, assignedByName:App.identity.employeeName, ownerId:to, ownerName:who, _prov:true };
     App._assignedCache=(App._assignedCache||[]); App._assignedCache.unshift(prov);
     if(App.view==='assigned') renderAssignedByMe();
-    apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details, dueDate:due, reminders:reminders, repeat:repeat, priority:priority, checklist:checklist, links:links })
+    apiCall('assignTask',{ assigneeId:to, department:n.dept, category:n.cat, clientName:client, details:details, dueDate:due, reminders:reminders, repeat:repeat, repeatDay:repeatDay, repeatUntil:repeatUntil, loop:loop, priority:priority, checklist:checklist, links:links })
       .then(function(res){
         if(!res||!res.ok){ toast('“'+client+'” didn’t sync: '+((res&&res.error)||'try again'),'error'); }
         else { App._assignedCache=null; if(App.view==='assigned') renderAssignedByMe(); }
@@ -3912,10 +4389,10 @@ function requestNotifPermission(){ try{ if('Notification' in window && Notificat
 function fireDesktopNotif(n){
   try{
     if(!('Notification' in window) || Notification.permission!=='granted') return;
-    var title=n.type==='assignment'?'📌 New task assigned':(n.type==='completed'?'✅ Task completed':(n.type==='comment'?'💬 New comment':(n.type==='status'?'⚙ Task update':'🔔 Reminder')));
+    var title=n.type==='chat'?'💬 New message':(n.type==='assignment'?'📌 New task assigned':(n.type==='completed'?'✅ Task completed':(n.type==='comment'?'💬 New comment':(n.type==='status'?'⚙ Task update':'🔔 Reminder'))));
     App._bannerDismissed=false;   // a new one arrived — re-show the banner
     var no=new Notification(title,{body:n.message, requireInteraction:true, tag:n.reminderId});
-    no.onclick=function(){ try{window.focus();}catch(e){} if(n.taskUid) openFromNotif(n.taskUid); no.close(); };
+    no.onclick=function(){ try{window.focus();}catch(e){} if(n.type==='chat') openChatLink(n.link); else if(n.taskUid) openFromNotif(n.taskUid); no.close(); };
   }catch(e){}
 }
 function openFromNotif(uid){
@@ -3923,6 +4400,104 @@ function openFromNotif(uid){
   if(t){ openTask(t.taskId); return; }
   navigate('dashboard'); toast('Open your diary to see it.','info');
 }
+
+/* ================================================================
+   TEAM CHAT  (channels + private DMs, task-referenced, instant push)
+   ================================================================ */
+function saveChatRead(){ try{ Store.put('kv','chatRead',App.chatRead); }catch(e){} }
+function otherParty(d){ return String(d.fromId)===String(App.identity.employeeId)?String(d.toId):String(d.fromId); }
+function chatChannels(){ var out=[{key:'team',label:'💬 Team'}]; visibleDepartments().forEach(function(d){ out.push({key:'dept::'+d.department, label:'# '+d.department}); }); return out; }
+function channelUnread(key){
+  var read=App.chatRead[key]||''; var me=String(App.identity.employeeId);
+  if(key.indexOf('dm:')===0){ var oid=key.slice(3); return (App.dms||[]).filter(function(d){ return otherParty(d)===oid && String(d.fromId)!==me && (!read||new Date(d.created)>new Date(read)); }).length; }
+  return (App.chat||[]).filter(function(m){ return m.channel===key && String(m.fromId)!==me && (!read||new Date(m.created)>new Date(read)); }).length;
+}
+function dmPartners(){ var s={}; (App.dms||[]).forEach(function(d){ s[otherParty(d)]=1; }); return Object.keys(s); }
+function dmUnreadTotal(){ return dmPartners().reduce(function(a,o){ return a+channelUnread('dm:'+o); },0); }
+function chatUnreadTotal(){ var t=0; chatChannels().forEach(function(c){ t+=channelUnread(c.key); }); t+=dmUnreadTotal(); return t; }
+function lastDM(otherId){ var conv=(App.dms||[]).filter(function(d){ return otherParty(d)===String(otherId); }); if(!conv.length) return ''; var m=conv[conv.length-1]; return (String(m.fromId)===String(App.identity.employeeId)?'You: ':'')+m.text; }
+function chatTime(iso){ var d=new Date(iso); if(isNaN(d)) return ''; var now=new Date(); var sameDay=d.toDateString()===now.toDateString(); return sameDay? (p2(d.getHours())+':'+p2(d.getMinutes())) : (fmtDate(iso)+' '+p2(d.getHours())+':'+p2(d.getMinutes())); }
+function markRead(key){ App.chatRead[key]=nowISO(); saveChatRead(); updateChatBadge(); }
+function updateChatBadge(){ var b=document.getElementById('chat-fab-badge'); if(!b) return; var n=chatUnreadTotal(); if(n>0){ b.style.display='flex'; b.textContent=n>99?'99+':String(n); } else b.style.display='none'; }
+function onChatData(){ if(App._chat.open) renderChat(); updateChatBadge(); }
+function toggleChat(){ if(App._chat.open) closeChat(); else openChat(); }
+function openChat(){ App._chat.open=true; var p=document.getElementById('chat-panel'); if(p) p.classList.remove('hidden'); document.body.classList.add('chat-open'); renderChat(); setTimeout(function(){ var i=document.getElementById('chat-input'); if(i) i.focus(); },80); }
+function closeChat(){ App._chat.open=false; var p=document.getElementById('chat-panel'); if(p) p.classList.add('hidden'); document.body.classList.remove('chat-open'); }
+function openChatLink(link){ link=link||''; if(link.indexOf('dm:')===0){ App._chat.tab='direct'; App._chat.dm=link.slice(3); } else if(link.indexOf('chan:')===0){ App._chat.tab='channels'; App._chat.channel=link.slice(5); } openChat(); }
+function chatSetTab(tab){ App._chat.tab=tab; if(tab==='direct') App._chat.dm=null; renderChat(); }
+function chatOpenChannel(ch){ App._chat.channel=ch; renderChat(); }
+function chatOpenDM(id){ App._chat.tab='direct'; App._chat.dm=String(id); renderChat(); }
+function chatBack(){ App._chat.dm=null; renderChat(); }
+function chatMsgHTML(list){
+  if(!list.length) return '<div class="chat-empty">No messages yet. Say hello 👋</div>';
+  var me=String(App.identity.employeeId);
+  return list.map(function(m){
+    App._chatMsgMap[m.id]=m;
+    var mine=String(m.fromId)===me;
+    var ref=(m.taskRef&&m.taskRef.uid)?'<button class="chat-taskchip" data-action="chat-open-taskref" data-id="'+esc(m.id)+'">↪ '+esc(m.taskRef.client||'task')+(m.taskRef.cat?' · '+esc(m.taskRef.cat):'')+'</button>':'';
+    var priv=!mine?'<button class="chat-reply" data-action="chat-reply-private" data-id="'+esc(m.id)+'">↩︎ reply privately</button>':'';
+    return '<div class="chat-msg'+(mine?' mine':'')+'">'+(mine?'':'<div class="chat-from">'+esc(m.fromName||'')+'</div>')+ref+'<div class="chat-bubble">'+esc(m.text)+'</div><div class="chat-time">'+esc(chatTime(m.created))+'</div>'+priv+'</div>';
+  }).join('');
+}
+function renderChat(){
+  var panel=document.getElementById('chat-panel'); if(!panel) return;
+  var st=App._chat;
+  if(st.tab==='channels') markRead(st.channel); else if(st.tab==='direct'&&st.dm) markRead('dm:'+st.dm);
+  var h='<div class="chat-topbar"><div class="chat-title">💬 Team Chat</div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
+  h+='<div class="chat-tabrow"><button class="chat-tab'+(st.tab==='channels'?' on':'')+'" data-action="chat-tab" data-tab="channels">Channels</button><button class="chat-tab'+(st.tab==='direct'?' on':'')+'" data-action="chat-tab" data-tab="direct">Direct'+(dmUnreadTotal()?'<span class="chat-dot"></span>':'')+'</button></div>';
+  var showCompose=false;
+  if(st.tab==='channels'){
+    h+='<div class="chat-chips">'+chatChannels().map(function(c){ var u=channelUnread(c.key); return '<button class="chat-chip'+(st.channel===c.key?' on':'')+'" data-action="chat-open-channel" data-ch="'+esc(c.key)+'">'+esc(c.label)+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</button>'; }).join('')+'</div>';
+    h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.chat||[]).filter(function(m){return m.channel===st.channel;}))+'</div>';
+    showCompose=true;
+  } else {
+    if(!st.dm){
+      var ppl=(App.members||[]).filter(function(m){return String(m.userId)!==String(App.identity.employeeId);});
+      h+='<div class="chat-body" id="chat-scroll"><div class="chat-people">'+(ppl.length?ppl.map(function(p){ var u=channelUnread('dm:'+p.userId); var last=lastDM(p.userId); return '<button class="chat-person" data-action="chat-open-dm" data-id="'+esc(p.userId)+'"><div class="cp-av">'+esc((p.name||'?').charAt(0).toUpperCase())+'</div><div class="cp-main"><div class="cp-name">'+esc(p.name)+(p.role&&p.role!=='Staff'?' <span class="cp-role">'+esc(p.role)+'</span>':'')+'</div><div class="cp-last">'+(last?esc(last):'<span class="cp-none">No messages yet</span>')+'</div></div>'+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</button>'; }).join(''):'<div class="chat-empty">No teammates yet.</div>')+'</div></div>';
+    } else {
+      var other=(App.members||[]).find(function(m){return String(m.userId)===String(st.dm);})||{name:'Direct'};
+      h+='<div class="chat-dmhead"><button class="chat-back" data-action="chat-back">‹</button><span>'+esc(other.name||'')+'</span><span class="cp-lock">🔒 private</span></div>';
+      h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.dms||[]).filter(function(d){return otherParty(d)===String(st.dm);}))+'</div>';
+      showCompose=true;
+    }
+  }
+  if(showCompose){
+    var ref=App._chatRef?'<div class="chat-refbar">↪ '+esc(App._chatRef.client||'task')+(App._chatRef.cat?' · '+esc(App._chatRef.cat):'')+' <button data-action="chat-clear-ref" title="Remove">&times;</button></div>':'';
+    h+='<div class="chat-compose">'+ref+'<div class="chat-inrow"><button class="chat-attach" data-action="chat-refer" title="Refer a task">📎</button><input id="chat-input" placeholder="Type a message…" autocomplete="off" maxlength="2000"><button class="chat-send" data-action="chat-send" title="Send">➤</button></div></div>';
+  }
+  panel.innerHTML=h;
+  var sc=document.getElementById('chat-scroll'); if(sc) sc.scrollTop=sc.scrollHeight;
+}
+function chatSend(){
+  var inp=document.getElementById('chat-input'); if(!inp) return; var text=(inp.value||'').trim(); if(!text) return;
+  var st=App._chat, ref=App._chatRef; inp.value=''; App._chatRef=null;
+  var done=function(){}; var fail=function(){ toast('Message didn’t send — try again.','error'); };
+  if(st.tab==='channels'){ apiCall('sendChat',{channel:st.channel,text:text,taskRef:ref}).then(done,fail); }
+  else if(st.dm){ apiCall('sendDM',{toId:st.dm,text:text,taskRef:ref}).then(done,fail); }
+  renderChat();
+}
+/* Task reference picker */
+function chatRefTasks(){
+  var raw=isBoss()?(App._allTasks||[]):(App.tasks||[]).concat(App._assignedCache||[]);
+  var me=String(App.identity.employeeId), seen={}, out=[];
+  raw.forEach(function(t){ if(!t||!t.uid||seen[t.uid]) return; seen[t.uid]=true; out.push({uid:t.uid,taskId:t.taskId,client:t.clientName,cat:t.category,dept:t.department,ownerId:String(t.ownerId||t.employeeId||me),ownerName:t.ownerName||'',assignedById:String(t.assignedById||'')}); });
+  out.sort(function(a,b){ return (a.client||'').localeCompare(b.client||''); });
+  return out;
+}
+function openTaskPicker(){ App._pickList=chatRefTasks(); var m=document.getElementById('taskpick-modal'); if(!m) return; m.classList.remove('hidden'); paintTaskPick(''); setTimeout(function(){ var s=document.getElementById('taskpick-q'); if(s){ s.value=''; s.focus(); } },60); }
+function paintTaskPick(q){ q=(q||'').toLowerCase(); var list=(App._pickList||[]).filter(function(t){ return !q||((t.client||'')+' '+(t.cat||'')+' '+(t.dept||'')+' '+(t.ownerName||'')).toLowerCase().indexOf(q)>=0; }).slice(0,80); var el=document.getElementById('taskpick-list'); if(el) el.innerHTML=list.length?list.map(function(t){ return '<button class="tp-item" data-action="chat-pick-task" data-uid="'+esc(t.uid)+'"><div class="tp-c">'+esc(t.client||'—')+'</div><div class="tp-m">'+esc(t.dept)+' › '+esc(t.cat)+(t.ownerName?' · '+esc(t.ownerName):'')+'</div></button>'; }).join(''):'<div class="chat-empty">No matching tasks</div>'; }
+function pickTaskRef(uid){ var t=(App._pickList||[]).find(function(x){return x.uid===uid;}); if(!t) return; App._chatRef=t; var m=document.getElementById('taskpick-modal'); if(m) m.classList.add('hidden'); renderChat(); setTimeout(function(){ var i=document.getElementById('chat-input'); if(i) i.focus(); },40); }
+function clearChatRef(){ App._chatRef=null; renderChat(); }
+function openTaskRefFromMsg(id){ var m=App._chatMsgMap[id]; if(m&&m.taskRef) openTaskRef(m.taskRef); }
+function openTaskRef(ref){
+  if(!ref||!ref.uid){ return; }
+  var t=(App.tasks||[]).find(function(x){return x.uid===ref.uid;});
+  if(t){ closeChat(); openTask(t.taskId); return; }
+  var at=(App._adminTaskCache&&App._adminTaskCache[ref.uid])||(App._sharedCache&&App._sharedCache[ref.uid]);
+  if(at){ closeChat(); openManagedTask(at); return; }
+  toast('Referenced task: '+(ref.client||'—')+(ref.cat?' · '+ref.cat:''),'info');
+}
+function chatReplyPrivate(id){ var m=App._chatMsgMap[id]; if(!m) return; App._chat.tab='direct'; App._chat.dm=String(m.fromId); if(m.taskRef&&m.taskRef.uid) App._chatRef=m.taskRef; renderChat(); }
 function resetDiary(){
   openConfirm({
     icon:'🗑️',
@@ -3988,6 +4563,8 @@ document.addEventListener('click', function(e){
     case 'log-out': logout(); break;
     case 'open-reminders': openReminders(); break;
     case 'mark-reminder': markReminderRead(el.getAttribute('data-id')); break;
+    case 'mark-unread': markReminderUnread(el.getAttribute('data-id')); break;
+    case 'mark-all-read': markAllRemindersRead(); break;
     case 'open-staff': openStaff(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'open-reminder-form': var rf=document.getElementById('rem-form'); if(rf){ rf.style.display='block'; var rm=document.getElementById('rem-msg'); if(rm)rm.focus(); } break;
     case 'cancel-reminder': var rf2=document.getElementById('rem-form'); if(rf2)rf2.style.display='none'; break;
@@ -4001,6 +4578,9 @@ document.addEventListener('click', function(e){
     case 'slate-task': slateToTask(el.getAttribute('data-id')); break;
     case 'slate-open-task': slateOpenTask(el.getAttribute('data-id')); break;
     case 'slate-tidy': slateTidy(); break;
+    case 'slate-select-toggle': slateSelToggle(); break;
+    case 'slate-sel-complete': slateSelComplete(); break;
+    case 'slate-sel-delete': slateSelDelete(); break;
     case 'slate-archive': openArchive(); break;
     case 'close-arch': closeArch(); break;
     case 'slate-restore': slateRestore(el.getAttribute('data-id')); break;
@@ -4010,6 +4590,19 @@ document.addEventListener('click', function(e){
     case 'new-client-task': newClientTask(el.getAttribute('data-client')); break;
     case 'open-cmdk': openCmdk(); break;
     case 'asst-toggle': toggleAsst(); break;
+    case 'chat-toggle': toggleChat(); break;
+    case 'chat-close': closeChat(); break;
+    case 'chat-tab': chatSetTab(el.getAttribute('data-tab')); break;
+    case 'chat-open-channel': chatOpenChannel(el.getAttribute('data-ch')); break;
+    case 'chat-open-dm': chatOpenDM(el.getAttribute('data-id')); break;
+    case 'chat-back': chatBack(); break;
+    case 'chat-send': chatSend(); break;
+    case 'chat-refer': openTaskPicker(); break;
+    case 'chat-clear-ref': clearChatRef(); break;
+    case 'taskpick-close': { var _tm=document.getElementById('taskpick-modal'); if(_tm) _tm.classList.add('hidden'); break; }
+    case 'chat-pick-task': pickTaskRef(el.getAttribute('data-uid')); break;
+    case 'chat-open-taskref': openTaskRefFromMsg(el.getAttribute('data-id')); break;
+    case 'chat-reply-private': chatReplyPrivate(el.getAttribute('data-id')); break;
     case 'asst-speak': voiceOpen('smart'); break;
     case 'asst-task': closeAsst(); openAssign(); break;
     case 'asst-note': voiceOpen('note'); break;
@@ -4046,6 +4639,9 @@ document.addEventListener('click', function(e){
     case 'set-role': var _rs=document.getElementById('role-sel'); adminToggleRole(el.getAttribute('data-id'), _rs?_rs.value:'Staff', el); break;
     case 'toggle-active': adminToggleActive(el.getAttribute('data-id'), el.getAttribute('data-active'), el); break;
     case 'save-visibility': adminSaveVisibility(el.getAttribute('data-id'), el); break;
+    case 'dept-add-open': openDeptAdd(); break;
+    case 'dept-add-create': deptAddCreate(el); break;
+    case 'dept-del': deptDelete(el.getAttribute('data-name')); break;
     case 'dash-filter': App.dashFilter=el.getAttribute('data-filter'); renderDashboard(); break;
     case 'dismiss-banner': App._bannerDismissed=true; var nb=document.getElementById('notif-banner'); if(nb)nb.style.display='none'; break;
     case 'add-reminder-row': addReminderRow(el.getAttribute('data-target')); break;
@@ -4072,6 +4668,9 @@ document.addEventListener('click', function(e){
     case 'save-task': saveTask(el.getAttribute('data-id'), el); break;
     case 'edit-task-inline': openTask(el.getAttribute('data-id'), true); break;
     case 'open-task-view': openTask(el.getAttribute('data-id'), false); break;
+    case 'open-snooze': openSnooze(el.getAttribute('data-id')); break;
+    case 'snooze-set': snoozeSet(el.getAttribute('data-when')); break;
+    case 'snooze-wake': snoozeWake(); break;
     case 'set-status': { var _ssi=el.getAttribute('data-id'),_sst=el.getAttribute('data-status'),_sse=el; askRemark({title:_sst==='In Progress'?'Mark In Progress':'Set to Pending',sub:'Add a remark about this update.',okLabel:'Save & update',ico:'📝'}, function(rk){ setStatusUI(_ssi,_sst,rk,_sse); }); break; }
     case 'complete-from-detail': { var _cfi=el.getAttribute('data-id'),_cfe=el; askRemark({title:'Complete this task',sub:'Add a closing remark before marking it complete.',okLabel:'✓ Complete',ico:'✅'}, function(rk){ completeTask(_cfi, rk, _cfe); }); break; }
     case 'reopen-task': { var _rti=el.getAttribute('data-id'); askRemark({title:'Reopen this task',sub:'Add a remark about why you are reopening it.',okLabel:'Reopen',ico:'↩️'}, function(rk){ reopenTask(_rti, rk); }); break; }
@@ -4088,10 +4687,14 @@ document.addEventListener('input', function(e){
   if(e.target.id==='search'){ if(App.view!=='search'){ App.view='search'; buildSidebar(); } renderSearch(e.target.value); }
   else if(e.target.id==='cmdk-input'){ App._cmdkSel=0; renderCmdk(e.target.value); }
   else if(e.target.id==='slate-search'){ App._slateQuery=e.target.value; paintSlate(); }
+  else if(e.target.id==='taskpick-q'){ paintTaskPick(e.target.value); }
   else if(e.target.classList && e.target.classList.contains('combo-input')){ suggestFor(e.target); }
 });
 document.addEventListener('focusin', function(e){
   if(e.target && e.target.classList && e.target.classList.contains('combo-input')) suggestFor(e.target);
+});
+document.addEventListener('change', function(e){
+  if(e.target && e.target.id==='assign-repeat') onRepeatChange();
 });
 document.addEventListener('keydown', function(e){
   if((e.ctrlKey||e.metaKey) && (e.key==='k'||e.key==='K')){ e.preventDefault(); var c=document.getElementById('cmdk'); if(c && c.classList.contains('hidden')) openCmdk(); else closeModal('cmdk'); return; }
@@ -4101,7 +4704,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); cancelSlateInput(); try{voiceClose();}catch(_){} }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); closeModal('snooze-modal'); closeModal('taskpick-modal'); closeModal('deptadd-modal'); var _cpz=document.getElementById('chat-panel'); if(_cpz&&!_cpz.classList.contains('hidden')){ closeChat(); } cancelSlateInput(); try{voiceClose();}catch(_){} }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
@@ -4109,9 +4712,11 @@ document.addEventListener('keydown', function(e){
     else if(id==='comment-input'){ var cb=document.querySelector('[data-action="add-comment"]'); if(cb) addCommentUI(cb.getAttribute('data-uid')); }
     else if(id==='login-key'||id==='login-url'){ doLogin(); }
     else if(id==='nm-name'){ submitCreateMember(document.querySelector('[data-action="submit-create-member"]')); }
+    else if(id==='deptadd-name'){ deptAddCreate(document.querySelector('[data-action="dept-add-create"]')); }
     else if(id==='slate-input'){ if(!e.shiftKey){ e.preventDefault(); commitSlateInput(); } }
+    else if(id==='chat-input'){ e.preventDefault(); chatSend(); }
     else if(id==='voice-text'){ if(!e.shiftKey){ e.preventDefault(); voiceUse(); } }
-    else if(id==='add-dept'||id==='add-cat'){ e.preventDefault(); if(id==='add-dept'){ document.getElementById('dept-sugg').classList.add('hidden'); document.getElementById('add-cat').focus(); } else { document.getElementById('cat-sugg').classList.add('hidden'); document.getElementById('add-client').focus(); } }
+    else if(id==='add-cat'){ e.preventDefault(); var _cs=document.getElementById('cat-sugg'); if(_cs) _cs.classList.add('hidden'); document.getElementById('add-client').focus(); }
   }
 });
 </script>
