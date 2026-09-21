@@ -47,6 +47,15 @@ body[data-theme="dark"]{
   --border:#242835;--border-completed:#2a2f3d;
   --shadow:0 1px 2px rgba(0,0,0,.5);--shadow-md:0 16px 40px -12px rgba(0,0,0,.6),0 2px 10px -4px rgba(0,0,0,.5);
 }
+/* ===== Selectable light themes (staff pick their own) — only re-tint brand/accent/bg/gradients ===== */
+body[data-theme="mint"]{ --primary:#0e7a53;--primary-light:#12986a;--brand:#0e7a53;--brand-ink:#fff;--accent:#0e7a53;--accent-hover:#0b6344;--accent-soft:#e6f3ec;--bg:#eef4f0;
+  --grad-warm:linear-gradient(120deg,#d9f2e4 0%,#eafaf0 50%,#e2f6ec 100%);--grad-cool:linear-gradient(120deg,#d7f0e6 0%,#e4f0ff 55%,#eafaf3 100%); }
+body[data-theme="ocean"]{ --primary:#28407a;--primary-light:#33528f;--brand:#28407a;--brand-ink:#fff;--accent:#28407a;--accent-hover:#1f3260;--accent-soft:#e8edf7;--bg:#eef1f8;
+  --grad-warm:linear-gradient(120deg,#dfe7fb 0%,#eaf2ff 50%,#e4ecff 100%);--grad-cool:linear-gradient(120deg,#dbe6ff 0%,#e8e2ff 55%,#dcefff 100%); }
+body[data-theme="sunset"]{ --primary:#c0553f;--primary-light:#d76a52;--brand:#c0553f;--brand-ink:#fff;--accent:#c0553f;--accent-hover:#a5442f;--accent-soft:#fbeae3;--bg:#f6efe8;
+  --grad-warm:linear-gradient(120deg,#ffe0d2 0%,#fff0dd 50%,#ffe9e2 100%);--grad-cool:linear-gradient(120deg,#ffe1e6 0%,#ffe9d6 55%,#ffdccb 100%); }
+body[data-theme="rose"]{ --primary:#a23a63;--primary-light:#c04d7c;--brand:#a23a63;--brand-ink:#fff;--accent:#a23a63;--accent-hover:#87304f;--accent-soft:#f7e6ef;--bg:#f5eef2;
+  --grad-warm:linear-gradient(120deg,#ffe0ee 0%,#fff0e5 50%,#ffe6f2 100%);--grad-cool:linear-gradient(120deg,#ffe0ef 0%,#efe2ff 55%,#ffe8f6 100%); }
 html{font-size:15px}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
@@ -990,9 +999,10 @@ body.slate-selecting .assistant, body.slate-selecting .chat-fab{ display:none; }
 .chat-reply{ background:none; border:none; color:var(--text-muted); font-size:.68rem; font-weight:600; cursor:pointer; padding:2px 4px; }
 .chat-reply:hover{ color:var(--accent); }
 .chat-people{ display:flex; flex-direction:column; gap:4px; }
-.chat-person{ display:flex; align-items:center; gap:10px; width:100%; border:none; background:rgba(255,255,255,.5); border-radius:12px; padding:9px 11px; cursor:pointer; text-align:left; }
-.chat-person:hover{ background:rgba(255,255,255,.85); }
-.cp-av{ width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#8e7bff,#6aa8ff); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.chat-person{ display:flex; align-items:center; gap:12px; width:100%; border:none; background:transparent; border-radius:12px; padding:10px 9px; cursor:pointer; text-align:left; border-bottom:1px solid var(--border); }
+.chat-person:last-child{ border-bottom:none; }
+.chat-person:hover{ background:var(--accent-soft); }
+.cp-av{ width:42px; height:42px; border-radius:50%; background:var(--accent-soft); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
 .cp-main{ flex:1; min-width:0; }
 .cp-name{ font-weight:700; font-size:.9rem; color:var(--text); }
 .cp-role{ font-size:.68rem; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:1px 6px; border-radius:6px; }
@@ -1188,6 +1198,30 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 .dept-header:hover{ background:#e4e5ee !important; }
 #searchbar{ background:var(--bg) !important; border:1px solid var(--border) !important; }
 .dept-count, .nav-badge{ background:var(--brand); color:var(--brand-ink); }
+/* Planet avatars on a deep-space circle so they glow */
+.cp-av.av-planet{ background:radial-gradient(circle at 50% 38%, #1b2440, #070a14) !important; overflow:hidden; padding:0; }
+.cp-av.av-planet svg{ display:block; width:100%; height:100%; }
+/* Planet picker grid (settings + first-login) */
+.planet-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:10px; }
+.planet-opt{ display:flex; flex-direction:column; align-items:center; gap:5px; padding:8px 4px; border:1.5px solid var(--border); border-radius:14px; background:var(--bg-card); cursor:pointer; font:inherit; transition:border-color .14s, transform .12s; }
+.planet-opt:hover{ transform:translateY(-1px); border-color:var(--text-muted); }
+.planet-opt.on{ border-color:var(--brand); }
+.planet-orb{ width:46px; height:46px; border-radius:50%; overflow:hidden; background:radial-gradient(circle at 50% 38%, #1b2440, #070a14); }
+.planet-orb svg{ display:block; width:100%; height:100%; }
+.planet-name{ font-size:.68rem; font-weight:700; color:var(--text-sec); }
+/* First-login planet chooser (space backdrop) */
+#avatar-modal .modal{ max-width:520px; }
+.avpick-hero{ text-align:center; margin-bottom:12px; }
+.avpick-hero h3{ margin:0 0 3px; font-size:1.15rem; }
+.avpick-hero p{ margin:0; color:var(--text-muted); font-size:.85rem; }
+/* Theme picker */
+.theme-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:4px; }
+.theme-card{ position:relative; display:flex; align-items:center; gap:10px; padding:12px 13px; border:1.5px solid var(--border); border-radius:14px; background:var(--bg-card); cursor:pointer; font:inherit; text-align:left; transition:border-color .15s, transform .12s; }
+.theme-card:hover{ transform:translateY(-1px); border-color:var(--text-muted); }
+.theme-card.on{ border-color:var(--brand); }
+.theme-dot{ width:26px; height:26px; border-radius:50%; flex:none; box-shadow:0 2px 6px rgba(17,18,23,.18); }
+.theme-name{ font-weight:700; font-size:.86rem; color:var(--text); }
+.theme-tick{ margin-left:auto; color:var(--brand); font-weight:900; }
 
 </style>
 </head>
@@ -1423,6 +1457,15 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 <!-- REASSIGN / ROLE-SWITCH MODAL (admin only) -->
 <div id="reassign-modal" class="overlay hidden">
   <div class="modal modal-lg" id="reassign-shell"></div>
+</div>
+
+<!-- PLANET AVATAR PICKER -->
+<div id="avatar-modal" class="overlay hidden">
+  <div class="modal">
+    <div class="avpick-hero"><h3 id="avpick-title">🪐 Choose your planet</h3><p id="avpick-sub">This becomes your avatar across the diary.</p></div>
+    <div class="modal-b" id="avatar-body"></div>
+    <div class="modal-f" id="avatar-foot"></div>
+  </div>
 </div>
 
 <div id="toasts"></div>
@@ -1881,6 +1924,15 @@ var FB = (function(){
           var cpatch={chanRead:{}}; cpatch.chanRead[String(b.channel)]=nowISO();
           return col('users').doc(String(me().userId)).set(cpatch,{merge:true}).then(function(){return {ok:true};});
         }
+        case 'setGender': {
+          if(!me().userId) return {ok:true};
+          var gv=String(b.gender||''); if(['male','female','other',''].indexOf(gv)<0) gv='';
+          return col('users').doc(String(me().userId)).set({gender:gv},{merge:true}).then(function(){return {ok:true};});
+        }
+        case 'setAvatar': {
+          if(!me().userId) return {ok:true};
+          return col('users').doc(String(me().userId)).set({avatar:String(b.avatar||'')},{merge:true}).then(function(){return {ok:true};});
+        }
         case 'getTask': {
           if(!b.uid) throw new Error('No task specified.');
           return col('tasks').doc(String(b.uid)).get().then(function(s){ if(!s.exists) return {ok:false, error:'Task not found (it may have been deleted).'}; return {ok:true, task:s.data()}; });
@@ -2334,7 +2386,43 @@ function init(){
   }).catch(showFatal_);
 }
 function showFatal_(e){ document.getElementById('loading').innerHTML='<div style="text-align:center;color:#dc2626;max-width:360px;padding:20px"><div style="font-size:2rem">⚠</div><div style="font-weight:600;margin:8px 0">Could not open the diary</div><div style="font-size:.85rem;color:#64748b">'+esc(e&&e.message?e.message:e)+'</div></div>'; }
-function applyTheme(){ document.body.setAttribute('data-theme', App.prefs.theme==='dark'?'dark':'light'); }
+var THEMES=[
+  {id:'light', name:'Paper', sw:'#14151a', bg:'#e9eaf1'},
+  {id:'dark', name:'Midnight', sw:'#eef0f6', bg:'#0c0e14'},
+  {id:'mint', name:'Mint', sw:'#0e7a53', bg:'#eef4f0'},
+  {id:'ocean', name:'Ocean', sw:'#28407a', bg:'#eef1f8'},
+  {id:'sunset', name:'Sunset', sw:'#c0553f', bg:'#f6efe8'},
+  {id:'rose', name:'Rose', sw:'#a23a63', bg:'#f5eef2'}
+];
+function applyTheme(){ var t=App.prefs.theme||'light'; document.body.setAttribute('data-theme', t); var th=THEMES.find(function(x){return x.id===t;}); var m=document.querySelector('meta[name="theme-color"]'); if(m&&th) m.setAttribute('content', th.bg); }
+function setTheme(name){ App.prefs.theme=name; applyTheme(); Data.savePrefs(); if(App.view==='settings') renderSettings(); }
+function setGender(g){ App.prefs.gender=g; Data.savePrefs();
+  if(App.identity){ var id=String(App.identity.employeeId); App._userMeta=App._userMeta||{}; App._userMeta[id]=App._userMeta[id]||{}; App._userMeta[id].gender=g; }
+  apiCall('setGender',{gender:g}).catch(function(){});
+  if(App.view==='settings') renderSettings();
+  if(App._chat && App._chat.open) renderChat();
+}
+/* Planet avatar picker */
+function currentAvatarId(){ return (App.prefs&&App.prefs.avatar) || (App.identity? avatarChoiceFor(App.identity.employeeId,App.identity.employeeName) : PLANETS[0].id); }
+function avatarGridHTML(sel){ return '<div class="planet-grid">'+PLANETS.map(function(p){ return '<button class="planet-opt'+(sel===p.id?' on':'')+'" data-action="set-avatar" data-id="'+p.id+'" title="'+esc(p.name)+'"><span class="planet-orb">'+planetSVG(p)+'</span><span class="planet-name">'+esc(p.name)+'</span></button>'; }).join('')+'</div>'; }
+function openAvatarPicker(firstTime){
+  var body=document.getElementById('avatar-body'); if(body) body.innerHTML=avatarGridHTML(currentAvatarId());
+  var foot=document.getElementById('avatar-foot'); var sub=document.getElementById('avpick-sub');
+  if(sub) sub.textContent = firstTime? 'Welcome! Pick a planet as your avatar — you can change it anytime in Settings.' : 'Tap a planet to set it as your avatar.';
+  if(foot) foot.innerHTML = firstTime? '' : '<button class="btn btn-ghost" data-action="close-modal" data-modal="avatar-modal">Done</button>';
+  App._avatarFirst=!!firstTime; openModal('avatar-modal');
+}
+function setAvatar(id){
+  if(!planetById(id)) return;
+  App.prefs.avatar=id; Data.savePrefs();
+  if(App.identity){ var uid=String(App.identity.employeeId); App._userMeta=App._userMeta||{}; App._userMeta[uid]=App._userMeta[uid]||{}; App._userMeta[uid].avatar=id; }
+  apiCall('setAvatar',{avatar:id}).catch(function(){});
+  var body=document.getElementById('avatar-body'); if(body) body.innerHTML=avatarGridHTML(id);
+  if(App._avatarFirst){ App._avatarFirst=false; setTimeout(function(){ closeModal('avatar-modal'); toast('🪐 Planet set!','success'); },360); }
+  if(App.view==='settings') renderSettings();
+  if(App._chat && App._chat.open) renderChat();
+  try{ buildSidebar(); }catch(e){}
+}
 function showLogin(){ document.getElementById('loading').style.display='none'; document.getElementById('welcome').style.display='flex'; setTimeout(function(){ var n=document.getElementById('login-key'); if(n)n.focus(); },150); }
 
 function doLogin(){
@@ -2462,11 +2550,17 @@ var FBLive = {
     // Team members — keep the assign dropdown & Team list live as staff are added/changed
     db.collection('users').onSnapshot(function(qs){
       var members=[]; App._userMeta=App._userMeta||{};
-      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}, chanRead:u.chanRead||{}, allowedDepartments:(u.allowedDepartments||null), role:u.role}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role}); });
+      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}, chanRead:u.chanRead||{}, allowedDepartments:(u.allowedDepartments||null), role:u.role, gender:(u.gender||''), avatar:(u.avatar||'')}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role}); });
       App.members=members;
       if(App._chat && App._chat.open) renderChat();   // live read-receipts / presence in the chat
       App._teamCache=null;   // force fresh counts next time Team opens
       if(App.view==='team') renderTeam();
+      // First-login: if this person hasn't chosen a planet yet, prompt once.
+      if(!App._avatarPrompted && App.identity){
+        App._avatarPrompted=true;
+        var meAv=((App._userMeta[String(App.identity.employeeId)]||{}).avatar)||(App.prefs&&App.prefs.avatar);
+        if(!meAv) setTimeout(function(){ if(document.getElementById('avatar-modal')) openAvatarPicker(true); }, 900);
+      }
     }, function(){});
 
     // Admin: keep Team / Analytics / Staff-profile / Activity-log live as ANY staff changes anything
@@ -4334,8 +4428,13 @@ function renderSettings(){
   var h='<div class="cat-head"><div class="cat-title">Settings</div><div class="cat-sub">Manage your diary.</div></div>';
   h+='<div class="set-sec"><h3>👤 My Identity</h3><div class="set-desc">Your identity is locked to this diary.</div>';
   h+='<div class="set-field"><div><div class="set-k">'+esc(i.employeeName)+'</div><div class="set-sub">'+esc(i.role)+' · ID '+esc(i.employeeId)+'</div></div><span class="locked-tag">'+ico('check')+' 🔒 Locked</span></div></div>';
-  h+='<div class="set-sec"><h3>🎨 Preferences</h3><div class="set-desc">Personal display options.</div>';
-  h+='<div class="set-field"><div><div class="set-k">Dark mode</div><div class="set-sub">Easier on the eyes at night</div></div><label class="toggle"><input type="checkbox" id="theme-toggle" data-action="toggle-theme" '+(App.prefs.theme==='dark'?'checked':'')+'><span></span></label></div></div>';
+  h+='<div class="set-sec"><h3>🎨 Theme</h3><div class="set-desc">Pick your look — saved just for you on this device.</div>';
+  var _cur=App.prefs.theme||'light';
+  h+='<div class="theme-grid">'+THEMES.map(function(t){ return '<button class="theme-card'+(_cur===t.id?' on':'')+'" data-action="set-theme" data-theme="'+t.id+'"><span class="theme-dot" style="background:'+t.sw+';outline:3px solid '+t.bg+'"></span><span class="theme-name">'+esc(t.name)+'</span>'+(_cur===t.id?'<span class="theme-tick">✓</span>':'')+'</button>'; }).join('')+'</div></div>';
+  var _av=currentAvatarId();
+  h+='<div class="set-sec"><h3>🪐 Your planet</h3><div class="set-desc">Your avatar across the diary — tap any planet to switch.</div>';
+  h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><span class="cp-av av-planet" style="width:50px;height:50px">'+planetSVG(planetById(_av)||PLANETS[0])+'</span><div><div class="set-k">'+esc((planetById(_av)||PLANETS[0]).name)+'</div><div class="set-sub">Your current planet</div></div></div>';
+  h+=avatarGridHTML(_av)+'</div>';
   h+='<div class="set-sec"><h3>🧩 My Templates</h3><div class="set-desc">Reusable task formats you build by ticking “Save as template” when adding a task. Personal to you on this device.</div>';
   if(!App.templates.length){ h+='<div class="set-field"><div class="set-sub">No templates yet — they’ll appear here once you save one.</div></div>'; }
   else { App.templates.forEach(function(t){ h+='<div class="set-field"><div><div class="set-k">'+esc(t.name||t.category||'Template')+'</div><div class="set-sub">'+esc((t.department||'—')+' › '+(t.category||'—'))+(t.details?' · '+esc(t.details.slice(0,60))+(t.details.length>60?'…':''):'')+'</div></div><button class="btn btn-ghost btn-sm" data-action="del-template" data-id="'+esc(t.id)+'">Delete</button></div>'; }); }
@@ -4499,14 +4598,14 @@ function renderReassign(){
     var mem=(App.members||[]).filter(function(m){ return String(m.userId)!==String(r.targetId); });
     shell.innerHTML=head('🔄 Role switch → '+esc(r.targetName))
       +'<div class="modal-b"><div class="ra-q">Bring <b>whose</b> active tasks onto '+esc(r.targetName)+'’s plate?</div><div class="ref-staff">'
-      + mem.map(function(m){ var n=sourceActiveTasks(m.userId).length; return '<button class="ref-staff-item" data-action="ra-pick-source" data-id="'+esc(m.userId)+'" data-name="'+esc(m.name)+'">'+avatarHTML(m.name,'sm')+'<span class="rs-name">'+esc(m.name)+'</span><span class="rs-role">'+n+' active</span></button>'; }).join('')
+      + mem.map(function(m){ var n=sourceActiveTasks(m.userId).length; return '<button class="ref-staff-item" data-action="ra-pick-source" data-id="'+esc(m.userId)+'" data-name="'+esc(m.name)+'">'+avatarHTML(m.name,'sm',m.userId)+'<span class="rs-name">'+esc(m.name)+'</span><span class="rs-role">'+n+' active</span></button>'; }).join('')
       + '</div></div>'; return;
   }
   if(r.kind==='single' && r.step==='target'){
     var mem2=(App.members||[]).filter(function(m){ return String(m.userId)!==String(r.task.ownerId); });
     shell.innerHTML=head('↪ Hand over task')
       +'<div class="modal-b"><div class="ra-q">Hand over <b>'+esc(r.task.clientName||'task')+'</b> to…</div><div class="ref-staff">'
-      + mem2.map(function(m){ return '<button class="ref-staff-item" data-action="ra-pick-target" data-id="'+esc(m.userId)+'" data-name="'+esc(m.name)+'">'+avatarHTML(m.name,'sm')+'<span class="rs-name">'+esc(m.name)+'</span>'+(m.role&&m.role!=='Staff'?'<span class="rs-role">'+esc(m.role)+'</span>':'')+'</button>'; }).join('')
+      + mem2.map(function(m){ return '<button class="ref-staff-item" data-action="ra-pick-target" data-id="'+esc(m.userId)+'" data-name="'+esc(m.name)+'">'+avatarHTML(m.name,'sm',m.userId)+'<span class="rs-name">'+esc(m.name)+'</span>'+(m.role&&m.role!=='Staff'?'<span class="rs-role">'+esc(m.role)+'</span>':'')+'</button>'; }).join('')
       + '</div></div>'; return;
   }
   // review step
@@ -5235,7 +5334,87 @@ function chatOpenChannel(ch){ App._chat.channel=ch; renderChat(); }
 function chatOpenDM(id){ App._chat.tab='direct'; App._chat.dm=String(id); renderChat(); }
 function chatBack(){ App._chat.dm=null; renderChat(); }
 var AV_HUES=['#8e7bff','#4f7cff','#0fb47f','#f59e0b','#ef4444','#8b5cf6','#e11d84','#0891b2','#6aa8ff'];
-function avatarHTML(name, cls){ var ch=(name||'?').charAt(0).toUpperCase(); var seed=0; var nm=String(name||''); for(var i=0;i<nm.length;i++) seed+=nm.charCodeAt(i); return '<div class="cp-av '+(cls||'')+'" style="background:'+AV_HUES[seed%AV_HUES.length]+'">'+esc(ch)+'</div>'; }
+function _seedOf(s){ var seed=0; s=String(s||'?'); for(var i=0;i<s.length;i++) seed=(seed*31+s.charCodeAt(i))>>>0; return seed; }
+function genderOf(userId){ var m=(App._userMeta||{})[String(userId)]||{}; if(m.gender) return m.gender; if(App.identity && String(userId)===String(App.identity.employeeId)) return (App.prefs&&App.prefs.gender)||''; return ''; }
+/* Original flat cartoon avatar (SVG) — deterministic per person, styled by gender. */
+function cartoonAvatar(seedStr, gender){
+  var seed=_seedOf(seedStr);
+  var BG=['#ffd9e6','#ffe6c7','#d7f2e3','#d8e6ff','#ece0ff','#ffe0d6','#d9f0ff','#f6e3ff'];
+  var SKIN=['#f7d0b0','#f2c39b','#e5ab7f','#c98a5f','#a86a42'];
+  var HAIR=['#2b2b33','#4a3327','#6b4a2f','#a5673f','#c98a3a','#8a8f99','#20232e'];
+  var bg=BG[seed%BG.length], skin=SKIN[(seed>>3)%SKIN.length], hair=HAIR[(seed>>5)%HAIR.length];
+  var g=(gender||'').toLowerCase();
+  var hairSVG;
+  if(g==='female'){ // long hair framing the face
+    hairSVG='<path d="M8 22c0-9 4-14 12-14s12 5 12 14v6c0 2-2 3-3 2 0-6 0-10-2-12 0 4 0 7-1 9-2-3-2-6-2-9-3 2-8 2-11 0 0 3 0 6-2 9-1-2-1-5-1-9-2 2-2 6-2 12-1 1-3 0-3-2z" fill="'+hair+'"/>';
+  } else if(g==='male'){ // short cropped hair
+    hairSVG='<path d="M8 20c0-8 5-12 12-12s12 4 12 12c-1-3-3-5-6-6-2 2-9 2-12 0-3 1-5 3-6 6z" fill="'+hair+'"/>';
+  } else { // neutral rounded top
+    hairSVG='<path d="M8 21c0-8 5-13 12-13s12 5 12 13c-2-4-5-7-12-7s-10 3-12 7z" fill="'+hair+'"/>';
+  }
+  return '<svg viewBox="0 0 40 40" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'
+    +'<circle cx="20" cy="20" r="20" fill="'+bg+'"/>'
+    +'<circle cx="20" cy="18.5" r="8.5" fill="'+skin+'"/>'
+    +'<path d="M12.5 33c1.2-4.4 4-6.5 7.5-6.5s6.3 2.1 7.5 6.5z" fill="'+skin+'"/>'
+    +hairSVG
+    +'<circle cx="16.7" cy="18.2" r="1.25" fill="#1c1c22"/><circle cx="23.3" cy="18.2" r="1.25" fill="#1c1c22"/>'
+    +'<path d="M16.8 22.2c1.2 1.4 4.1 1.4 6.4 0" stroke="#1c1c22" stroke-width="1.2" fill="none" stroke-linecap="round"/>'
+    +'</svg>';
+}
+/* ===== Planet avatars — staff pick a planet; crisp vector art (any resolution) ===== */
+var PLANETS=[
+  {id:'earth',name:'Earth',c1:'#3a86f0',c2:'#0b2e6e',style:'earth',land:'#3fae66'},
+  {id:'mars',name:'Mars',c1:'#e07a45',c2:'#6e2612',style:'rocky',spot:'#b5502b'},
+  {id:'neptune',name:'Neptune',c1:'#4f7bf0',c2:'#152f80',style:'bands',band:'#7ea6ff'},
+  {id:'jupiter',name:'Jupiter',c1:'#e9c99e',c2:'#a2703f',style:'bands',band:'#c08a56',spot:'#c34b3a'},
+  {id:'saturn',name:'Saturn',c1:'#e7cf98',c2:'#a48a4e',style:'rings',ring:'#dcc78f'},
+  {id:'uranus',name:'Uranus',c1:'#bff0f0',c2:'#5ab2bd',style:'rings',ring:'#a9dfe6',thinring:true},
+  {id:'venus',name:'Venus',c1:'#f4dc9e',c2:'#c2924e',style:'smooth'},
+  {id:'mercury',name:'Mercury',c1:'#bbb6ae',c2:'#6b675f',style:'craters'},
+  {id:'pluto',name:'Pluto',c1:'#d9c4a6',c2:'#8a6f52',style:'rocky'},
+  {id:'moon',name:'Luna',c1:'#d9dade',c2:'#8a8c93',style:'craters'},
+  {id:'sun',name:'Sol',c1:'#ffd24a',c2:'#ff7a1a',style:'star'},
+  {id:'ember',name:'Ember',c1:'#ff8a3a',c2:'#4e1303',style:'lava'},
+  {id:'glacia',name:'Glacia',c1:'#e2f4ff',c2:'#7db6e6',style:'smooth'},
+  {id:'verdis',name:'Verdis',c1:'#8fe86a',c2:'#2c7330',style:'bands',band:'#b6f58c'},
+  {id:'nyx',name:'Nyx',c1:'#a86bff',c2:'#361879',style:'nebula'},
+  {id:'aqua',name:'Aqua',c1:'#2fd0e0',c2:'#0a5678',style:'smooth'},
+  {id:'aurel',name:'Aurel',c1:'#f0a6cf',c2:'#89395f',style:'rings',ring:'#f2c1dd'},
+  {id:'zephyr',name:'Zephyr',c1:'#a6ccff',c2:'#365a96',style:'bands',band:'#c8ddff'},
+  {id:'ferro',name:'Ferro',c1:'#c8703a',c2:'#582810',style:'rocky',spot:'#8a4522'},
+  {id:'comet',name:'Comet',c1:'#e2f4ff',c2:'#8fc7e6',style:'comet'}
+];
+function planetById(id){ for(var i=0;i<PLANETS.length;i++){ if(PLANETS[i].id===id) return PLANETS[i]; } return null; }
+var _pgid=0;
+function planetSVG(def){
+  def=def||PLANETS[0]; var u='p'+(++_pgid); var c1=def.c1, c2=def.c2, style=def.style||'smooth';
+  var s='<svg viewBox="0 0 40 40" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs>';
+  s+='<radialGradient id="'+u+'g" cx="34%" cy="29%" r="80%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".9"/><stop offset="24%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></radialGradient>';
+  var R=(style==='rings')?13:19;
+  s+='<clipPath id="'+u+'c"><circle cx="20" cy="20" r="'+R+'"/></clipPath></defs>';
+  if(style==='comet'){ return s+'<path d="M21 19 L39 6 Q29 16 24 23 Z" fill="'+c1+'" opacity=".4"/><circle cx="17" cy="23" r="9" fill="url(#'+u+'g)"/><ellipse cx="13.5" cy="19.5" rx="3" ry="2" fill="#fff" opacity=".5"/></svg>'; }
+  if(style==='star'){ return s+'<circle cx="20" cy="20" r="19" fill="'+c2+'" opacity=".3"/><circle cx="20" cy="20" r="14" fill="url(#'+u+'g)"/><circle cx="20" cy="20" r="14" fill="none" stroke="'+c1+'" stroke-width="1" opacity=".6"/></svg>'; }
+  if(style==='rings'){ s+='<ellipse cx="20" cy="20" rx="19" ry="6" fill="none" stroke="'+def.ring+'" stroke-width="'+(def.thinring?1.4:2.8)+'" opacity=".9" transform="rotate(-18 20 20)"/>'; }
+  s+='<circle cx="20" cy="20" r="'+R+'" fill="url(#'+u+'g)"/><g clip-path="url(#'+u+'c)">';
+  if(style==='bands'){ var by=[11,15,20,25,29]; for(var i=0;i<by.length;i++){ s+='<ellipse cx="20" cy="'+by[i]+'" rx="'+R+'" ry="'+(1.5+(i%2))+'" fill="'+(def.band||c2)+'" opacity="'+(0.16+0.07*(i%3)).toFixed(2)+'"/>'; } }
+  if(style==='earth'){ s+='<path d="M9 16 q5 -3 9 0 q4 2 2 5 q-4 2 -8 0 q-4 -2 -3 -5z" fill="'+def.land+'" opacity=".9"/><path d="M22 25 q4 -1 6 2 q1 3 -3 4 q-4 0 -4 -3z" fill="'+def.land+'" opacity=".85"/><ellipse cx="27" cy="14" rx="4" ry="2" fill="#fff" opacity=".45"/>'; }
+  if(style==='rocky'){ s+='<circle cx="15" cy="16" r="3" fill="'+c2+'" opacity=".28"/><circle cx="25" cy="24" r="2.4" fill="'+c2+'" opacity=".28"/><circle cx="27" cy="14" r="1.8" fill="'+c2+'" opacity=".26"/>'; }
+  if(style==='craters'){ s+='<circle cx="15" cy="15" r="2.4" fill="'+c2+'" opacity=".32"/><circle cx="24" cy="22" r="3" fill="'+c2+'" opacity=".32"/><circle cx="27" cy="15" r="1.6" fill="'+c2+'" opacity=".28"/><circle cx="16" cy="26" r="1.8" fill="'+c2+'" opacity=".28"/>'; }
+  if(style==='lava'){ s+='<path d="M8 18 L15 20 L12 25 M22 12 L26 17 L24 24 L30 26" stroke="#ff7a1a" stroke-width="1.2" fill="none" opacity=".85"/>'; }
+  if(style==='nebula'){ s+='<path d="M9 25 Q18 9 31 16 Q22 22 26 31 Q15 27 9 25z" fill="#ffffff" opacity=".15"/>'; }
+  if(def.spot){ s+='<ellipse cx="24" cy="23" rx="3.2" ry="2.1" fill="'+def.spot+'" opacity=".8"/>'; }
+  s+='<circle cx="27" cy="26" r="'+R+'" fill="#04060f" opacity=".24"/></g>';
+  s+='<circle cx="20" cy="20" r="'+R+'" fill="none" stroke="#ffffff" stroke-opacity=".16" stroke-width="1"/></svg>';
+  return s;
+}
+function avatarChoiceFor(userId, name){
+  var chosen='';
+  if(userId){ var m=(App._userMeta||{})[String(userId)]||{}; chosen=m.avatar||''; if(!chosen && App.identity && String(userId)===String(App.identity.employeeId)) chosen=(App.prefs&&App.prefs.avatar)||''; }
+  else if(App.prefs){ chosen=App.prefs.avatar||''; }
+  if(!chosen) chosen=PLANETS[_seedOf(userId||name)%PLANETS.length].id;
+  return chosen;
+}
+function avatarHTML(name, cls, userId){ var def=planetById(avatarChoiceFor(userId,name))||PLANETS[_seedOf(userId||name)%PLANETS.length]; return '<div class="cp-av av-planet '+(cls||'')+'">'+planetSVG(def)+'</div>'; }
 function relTime(iso){ var t=new Date(iso).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(iso); }
 function presenceOf(userId){ var m=(App._userMeta||{})[String(userId)]||{}; if(m.lastActive && (Date.now()-new Date(m.lastActive).getTime())<180000) return {online:true, text:'online now'}; if(m.lastActive) return {online:false, text:'last seen '+relTime(m.lastActive)}; return {online:false, text:''}; }
 function lastOpenedText(userId){ var m=(App._userMeta||{})[String(userId)]||{}; return m.lastOpened? ('opened '+relTime(m.lastOpened)) : ''; }
@@ -5272,7 +5451,7 @@ function chatMsgHTML(list, isDM, otherId){
     var ref=(m.taskRef&&m.taskRef.uid)?'<button class="chat-taskchip" data-action="chat-open-taskref" data-id="'+esc(m.id)+'">↪ '+esc(m.taskRef.client||'task')+(m.taskRef.cat?' · '+esc(m.taskRef.cat):'')+'</button>':'';
     var tick = (mine && isDM) ? '<span class="chat-tick'+(dmSeen(otherId,m.created)?' seen':'')+'">'+(dmSeen(otherId,m.created)?'✓✓':'✓')+'</span>' : '';
     var priv=(!mine && !isDM)?'<button class="chat-reply" data-action="chat-reply-private" data-id="'+esc(m.id)+'">↩︎ reply privately</button>':'';
-    out+='<div class="chat-row'+(mine?' mine':'')+'">'+(!mine?avatarHTML(m.fromName,'sm'):'')+
+    out+='<div class="chat-row'+(mine?' mine':'')+'">'+(!mine?avatarHTML(m.fromName,'sm',m.fromId):'')+
       '<div class="chat-col"><div class="chat-msg'+(mine?' mine':'')+'" data-action="chat-msg-info" data-id="'+esc(m.id)+'" title="Tap for info">'+((!mine&&!isDM)?'<div class="chat-from">'+esc(m.fromName||'')+'</div>':'')+ref+'<div class="chat-bubble">'+esc(m.text)+'</div><div class="chat-meta"><span class="chat-time">'+esc(chatTime(m.created))+'</span>'+tick+'</div></div>'+(priv?'<div class="chat-rowact">'+priv+'</div>':'')+'</div></div>';
   });
   return out;
@@ -5287,7 +5466,7 @@ function renderChat(){
   var h;
   if(inDM){
     var pr=presenceOf(st.dm); var op=lastOpenedText(st.dm);
-    h='<div class="chat-topbar dmbar"><button class="chat-back" data-action="chat-back" aria-label="Back">‹</button>'+avatarHTML(other.name,'md')+'<div class="dmbar-info"><div class="dmbar-name">'+esc(other.name||'')+'</div><div class="dmbar-sub">'+(pr.online?'<span class="pr-dot on"></span> online':(pr.text?esc(pr.text):'🔒 private'))+(op?' · '+esc(op):'')+'</div></div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
+    h='<div class="chat-topbar dmbar"><button class="chat-back" data-action="chat-back" aria-label="Back">‹</button>'+avatarHTML(other.name,'md',st.dm)+'<div class="dmbar-info"><div class="dmbar-name">'+esc(other.name||'')+'</div><div class="dmbar-sub">'+(pr.online?'<span class="pr-dot on"></span> online':(pr.text?esc(pr.text):'🔒 private'))+(op?' · '+esc(op):'')+'</div></div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
   } else {
     h='<div class="chat-topbar"><div class="chat-title">💬 Team Chat</div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
     h+='<div class="chat-tabrow"><button class="chat-tab'+(st.tab==='channels'?' on':'')+'" data-action="chat-tab" data-tab="channels"># Channels</button><button class="chat-tab'+(st.tab==='direct'?' on':'')+'" data-action="chat-tab" data-tab="direct">✉ Direct'+(dmUnreadTotal()?'<span class="chat-dot"></span>':'')+'</button></div>';
@@ -5308,7 +5487,7 @@ function renderChat(){
     ppl.sort(function(a,b){ var ta=dmLastTime(a.userId), tb=dmLastTime(b.userId); if(tb!==ta) return tb-ta; return String(a.name).localeCompare(String(b.name)); });
     h+='<div class="chat-body" id="chat-scroll"><div class="chat-people">'+(ppl.length?ppl.map(function(p){
       var u=channelUnread('dm:'+p.userId); var last=lastDM(p.userId); var lt=dmLastTime(p.userId); var pr=presenceOf(p.userId);
-      return '<button class="chat-person" data-action="chat-open-dm" data-id="'+esc(p.userId)+'"><div class="cp-avwrap">'+avatarHTML(p.name)+(pr.online?'<span class="pr-dot on ring"></span>':'')+'</div><div class="cp-main"><div class="cp-top"><span class="cp-name">'+esc(p.name)+(p.role&&p.role!=='Staff'?' <span class="cp-role">'+esc(p.role)+'</span>':'')+'</span>'+(lt?'<span class="cp-time">'+esc(chatTime(new Date(lt).toISOString()))+'</span>':'')+'</div><div class="cp-bot"><span class="cp-last">'+(last?esc(last):'<span class="cp-none">Tap to start chatting</span>')+'</span>'+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</div></div></button>';
+      return '<button class="chat-person" data-action="chat-open-dm" data-id="'+esc(p.userId)+'"><div class="cp-avwrap">'+avatarHTML(p.name,'',p.userId)+(pr.online?'<span class="pr-dot on ring"></span>':'')+'</div><div class="cp-main"><div class="cp-top"><span class="cp-name">'+esc(p.name)+(p.role&&p.role!=='Staff'?' <span class="cp-role">'+esc(p.role)+'</span>':'')+'</span>'+(lt?'<span class="cp-time">'+esc(chatTime(new Date(lt).toISOString()))+'</span>':'')+'</div><div class="cp-bot"><span class="cp-last">'+(last?esc(last):'<span class="cp-none">Tap to start chatting</span>')+'</span>'+(u?'<span class="chat-badge2">'+u+'</span>':'')+'</div></div></button>';
     }).join(''):'<div class="chat-empty">No teammates yet.</div>')+'</div></div>';
   } else {
     h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.dms||[]).filter(function(d){return otherParty(d)===String(st.dm);}), true, st.dm)+'</div>';
@@ -5352,7 +5531,7 @@ function paintRefModal(){
   var body='';
   if(r.step==='staff'){
     var mem=channelMembers(r.channel);
-    body='<div class="ref-q">Whose task do you want to refer?</div><div class="ref-staff">'+mem.map(function(m){ var meq=String(m.userId)===String(App.identity.employeeId); return '<button class="ref-staff-item" data-action="ref-pick-staff" data-id="'+esc(m.userId)+'">'+avatarHTML(m.name,'sm')+'<span class="rs-name">'+esc(m.name)+(meq?' (you)':'')+'</span>'+(m.role&&m.role!=='Staff'?'<span class="rs-role">'+esc(m.role)+'</span>':'')+'</button>'; }).join('')+'</div>';
+    body='<div class="ref-q">Whose task do you want to refer?</div><div class="ref-staff">'+mem.map(function(m){ var meq=String(m.userId)===String(App.identity.employeeId); return '<button class="ref-staff-item" data-action="ref-pick-staff" data-id="'+esc(m.userId)+'">'+avatarHTML(m.name,'sm',m.userId)+'<span class="rs-name">'+esc(m.name)+(meq?' (you)':'')+'</span>'+(m.role&&m.role!=='Staff'?'<span class="rs-role">'+esc(m.role)+'</span>':'')+'</button>'; }).join('')+'</div>';
   } else {
     var staffId=refActiveStaff();
     var sname = String(staffId)===String(App.identity.employeeId) ? 'You' : memberById(staffId).name;
@@ -5397,7 +5576,7 @@ function openTaskRef(ref){
   }).catch(function(e){ toast(e.message||'Couldn’t open the task.','error'); });
 }
 /* ---- Read-receipt / message-info sheet ---- */
-function miPerson(userId, sub){ var nm=memberById(userId).name; return '<div class="mi-person">'+avatarHTML(nm,'sm')+'<div class="mi-pi"><div class="mi-name">'+esc(nm)+'</div><div class="mi-sub">'+esc(sub)+'</div></div></div>'; }
+function miPerson(userId, sub){ var nm=memberById(userId).name; return '<div class="mi-person">'+avatarHTML(nm,'sm',userId)+'<div class="mi-pi"><div class="mi-name">'+esc(nm)+'</div><div class="mi-sub">'+esc(sub)+'</div></div></div>'; }
 function openMsgInfo(id){
   var m=App._chatMsgMap[id]; if(!m) return;
   var me=String(App.identity.employeeId);
@@ -5622,6 +5801,10 @@ document.addEventListener('click', function(e){
     case 'reopen-task': { var _rti=el.getAttribute('data-id'); askRemark({title:'Reopen this task',sub:'Add a remark about why you are reopening it.',okLabel:'Reopen',ico:'↩️'}, function(rk){ reopenTask(_rti, rk); }); break; }
     case 'pick': pickSugg(el.getAttribute('data-input'), parseInt(el.getAttribute('data-idx'),10)); break;
     case 'toggle-theme': toggleTheme(); break;
+    case 'set-theme': setTheme(el.getAttribute('data-theme')); break;
+    case 'set-gender': setGender(el.getAttribute('data-g')); break;
+    case 'set-avatar': setAvatar(el.getAttribute('data-id')); break;
+    case 'open-avatar-picker': openAvatarPicker(false); break;
     case 'reset-diary': resetDiary(); break;
     case 'export-data': exportData(); break;
     case 'sync-now': syncNow(); break;
@@ -5649,7 +5832,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); closeModal('snooze-modal'); closeModal('taskpick-modal'); closeModal('msginfo-modal'); closeModal('reassign-modal'); closeModal('deptadd-modal'); var _cpz=document.getElementById('chat-panel'); if(_cpz&&!_cpz.classList.contains('hidden')){ closeChat(); } cancelSlateInput(); try{voiceClose();}catch(_){} }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); closeModal('snooze-modal'); closeModal('taskpick-modal'); closeModal('msginfo-modal'); closeModal('reassign-modal'); closeModal('avatar-modal'); closeModal('deptadd-modal'); var _cpz=document.getElementById('chat-panel'); if(_cpz&&!_cpz.classList.contains('hidden')){ closeChat(); } cancelSlateInput(); try{voiceClose();}catch(_){} }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
