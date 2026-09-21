@@ -1051,6 +1051,23 @@ body.slate-selecting .assistant, body.slate-selecting .chat-fab{ display:none; }
 .mi-name{ font-weight:700; font-size:.88rem; }
 .mi-sub{ font-size:.76rem; color:var(--text-muted); }
 .mi-note{ font-size:.82rem; color:var(--text-muted); padding:4px 2px; }
+/* Role switch / hand-over */
+.ra-q{ font-size:.9rem; color:var(--text-sec); margin-bottom:12px; }
+.ra-modes{ display:flex; gap:8px; margin:4px 0 10px; flex-wrap:wrap; }
+.ra-mode{ flex:1; min-width:150px; border:1px solid var(--border); background:var(--bg-card); border-radius:11px; padding:10px; font:inherit; font-size:.82rem; font-weight:700; color:var(--text-sec); cursor:pointer; }
+.ra-mode.on{ background:var(--accent); color:#fff; border-color:transparent; }
+.ra-note{ font-size:.8rem; color:var(--text-sec); background:var(--accent-soft); border-radius:9px; padding:9px 11px; margin-bottom:12px; }
+.ra-list{ display:flex; flex-direction:column; gap:8px; max-height:46vh; overflow:auto; }
+.ra-task{ border:1px solid var(--border); border-radius:11px; padding:10px 12px; background:var(--bg-card); }
+.ra-head{ display:flex; align-items:center; gap:8px; }
+.ra-inc{ display:flex; align-items:center; gap:9px; flex:1; cursor:pointer; font-weight:700; font-size:.9rem; }
+.ra-inc .ra-cb{ width:17px; height:17px; accent-color:var(--accent); }
+.ra-editbtn{ border:1px solid var(--border); background:transparent; border-radius:8px; padding:4px 9px; font:inherit; font-size:.75rem; font-weight:600; color:var(--text-sec); cursor:pointer; }
+.ra-editbtn:hover{ border-color:var(--accent); color:var(--accent); }
+.ra-meta{ font-size:.76rem; color:var(--text-muted); margin-top:4px; }
+.ra-edit{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--border); }
+.ra-edit.hidden{ display:none; }
+.from-badge{ display:inline-flex; align-items:center; gap:3px; font-size:.68rem; font-weight:700; color:#7c5cff; background:rgba(124,92,255,.12); padding:2px 8px; border-radius:999px; }
 /* Modern chat: rows with avatars, date dividers, read ticks, presence, WhatsApp-style list */
 .cp-av.sm{ width:26px; height:26px; font-size:.72rem; }
 .cp-av.md{ width:38px; height:38px; font-size:.95rem; }
@@ -1343,6 +1360,11 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
   </div>
 </div>
 
+<!-- REASSIGN / ROLE-SWITCH MODAL (admin only) -->
+<div id="reassign-modal" class="overlay hidden">
+  <div class="modal modal-lg" id="reassign-shell"></div>
+</div>
+
 <div id="toasts"></div>
 
 <!-- Firebase SDK (compat build so it works in this single-file app with no bundler) -->
@@ -1390,6 +1412,24 @@ var FB = (function(){
   function logAudit(action, taskId, client, detail){
     var id=newId('A'); var u=me();
     return col('audit').doc(id).set({ id:id, ts:nowISO(), actorId:u.userId||'', actor:u.name||'', action:String(action||''), taskId:String(taskId||''), client:String(client||''), detail:String(detail||'') });
+  }
+  // Role-switch department handover: target GAINS the source's departments; on a move the source loses them.
+  // Users who see all departments (allowedDepartments == null) are left untouched.
+  function applyDeptSwap_(sourceId, targetId, mode){
+    return Promise.all([col('users').doc(String(sourceId)).get(), col('users').doc(String(targetId)).get()]).then(function(r){
+      var src=r[0].exists?r[0].data():null, tgt=r[1].exists?r[1].data():null;
+      if(!src||!tgt) return true;
+      var srcDepts=Array.isArray(src.allowedDepartments)?src.allowedDepartments.slice():null;
+      if(!srcDepts||!srcDepts.length) return true;   // source already sees all → nothing specific to hand over
+      var jobs=[];
+      if(Array.isArray(tgt.allowedDepartments)){
+        var union=tgt.allowedDepartments.slice();
+        srcDepts.forEach(function(d){ if(union.indexOf(d)<0) union.push(d); });
+        jobs.push(col('users').doc(String(targetId)).set({allowedDepartments:union},{merge:true}));
+      } // target null = sees all → leave as-is
+      if(mode==='move'){ jobs.push(col('users').doc(String(sourceId)).set({allowedDepartments:[]},{merge:true})); }
+      return Promise.all(jobs);
+    });
   }
 
   // Router — mirrors the old backend actions, returns the same {ok,...} shapes.
@@ -1455,6 +1495,56 @@ var FB = (function(){
               .then(function(){ return addNotif(a.userId, u.name, u.name+' assigned you: '+task.clientName+' ('+task.category+')', uid, 'assignment'); })
               .then(function(){ return logAudit('Assigned', uid, task.clientName, 'to '+a.name+' · '+task.department+' / '+task.category); })
               .then(function(){ return {ok:true, task:task}; });
+          });
+        }
+
+        case 'reassignTasks': {
+          if(!isOverseer()) throw new Error('Admin access required.');
+          var targetId=String(b.targetId||''); var mode=(b.mode==='copy')?'copy':'move';
+          var items=Array.isArray(b.items)?b.items:[];
+          if(!targetId || !items.length) throw new Error('Nothing to reassign.');
+          var admin=me();
+          return col('users').doc(targetId).get().then(function(ts){
+            if(!ts.exists) throw new Error('Target staff not found.');
+            var tgt=ts.data();
+            return Promise.all(items.map(function(it){ return col('tasks').doc(String(it.uid)).get(); })).then(function(snaps){
+              var batch=db.batch(); var count=0; var fromName='';
+              snaps.forEach(function(snap, i){
+                if(!snap.exists) return; var t=snap.data();
+                if(t.status==='Completed') return;                        // active tasks only — never touch completed history
+                if(String(t.ownerId)===targetId) return;                  // already owned by target
+                var edits=(items[i] && items[i].edits) || {};
+                var applied={}; ['clientName','department','category','details','dueDate','priority'].forEach(function(k){ if(edits[k]!==undefined && edits[k]!==null) applied[k]=edits[k]; });
+                var oldOwnerId=String(t.ownerId), oldOwnerName=t.ownerName||''; fromName=oldOwnerName||fromName;
+                if(mode==='copy'){
+                  var nuid=genUid(); var ts2=nowISO();
+                  var copy={ uid:nuid, taskId:'RA-'+Date.now()+'-'+String(nuid).slice(-5),
+                    ownerId:tgt.userId, ownerName:tgt.name,
+                    department:applied.department||t.department, category:applied.category||t.category,
+                    clientName:applied.clientName||t.clientName, details:(applied.details!==undefined?applied.details:(t.details||'')),
+                    status:(t.status==='In Progress'?'In Progress':'Pending'), dueDate:(applied.dueDate!==undefined?applied.dueDate:(t.dueDate||'')), followUpDate:t.followUpDate||'',
+                    reminders:Array.isArray(t.reminders)?t.reminders:[], repeat:'', repeatDay:'', repeatUntil:'',   // copy = one-off (no future auto-spawn)
+                    priority:applied.priority||t.priority||'medium',
+                    checklist:Array.isArray(t.checklist)?t.checklist.map(function(x){return {text:x.text,done:false};}):[], links:Array.isArray(t.links)?t.links:[], loop:Array.isArray(t.loop)?t.loop:[],
+                    createdTimestamp:ts2, completedTimestamp:'', lastUpdatedTimestamp:ts2,
+                    createdById:admin.userId, createdByName:admin.name, assignedById:admin.userId, assignedByName:admin.name,
+                    reassignedFromId:oldOwnerId, reassignedFromName:oldOwnerName, syncStatus:'SYNCED' };
+                  batch.set(col('tasks').doc(nuid), copy); count++;
+                } else {
+                  var patch={ ownerId:tgt.userId, ownerName:tgt.name, lastUpdatedTimestamp:nowISO(), reassignedFromId:oldOwnerId, reassignedFromName:oldOwnerName };
+                  Object.keys(applied).forEach(function(k){ patch[k]=applied[k]; });
+                  if(String(t.assignedById)===oldOwnerId){ patch.assignedById=admin.userId; patch.assignedByName=admin.name; }   // self-made task → admin becomes the assigner
+                  batch.set(col('tasks').doc(String(t.uid)), patch, {merge:true}); count++;
+                }
+              });
+              if(!count) return {ok:true, count:0};
+              return batch.commit().then(function(){
+                var jobs=[ addNotif(targetId, admin.name, admin.name+(mode==='copy'?' copied ':' moved ')+count+' task'+(count!==1?'s':'')+' to you'+(fromName?(' from '+fromName):''), '', 'assignment'),
+                           logAudit(mode==='copy'?'Copied tasks':'Moved tasks', '', '', count+' task(s) to '+tgt.name+(fromName?(' from '+fromName):'')) ];
+                if(b.swapDepts && b.sourceId){ jobs.push(applyDeptSwap_(String(b.sourceId), targetId, mode)); }
+                return Promise.all(jobs).then(function(){ return {ok:true, count:count}; });
+              });
+            });
           });
         }
 
@@ -2803,6 +2893,7 @@ function taskCard(t,isDone,showCat){
   h+='<div class="card-facts">'+facts.join('')+'</div>';
   if(t.details) h+='<div class="card-preview">'+esc(t.details)+'</div>';
   var badges='';
+  if(t.reassignedFromName) badges+=reassignBadge(t);
   if(t.repeat && !isDone) badges+='<span class="rep-tag">&#128257; '+esc(t.repeat)+'</span>';
   if(!isDone && overdueDays(t)>=3) badges+='<span class="esc-tag">&#128681; Escalated</span>';
   if(badges) h+='<div class="card-badges">'+badges+'</div>';
@@ -3823,6 +3914,7 @@ function openTask(taskId, editMode){
     // Committed task — update status & complete. Only the owner/assigner can Edit its details.
     f+='<button class="btn btn-ghost" data-action="close-modal" data-modal="detail-modal">Close</button>';
     if(canEdit) f+='<button class="btn btn-ghost" data-action="edit-task-inline" data-id="'+esc(t.taskId)+'">✏️ Edit</button>';
+    if(App.identity.role==='Admin') f+='<button class="btn btn-ghost" data-action="handover-task" data-uid="'+esc(t.uid)+'">↪ Hand over</button>';
     f+='<button class="btn btn-ghost" data-action="open-snooze" data-id="'+esc(t.taskId)+'">'+(isSnoozed(t)?'😴 Snoozed':'😴 Snooze')+'</button>';
     if(t.status==='In Progress') f+='<button class="btn btn-ghost" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="Pending">Set Pending</button>';
     else f+='<button class="btn btn-primary" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="In Progress">&#9881; In Progress</button>';
@@ -3934,6 +4026,7 @@ function myTaskRow(t){
   if(byOther) meta.push('👤 by '+esc(t.assignedByName||'')); else meta.push('👤 self');
   meta.push('📅 '+esc(t.dueDate?fmtDateTime(t.dueDate):'No due date'));
   meta.push('🏷 '+esc(t.department)+' › '+esc(t.category));
+  if(t.reassignedFromName) meta.push('↪ from '+esc(t.reassignedFromName));
   return '<div class="mt-row mt-'+st+'" data-action="open-task" data-id="'+esc(t.taskId)+'"><div class="mt-main"><div class="mt-top">'+prioTag(t.priority)+'<span class="mt-client">'+esc(t.clientName)+'</span><span class="mt-state mt-'+st+'">'+lbl+'</span></div><div class="mt-meta">'+meta.join(' <span class="mt-sep">·</span> ')+'</div></div></div>';
 }
 /* Anchor date a task falls on for range filtering: completed→done date, else due, else created. */
@@ -4285,6 +4378,7 @@ function openStaff(staffId,name){
       h+='<div class="set-field" style="flex-direction:column;align-items:stretch;gap:8px"><div><div class="set-k">Visible departments</div><div class="set-sub">Tick what this person sees in their tool. None ticked = they see all.</div></div><div class="vis-grid">';
       App.departments.forEach(function(d){ var on=member.allowedDepartments&&member.allowedDepartments.indexOf(d.department)!==-1; h+='<label class="vis-item"><input type="checkbox" class="vis-cb" value="'+esc(d.department)+'" '+(on?'checked':'')+'> '+esc(d.department)+'</label>'; });
       h+='</div><button class="btn btn-primary btn-sm" style="align-self:flex-start" data-action="save-visibility" data-id="'+esc(staffId)+'">Save visibility</button></div>';
+      h+='<div class="set-field"><div><div class="set-k">🔄 Role switch</div><div class="set-sub">Bring another staffer’s <b>active</b> tasks onto '+esc(name)+'’s plate (move or copy, edit each first). Also gives '+esc(name)+' their department access. Completed tasks stay with whoever finished them.</div></div><button class="btn btn-primary btn-sm" data-action="role-switch" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Switch tasks here</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset this member’s data</div><div class="set-sub">Clears all of '+esc(name)+'’s own tasks &amp; activity. Tasks others assigned to them are kept. Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="reset-member" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Reset</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Delete ALL of '+esc(name)+'’s tasks</div><div class="set-sub">Permanently removes <b>every</b> task on '+esc(name)+'’s plate — including ones others assigned to them (so the assigner loses it too). Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="admin-del-all-tasks" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Delete all</button></div>';
       }
@@ -4305,6 +4399,114 @@ function openStaff(staffId,name){
     if(!res||!res.ok){ if(!App._staffCache[staffId]) showContentError_(res&&res.error?res.error:'Could not load.'); return; }
     App._staffCache[staffId]=res.tasks||[]; paint(App._staffCache[staffId]);
   }).catch(function(e){ if(!App._staffCache[staffId]) showContentError_(e.message||'Could not load.'); });
+}
+
+/* ================================================================
+   ROLE SWITCH (bulk) + TASK HAND-OVER (single) — admin only
+   Only ever touches the tasks selected right now; creates no standing
+   redirect, so future tasks assigned to anyone are unaffected.
+   ================================================================ */
+function reassignBadge(t){ return (t && t.reassignedFromName) ? '<span class="from-badge">↪ from '+esc(t.reassignedFromName)+'</span>' : ''; }
+function findAnyTask(uid){
+  return (App.tasks||[]).find(function(x){return x.uid===uid;})
+    || (App._allTasks||[]).find(function(x){return x.uid===uid;})
+    || (App._assignedCache||[]).find(function(x){return x.uid===uid;})
+    || (App._adminTaskCache&&App._adminTaskCache[uid])
+    || (App._sharedCache&&App._sharedCache[uid]) || null;
+}
+function sourceActiveTasks(sourceId){
+  return (App._allTasks||[]).filter(function(t){ return String(t.ownerId)===String(sourceId) && t.status!=='Completed'; })
+    .sort(function(a,b){ var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; return ad-bd; });
+}
+function openRoleSwitch(targetId, targetName){
+  if(!(App.identity&&App.identity.role==='Admin')){ toast('Admins only.','error'); return; }
+  App._ra={ kind:'bulk', targetId:String(targetId), targetName:targetName, step:'source', tmode:'move', edited:{} };
+  renderReassign(); var m=document.getElementById('reassign-modal'); if(m) m.classList.remove('hidden');
+}
+function openHandover(uid){
+  if(!(App.identity&&App.identity.role==='Admin')){ toast('Admins only.','error'); return; }
+  var t=findAnyTask(uid); if(!t){ toast('Task not found.','error'); return; }
+  if(t.status==='Completed'){ toast('Completed tasks stay with who finished them.','info'); return; }
+  closeModal('detail-modal');
+  App._ra={ kind:'single', task:t, step:'target', tmode:'move', edited:{} };
+  renderReassign(); var m=document.getElementById('reassign-modal'); if(m) m.classList.remove('hidden');
+}
+function closeReassign(){ var m=document.getElementById('reassign-modal'); if(m) m.classList.add('hidden'); App._ra=null; App._raBusy=false; }
+function renderReassign(){
+  var shell=document.getElementById('reassign-shell'); if(!shell) return; var r=App._ra||{};
+  var head=function(title){ return '<div class="modal-h"><h3>'+title+'</h3><button class="modal-x" data-action="reassign-close">&times;</button></div>'; };
+  if(r.kind==='bulk' && r.step==='source'){
+    var mem=(App.members||[]).filter(function(m){ return String(m.userId)!==String(r.targetId); });
+    shell.innerHTML=head('🔄 Role switch → '+esc(r.targetName))
+      +'<div class="modal-b"><div class="ra-q">Bring <b>whose</b> active tasks onto '+esc(r.targetName)+'’s plate?</div><div class="ref-staff">'
+      + mem.map(function(m){ var n=sourceActiveTasks(m.userId).length; return '<button class="ref-staff-item" data-action="ra-pick-source" data-id="'+esc(m.userId)+'" data-name="'+esc(m.name)+'">'+avatarHTML(m.name,'sm')+'<span class="rs-name">'+esc(m.name)+'</span><span class="rs-role">'+n+' active</span></button>'; }).join('')
+      + '</div></div>'; return;
+  }
+  if(r.kind==='single' && r.step==='target'){
+    var mem2=(App.members||[]).filter(function(m){ return String(m.userId)!==String(r.task.ownerId); });
+    shell.innerHTML=head('↪ Hand over task')
+      +'<div class="modal-b"><div class="ra-q">Hand over <b>'+esc(r.task.clientName||'task')+'</b> to…</div><div class="ref-staff">'
+      + mem2.map(function(m){ return '<button class="ref-staff-item" data-action="ra-pick-target" data-id="'+esc(m.userId)+'" data-name="'+esc(m.name)+'">'+avatarHTML(m.name,'sm')+'<span class="rs-name">'+esc(m.name)+'</span>'+(m.role&&m.role!=='Staff'?'<span class="rs-role">'+esc(m.role)+'</span>':'')+'</button>'; }).join('')
+      + '</div></div>'; return;
+  }
+  // review step
+  var tasks = r.kind==='bulk' ? sourceActiveTasks(r.sourceId) : [r.task];
+  var fromName = r.kind==='bulk' ? r.sourceName : (r.task.ownerName||'owner');
+  var title = r.kind==='bulk' ? ('🔄 '+esc(r.sourceName)+' → '+esc(r.targetName)) : ('↪ Hand over to '+esc(r.targetName));
+  var modeRow='<div class="ra-modes"><button class="ra-mode'+(r.tmode==='move'?' on':'')+'" data-action="ra-mode" data-m="move">Remove from '+esc(fromName)+'</button><button class="ra-mode'+(r.tmode==='copy'?' on':'')+'" data-action="ra-mode" data-m="copy">Copy (keep with '+esc(fromName)+')</button></div>';
+  var deptNote = (r.kind==='bulk') ? '<div class="ra-note">'+(r.tmode==='move' ? ('🏢 '+esc(r.targetName)+' also gains '+esc(r.sourceName)+'’s department access; '+esc(r.sourceName)+'’s access is cleared.') : ('🏢 '+esc(r.targetName)+' also gains '+esc(r.sourceName)+'’s department access ('+esc(r.sourceName)+' keeps theirs).'))+'</div>' : '';
+  var listHTML = tasks.length ? tasks.map(function(t){ return raTaskRow(t); }).join('') : '<div class="chat-empty">No active tasks to transfer.</div>';
+  var backBtn = r.kind==='bulk' ? '<button class="ref-back" data-action="ra-back">‹ Pick a different person</button>' : '<button class="ref-back" data-action="ra-back">‹ Pick a different person</button>';
+  var submit = tasks.length ? '<button class="btn btn-primary" data-action="ra-submit">'+(r.tmode==='copy'?'Copy':'Move')+' '+tasks.length+' task'+(tasks.length!==1?'s':'')+'</button>' : '';
+  shell.innerHTML=head(title)
+    +'<div class="modal-b">'+backBtn+modeRow+deptNote+'<div class="ra-list">'+listHTML+'</div></div>'
+    +'<div class="modal-f"><button class="btn btn-ghost" data-action="reassign-close">Cancel</button>'+submit+'</div>';
+}
+function raTaskRow(t){
+  var h='<div class="ra-task">';
+  h+='<div class="ra-head"><label class="ra-inc"><input type="checkbox" class="ra-cb" data-uid="'+esc(t.uid)+'" checked><span class="ra-c">'+esc(t.clientName||'—')+'</span></label><button type="button" class="ra-editbtn" data-action="ra-edit-toggle" data-uid="'+esc(t.uid)+'">✏️ Edit</button></div>';
+  h+='<div class="ra-meta">'+esc(t.department)+' › '+esc(t.category)+(t.dueDate?' · '+esc(fmtDue(t.dueDate)):'')+(t.priority?' · '+esc(t.priority):'')+(t.repeat?' · 🔁'+esc(t.repeat):'')+'</div>';
+  h+='<div class="ra-edit hidden" id="ra-edit-'+esc(t.uid)+'">';
+  h+='<label class="f-label">Client</label><input class="f-input ra-f" data-k="clientName" value="'+esc(t.clientName||'')+'">';
+  h+='<div class="row2"><div><label class="f-label">Category</label><input class="f-input ra-f" data-k="category" value="'+esc(t.category||'')+'"></div><div><label class="f-label">Priority</label><select class="f-input ra-f" data-k="priority"><option value="high"'+(t.priority==='high'?' selected':'')+'>High</option><option value="medium"'+((!t.priority||t.priority==='medium')?' selected':'')+'>Medium</option><option value="low"'+(t.priority==='low'?' selected':'')+'>Low</option></select></div></div>';
+  h+='<label class="f-label">Due date &amp; time</label><div class="dt-row"><input type="date" class="f-input" id="ra-due-d-'+esc(t.uid)+'" value="'+esc(isoToDate(t.dueDate))+'"><input type="time" class="f-input" id="ra-due-t-'+esc(t.uid)+'" value="'+esc(isoToTime(t.dueDate))+'"></div>';
+  h+='<label class="f-label">Details</label><textarea class="f-area ra-f" data-k="details" rows="2">'+esc(t.details||'')+'</textarea>';
+  h+='</div></div>';
+  return h;
+}
+function raPickSource(id,name){ App._ra.sourceId=String(id); App._ra.sourceName=name; App._ra.step='review'; App._ra.edited={}; renderReassign(); }
+function raPickTarget(id,name){ App._ra.targetId=String(id); App._ra.targetName=name; App._ra.step='review'; App._ra.edited={}; renderReassign(); }
+function raBack(){ App._ra.step = App._ra.kind==='bulk' ? 'source' : 'target'; renderReassign(); }
+function raSetMode(m){ App._ra.tmode=m; var r=App._ra;
+  document.querySelectorAll('#reassign-shell .ra-mode').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-m')===m); });
+  var note=document.querySelector('#reassign-shell .ra-note');
+  if(note && r.kind==='bulk'){ note.innerHTML = m==='move' ? ('🏢 '+esc(r.targetName)+' also gains '+esc(r.sourceName)+'’s department access; '+esc(r.sourceName)+'’s access is cleared.') : ('🏢 '+esc(r.targetName)+' also gains '+esc(r.sourceName)+'’s department access ('+esc(r.sourceName)+' keeps theirs).'); }
+  var fromName = r.kind==='bulk' ? r.sourceName : (r.task.ownerName||'owner');
+  document.querySelectorAll('#reassign-shell .ra-mode').forEach(function(b){ if(b.getAttribute('data-m')==='move') b.textContent='Remove from '+fromName; else b.textContent='Copy (keep with '+fromName+')'; });
+  var sb=document.querySelector('#reassign-shell [data-action="ra-submit"]'); if(sb){ var n=document.querySelectorAll('#reassign-shell .ra-cb').length; sb.textContent=(m==='copy'?'Copy':'Move')+' '+n+' task'+(n!==1?'s':''); }
+}
+function raEditToggle(uid){ var box=document.getElementById('ra-edit-'+uid); if(!box) return; box.classList.toggle('hidden'); if(!box.classList.contains('hidden')) App._ra.edited[uid]=true; }
+function submitReassign(){
+  var r=App._ra; if(!r || App._raBusy) return;
+  var uids=Array.prototype.slice.call(document.querySelectorAll('#reassign-shell .ra-cb')).filter(function(cb){return cb.checked;}).map(function(cb){return cb.getAttribute('data-uid');});
+  if(!uids.length){ toast('Select at least one task.','error'); return; }
+  var items=uids.map(function(uid){
+    var edits={};
+    if(r.edited[uid]){ var box=document.getElementById('ra-edit-'+uid);
+      if(box){ Array.prototype.slice.call(box.querySelectorAll('.ra-f')).forEach(function(f){ edits[f.getAttribute('data-k')]=f.value; });
+        edits.dueDate=combineDT('ra-due-d-'+uid,'ra-due-t-'+uid); }
+    }
+    return {uid:uid, edits:edits};
+  });
+  var payload={ targetId:r.targetId, mode:r.tmode, items:items };
+  if(r.kind==='bulk'){ payload.sourceId=r.sourceId; payload.swapDepts=true; }
+  App._raBusy=true;
+  var sb=document.querySelector('#reassign-shell [data-action="ra-submit"]'); if(sb){ sb.disabled=true; sb.innerHTML='<span class="mini-spin"></span> Working…'; }
+  apiCall('reassignTasks', payload).then(function(res){
+    App._raBusy=false;
+    if(res&&res.ok){ toast('✓ '+(r.tmode==='copy'?'Copied':'Moved')+' '+res.count+' task'+(res.count!==1?'s':''),'success'); var wasStaff=(App.view==='staff'&&App._staffView); var sid=wasStaff?App._staffView.id:null, sname=wasStaff?App._staffView.name:null; closeReassign(); App._staffCache={}; App._lbCache=null; App._teamCache=null; if(wasStaff) openStaff(sid, sname); }
+    else { toast((res&&res.error)||'Could not reassign.','error'); if(sb){ sb.disabled=false; renderReassign(); } }
+  }).catch(function(e){ App._raBusy=false; toast(e.message||'Could not reassign.','error'); if(sb){ sb.disabled=false; renderReassign(); } });
 }
 
 /* Read-only card for admin viewing another person's work */
@@ -4770,7 +4972,7 @@ function sharedCard(t){
   var isDone=t.status==='Completed';
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-shared" data-uid="'+esc(t.uid)+'">';
   h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+'</div>';
-  h+='<div class="card-meta">To '+esc(t.ownerName)+' · '+esc(t.department)+' › '+esc(t.category)+(isDone&&t.completedTimestamp?' · Completed '+fmtDate(t.completedTimestamp):'')+'</div>';
+  h+='<div class="card-meta">To '+esc(t.ownerName)+' · '+esc(t.department)+' › '+esc(t.category)+(isDone&&t.completedTimestamp?' · Completed '+fmtDate(t.completedTimestamp):'')+(t.reassignedFromName?' · ↪ from '+esc(t.reassignedFromName):'')+'</div>';
   if(t.details) h+='<div class="card-preview">'+esc(t.details)+'</div>';
   h+='</div><div class="card-right"><span class="'+(isDone?'done-badge':'days days-warn')+'">'+(isDone?ico('check')+' Done':'⏳ '+esc(t.status))+'</span></div></div>';
   return h;
@@ -4818,6 +5020,7 @@ function openManagedTask(t){
   } else if(canEdit && isDone){
     f+='<button class="btn btn-ghost" data-action="shared-status" data-uid="'+esc(t.uid)+'" data-status="Pending">Reopen</button>';
   }
+  if(App.identity.role==='Admin' && !isDone) f+='<button class="btn btn-ghost" data-action="handover-task" data-uid="'+esc(t.uid)+'">↪ Hand over</button>';
   document.getElementById('det-foot').innerHTML=f;
   openModal('detail-modal');
   loadHistoryInto(t.uid); loadCommentsInto(t.uid);
@@ -4907,6 +5110,7 @@ function taskCardAdmin(t){
   h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+'</div>';
   var meta='Added '+fmtDate(t.createdTimestamp)+' · '+esc(t.department)+' › '+esc(t.category);
   if(isDone&&t.completedTimestamp) meta+=' → Completed '+fmtDate(t.completedTimestamp);
+  if(t.reassignedFromName) meta+=' · ↪ from '+esc(t.reassignedFromName);
   h+='<div class="card-meta">'+meta+'</div>';
   if(t.details) h+='<div class="card-preview">'+esc(t.details)+'</div>';
   h+='</div><div class="card-right">';
@@ -5309,6 +5513,15 @@ document.addEventListener('click', function(e){
     case 'set-role': var _rs=document.getElementById('role-sel'); adminToggleRole(el.getAttribute('data-id'), _rs?_rs.value:'Staff', el); break;
     case 'toggle-active': adminToggleActive(el.getAttribute('data-id'), el.getAttribute('data-active'), el); break;
     case 'save-visibility': adminSaveVisibility(el.getAttribute('data-id'), el); break;
+    case 'role-switch': openRoleSwitch(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
+    case 'handover-task': openHandover(el.getAttribute('data-uid')); break;
+    case 'reassign-close': closeReassign(); break;
+    case 'ra-pick-source': raPickSource(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
+    case 'ra-pick-target': raPickTarget(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
+    case 'ra-back': raBack(); break;
+    case 'ra-mode': raSetMode(el.getAttribute('data-m')); break;
+    case 'ra-edit-toggle': raEditToggle(el.getAttribute('data-uid')); break;
+    case 'ra-submit': submitReassign(); break;
     case 'dept-add-open': openDeptAdd(); break;
     case 'dept-add-create': deptAddCreate(el); break;
     case 'dept-del': deptDelete(el.getAttribute('data-name')); break;
@@ -5376,7 +5589,7 @@ document.addEventListener('keydown', function(e){
     if(e.key==='ArrowUp'){ e.preventDefault(); cmdkMove(-1); return; }
     if(e.key==='Enter'){ e.preventDefault(); cmdkExec(App._cmdkSel||0); return; }
   }
-  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); closeModal('snooze-modal'); closeModal('taskpick-modal'); closeModal('msginfo-modal'); closeModal('deptadd-modal'); var _cpz=document.getElementById('chat-panel'); if(_cpz&&!_cpz.classList.contains('hidden')){ closeChat(); } cancelSlateInput(); try{voiceClose();}catch(_){} }
+  if(e.key==='Escape'){ closeModal('add-modal'); closeModal('detail-modal'); closeModal('reminders-modal'); closeModal('assign-modal'); closeModal('member-modal'); closeModal('cmdk'); closeModal('confirm-modal'); closeModal('remark-modal'); closeModal('snooze-modal'); closeModal('taskpick-modal'); closeModal('msginfo-modal'); closeModal('reassign-modal'); closeModal('deptadd-modal'); var _cpz=document.getElementById('chat-panel'); if(_cpz&&!_cpz.classList.contains('hidden')){ closeChat(); } cancelSlateInput(); try{voiceClose();}catch(_){} }
   if(e.key==='Enter'){
     var id=document.activeElement?document.activeElement.id:'';
     if(id==='add-client'){ submitAdd(); }
