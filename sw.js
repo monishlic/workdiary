@@ -1,6 +1,6 @@
 /* WorkDiary service worker — makes the app installable and works offline for the shell.
    It ONLY touches same-origin GET requests (the app files); all backend/API calls pass through untouched. */
-const CACHE = 'workdiary-v12';
+const CACHE = 'workdiary-v16';
 self.addEventListener('install', function(e){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){ e.waitUntil(
   caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ if(k!==CACHE) return caches.delete(k); })); })

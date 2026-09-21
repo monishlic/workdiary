@@ -19,6 +19,10 @@
 /* ================================================================
    WorkDiary — Standalone Private Diary (Phase 1)
    ================================================================ */
+/* Self-hosted fonts (open-licensed). Drop the two .woff2 files in a /fonts folder
+   next to index.html — until then everything gracefully falls back to system fonts. */
+@font-face{ font-family:'EDBody'; font-style:normal; font-weight:300 800; font-display:swap; src:url('body.woff2') format('woff2'); }
+@font-face{ font-family:'EDDisplay'; font-style:normal; font-weight:400 800; font-display:swap; src:url('display.woff2') format('woff2'); }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --primary:#14151a;--primary-light:#2a2c34;
@@ -36,7 +40,8 @@
   --shadow:0 1px 2px rgba(17,18,23,.03),0 12px 30px -18px rgba(17,18,23,.16);--shadow-md:0 22px 50px -22px rgba(17,18,23,.20),0 6px 16px -10px rgba(17,18,23,.12);
   --radius:22px;--radius-sm:14px;
   --sb-width:274px;--header-h:62px;
-  --font:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Inter',system-ui,'Segoe UI',Roboto,sans-serif;
+  --font:'EDBody',-apple-system,BlinkMacSystemFont,'SF Pro Text','Inter',system-ui,'Segoe UI',Roboto,sans-serif;
+  --font-display:'EDDisplay','EDBody',-apple-system,BlinkMacSystemFont,'Inter',system-ui,'Segoe UI',Roboto,sans-serif;
 }
 body[data-theme="dark"]{
   --primary:#0c0e14;--primary-light:#1b2130;
@@ -47,15 +52,31 @@ body[data-theme="dark"]{
   --border:#242835;--border-completed:#2a2f3d;
   --shadow:0 1px 2px rgba(0,0,0,.5);--shadow-md:0 16px 40px -12px rgba(0,0,0,.6),0 2px 10px -4px rgba(0,0,0,.5);
 }
-/* ===== Selectable light themes (staff pick their own) — only re-tint brand/accent/bg/gradients ===== */
-body[data-theme="mint"]{ --primary:#0e7a53;--primary-light:#12986a;--brand:#0e7a53;--brand-ink:#fff;--accent:#0e7a53;--accent-hover:#0b6344;--accent-soft:#e6f3ec;--bg:#eef4f0;
-  --grad-warm:linear-gradient(120deg,#d9f2e4 0%,#eafaf0 50%,#e2f6ec 100%);--grad-cool:linear-gradient(120deg,#d7f0e6 0%,#e4f0ff 55%,#eafaf3 100%); }
-body[data-theme="ocean"]{ --primary:#28407a;--primary-light:#33528f;--brand:#28407a;--brand-ink:#fff;--accent:#28407a;--accent-hover:#1f3260;--accent-soft:#e8edf7;--bg:#eef1f8;
-  --grad-warm:linear-gradient(120deg,#dfe7fb 0%,#eaf2ff 50%,#e4ecff 100%);--grad-cool:linear-gradient(120deg,#dbe6ff 0%,#e8e2ff 55%,#dcefff 100%); }
-body[data-theme="sunset"]{ --primary:#c0553f;--primary-light:#d76a52;--brand:#c0553f;--brand-ink:#fff;--accent:#c0553f;--accent-hover:#a5442f;--accent-soft:#fbeae3;--bg:#f6efe8;
-  --grad-warm:linear-gradient(120deg,#ffe0d2 0%,#fff0dd 50%,#ffe9e2 100%);--grad-cool:linear-gradient(120deg,#ffe1e6 0%,#ffe9d6 55%,#ffdccb 100%); }
-body[data-theme="rose"]{ --primary:#a23a63;--primary-light:#c04d7c;--brand:#a23a63;--brand-ink:#fff;--accent:#a23a63;--accent-hover:#87304f;--accent-soft:#f7e6ef;--bg:#f5eef2;
-  --grad-warm:linear-gradient(120deg,#ffe0ee 0%,#fff0e5 50%,#ffe6f2 100%);--grad-cool:linear-gradient(120deg,#ffe0ef 0%,#efe2ff 55%,#ffe8f6 100%); }
+/* ===== 8 selectable themes — Paper(:root) + Midnight(dark) + these 6 ===== */
+/* CARE — light, soft violet, pastel purple→peach gradient hero */
+body[data-theme="care"]{ --primary:#6d5ae6;--primary-light:#8b7bff;--brand:#6d5ae6;--brand-ink:#fff;--accent:#6d5ae6;--accent-hover:#5a49d4;--accent-soft:#eeeafc;--bg:#f2eefa;--border:#eae6f4;
+  --grad-warm:linear-gradient(120deg,#e6ddff 0%,#ffe6dd 55%,#ffe1ec 100%);--grad-cool:linear-gradient(120deg,#e2ddff 0%,#dfeaff 55%,#ffe4ee 100%); }
+/* BLOOM — warm cream, black brand, peachy accents */
+body[data-theme="bloom"]{ --primary:#14151a;--brand:#14151a;--brand-ink:#fff;--accent:#e0704a;--accent-hover:#c85c39;--accent-soft:#f5ede2;--bg:#f4efe4;--border:#ece5d7;
+  --grad-warm:linear-gradient(120deg,#ffe6d5 0%,#fff2df 50%,#ffe3ea 100%);--grad-cool:linear-gradient(120deg,#ffe3ec 0%,#e9e2ff 55%,#dff0ff 100%); }
+/* STUDIO — crisp light workspace, coral accent */
+body[data-theme="studio"]{ --primary:#ef5b4c;--primary-light:#ff6f5f;--brand:#ef5b4c;--brand-ink:#fff;--accent:#ef5b4c;--accent-hover:#d94a3c;--accent-soft:#fdeae7;--bg:#eef0f3;--border:#e7eaef;
+  --grad-warm:linear-gradient(120deg,#ffe6df 0%,#fff1ea 50%,#ffe2e6 100%);--grad-cool:linear-gradient(120deg,#ffe4e0 0%,#e9edff 55%,#e2f6ff 100%); }
+/* MARKETER — light, deep purple + warm accents */
+body[data-theme="marketer"]{ --primary:#4b2e83;--primary-light:#5f3ba3;--brand:#4b2e83;--brand-ink:#fff;--accent:#4b2e83;--accent-hover:#3b2467;--accent-soft:#efe8f7;--bg:#ecebf2;--border:#e6e3ee;
+  --grad-warm:linear-gradient(120deg,#ecd9ff 0%,#ffe6cf 55%,#ffe0e6 100%);--grad-cool:linear-gradient(120deg,#e2d6ff 0%,#e9e2ff 55%,#ffe6d6 100%); }
+/* ONYX — dark crypto, amber glow */
+body[data-theme="onyx"]{ --primary:#0e0b0a;--primary-light:#241a12;--brand:#ff9a3d;--brand-ink:#1a1206;--accent:#ff9a3d;--accent-hover:#ffab5c;--accent-soft:#241a10;
+  --bg:#0e0b09;--bg-card:#1a1511;--bg-completed:#171310;--text:#f2e9df;--text-sec:#b3a596;--text-muted:#7a6f62;--text-completed:#7a6f62;--border:#2a221b;--border-completed:#2f261e;
+  --glass:var(--bg-card);--glass-2:var(--bg-card);--glass-strong:var(--bg-card);--glass-brd:var(--border);--glass-line:var(--border);--solid-panel:#14100c;--solid-header:#14100c;
+  --shadow:0 1px 2px rgba(0,0,0,.5);--shadow-md:0 16px 40px -12px rgba(0,0,0,.65);
+  --grad-warm:linear-gradient(120deg,#2a1c0f,#1c1510);--grad-cool:linear-gradient(120deg,#241a12,#171310); }
+/* NEURO — charcoal AI, soft mint accent */
+body[data-theme="neuro"]{ --primary:#0f1115;--primary-light:#1a1f27;--brand:#5fd6a0;--brand-ink:#08130d;--accent:#5fd6a0;--accent-hover:#79e0b2;--accent-soft:#16241d;
+  --bg:#0f1116;--bg-card:#181b21;--bg-completed:#15181e;--text:#e7ebf1;--text-sec:#9aa1b0;--text-muted:#69707e;--text-completed:#69707e;--border:#242a33;--border-completed:#2a3039;
+  --glass:var(--bg-card);--glass-2:var(--bg-card);--glass-strong:var(--bg-card);--glass-brd:var(--border);--glass-line:var(--border);--solid-panel:#14171d;--solid-header:#14171d;
+  --shadow:0 1px 2px rgba(0,0,0,.5);--shadow-md:0 16px 40px -12px rgba(0,0,0,.6);
+  --grad-warm:linear-gradient(120deg,#17241d,#141820);--grad-cool:linear-gradient(120deg,#152420,#141820); }
 html{font-size:15px}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
@@ -96,6 +117,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .nav-badge{margin-left:auto;background:#4f7cff;color:#fff;font-size:.7rem;font-weight:800;padding:1px 8px;border-radius:11px;min-width:22px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.28)}
 /* Department header (big + highlighted + collapsible) */
 .dept-group{margin:6px 10px 2px}
+.sb-noaccess{margin:10px 12px;padding:12px 13px;border-radius:12px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.85);font-size:.84rem;font-weight:700;display:flex;flex-direction:column;gap:3px;line-height:1.35}
+.sb-noaccess span{font-size:.74rem;font-weight:500;color:rgba(255,255,255,.6)}
+#sidebar:not(:hover) .sb-noaccess span{display:none}
 .dept-header{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;border:none;border-radius:10px;background:rgba(255,255,255,.05);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;letter-spacing:-.01em;cursor:pointer;transition:background .15s}
 .dept-header:hover{background:rgba(255,255,255,.10)}
 .dept-header .chev{width:16px;height:16px;transition:transform .2s;flex-shrink:0;color:#94a3b8}
@@ -391,7 +415,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .rem-from{font-size:.82rem;font-weight:700}
 .rem-time{font-size:.72rem;color:var(--text-muted);white-space:nowrap}
 .rem-msg{font-size:.88rem;color:var(--text);line-height:1.5}
-.assign-banner{background:var(--accent-soft);color:var(--accent);font-size:.8rem;font-weight:600;padding:9px 12px;border-radius:9px;margin-bottom:14px}
+.assign-banner{display:flex;align-items:center;gap:11px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);padding:11px 13px;border-radius:14px;margin-bottom:16px}
+.assign-banner .ab-av{flex:0 0 auto}
+.assign-banner .ab-av .avatar{width:38px;height:38px}
+.assign-banner .ab-tx{min-width:0}
+.assign-banner .ab-t{font-size:.86rem;font-weight:700;color:var(--accent);line-height:1.25}
+.assign-banner .ab-s{font-size:.74rem;font-weight:500;color:var(--text-sec);line-height:1.3;margin-top:2px}
+/* overdue due fact */
+.fact.fact-over{border-color:color-mix(in srgb,var(--danger) 45%,transparent);background:var(--danger-bg,rgba(239,68,68,.08))}
+.fact.fact-over .fact-lbl{color:var(--danger)}
+/* Combined activity (Comments + History) */
+.det-activity{border:1px solid var(--border);border-radius:16px;background:var(--bg-card);padding:6px;margin-bottom:12px}
+.act-tabs{display:flex;gap:4px;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:10px}
+.act-tab{flex:1;border:none;background:transparent;color:var(--text-sec);font-size:.8rem;font-weight:700;padding:8px 10px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit}
+.act-tab:hover{color:var(--text)}
+.act-tab.on{background:var(--bg-card);color:var(--accent);box-shadow:0 2px 8px -3px rgba(80,72,150,.35)}
+.act-panel{padding:2px 8px 8px}
+.act-panel.hidden{display:none}
+.act-empty{text-align:center;padding:22px 12px 18px}
+.act-empty-ic{font-size:1.8rem;line-height:1;margin-bottom:8px;opacity:.85}
+.act-empty-t{font-size:.85rem;font-weight:700;color:var(--text-sec)}
+.act-empty-s{font-size:.76rem;color:var(--text-muted);margin-top:3px;line-height:1.4}
 .assign-tag{font-size:.66rem;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
 .ip-tag{font-size:.66rem;font-weight:600;color:var(--warning-dark);background:var(--warning-bg);padding:2px 7px;border-radius:6px;white-space:nowrap;vertical-align:middle;margin-left:4px}
 .due{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap}
@@ -679,7 +723,7 @@ body{ -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; lett
 /* Skeleton shimmer loaders */
 .skel{ position:relative; overflow:hidden; background:var(--bg-completed); border-radius:var(--radius-sm); }
 .skel::after{ content:''; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent); animation:shimmer 1.15s infinite; }
-body[data-theme="dark"] .skel::after{ background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent); }
+body.is-dark .skel::after{ background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent); }
 @keyframes shimmer{ 100%{ transform:translateX(100%); } }
 .skel-wrap{ animation:none!important; }
 .skel-row{ height:76px; margin-bottom:10px; }
@@ -1119,9 +1163,9 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 .dm-name{ font-weight:700; font-size:.9rem; color:var(--text); flex:1; }
 .dm-cats{ font-size:.74rem; color:var(--text-muted); }
 .vis-list{ display:flex; flex-direction:column; gap:2px; max-height:40vh; overflow-y:auto; }
-[data-theme="dark"] .chat-bubble{ background:#1b2536; }
-[data-theme="dark"] .dm-row{ background:rgba(255,255,255,.06); }
-[data-theme="dark"] .chat-person,[data-theme="dark"] .chat-tab,[data-theme="dark"] .chat-chip{ background:rgba(255,255,255,.06); }
+.is-dark .chat-bubble{ background:#1b2536; }
+.is-dark .dm-row{ background:rgba(255,255,255,.06); }
+.is-dark .chat-person,.is-dark .chat-tab,.is-dark .chat-chip{ background:rgba(255,255,255,.06); }
 /* Voice overlay */
 #voice-ov.overlay{ align-items:flex-start; justify-content:center; padding-top:12vh; }
 .voice-box{ background:var(--glass-strong); -webkit-backdrop-filter:blur(12px) saturate(160%); backdrop-filter:blur(12px) saturate(160%); border:1px solid var(--glass-brd); width:100%; max-width:560px; border-radius:20px; box-shadow:0 34px 90px -24px rgba(80,72,150,.55); padding:18px; }
@@ -1161,7 +1205,7 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 .newtask-fab:hover, .chat-fab:hover, .asst-ball:hover{ background:var(--accent-hover) !important; }
 /* Sent chat bubble → black */
 .chat-msg.mine .chat-bubble{ background:var(--brand) !important; color:var(--brand-ink) !important; }
-[data-theme="dark"] .chat-bubble{ background:var(--bg-completed); }
+.is-dark .chat-bubble{ background:var(--bg-completed); }
 /* Selected pills / toggles / chips → black */
 .nav-link.active{ background:var(--accent-soft) !important; color:var(--text) !important; box-shadow:inset 2px 0 0 var(--brand) !important; }
 .mt-chip-all.on, .ref-who.on, .ra-mode.on, .chat-tab.on, .mt-rchip.on, .seeall-btn:hover{ background:var(--brand) !important; color:var(--brand-ink) !important; border-color:var(--brand) !important; }
@@ -1178,10 +1222,10 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 .nudge .nudge-line, .nudge .nudge-sub{ color:var(--text) !important; }
 .nudge-btn{ background:var(--brand) !important; color:var(--brand-ink) !important; }
 /* Dark mode: replace the light pastel hero/nudge so text stays readable */
-[data-theme="dark"] .dash-hero{ background:linear-gradient(120deg,#20232e,#181b24) !important; }
-[data-theme="dark"] .nudge{ background:linear-gradient(120deg,#241d29,#1a1b24) !important; }
-[data-theme="dark"] .hero-btn{ background:rgba(255,255,255,.08) !important; color:var(--text) !important; border-color:rgba(255,255,255,.14) !important; }
-[data-theme="dark"] .streak-chip{ background:rgba(255,255,255,.10) !important; color:var(--text) !important; }
+.is-dark .dash-hero{ background:linear-gradient(120deg,#20232e,#181b24) !important; }
+.is-dark .nudge{ background:linear-gradient(120deg,#241d29,#1a1b24) !important; }
+.is-dark .hero-btn{ background:rgba(255,255,255,.08) !important; color:var(--text) !important; border-color:rgba(255,255,255,.14) !important; }
+.is-dark .streak-chip{ background:rgba(255,255,255,.10) !important; color:var(--text) !important; }
 /* Focus-now card left stripe → black */
 .focus-card{ background:var(--bg-card) !important; }
 .focus-card::before{ background:var(--brand); }
@@ -1198,6 +1242,8 @@ select[multiple].f-input option{ padding:6px 8px; border-radius:6px; }
 .dept-header:hover{ background:#e4e5ee !important; }
 #searchbar{ background:var(--bg) !important; border:1px solid var(--border) !important; }
 .dept-count, .nav-badge{ background:var(--brand); color:var(--brand-ink); }
+/* Display font on headings / prominent titles (falls back to system until the font file loads) */
+h1,h2,h3,.cat-title,.dash-hero h2,.hero-eyebrow,.sb-brand,.id-name,.avpick-hero h3,.tcard-client,.focus-card .fc-client,.dmbar-name,.cp-name,.set-sec h3,.modal-h h3,.stat-v{ font-family:var(--font-display); letter-spacing:-.01em; }
 /* Planet avatars on a deep-space circle so they glow */
 .cp-av.av-planet{ background:radial-gradient(circle at 50% 38%, #1b2440, #070a14) !important; overflow:hidden; padding:0; }
 .cp-av.av-planet svg{ display:block; width:100%; height:100%; }
@@ -2415,13 +2461,16 @@ function init(){
 function showFatal_(e){ document.getElementById('loading').innerHTML='<div style="text-align:center;color:#dc2626;max-width:360px;padding:20px"><div style="font-size:2rem">⚠</div><div style="font-weight:600;margin:8px 0">Could not open the diary</div><div style="font-size:.85rem;color:#64748b">'+esc(e&&e.message?e.message:e)+'</div></div>'; }
 var THEMES=[
   {id:'light', name:'Paper', sw:'#14151a', bg:'#e9eaf1'},
+  {id:'care', name:'Care', sw:'#6d5ae6', bg:'#f2eefa'},
+  {id:'bloom', name:'Bloom', sw:'#e0704a', bg:'#f4efe4'},
+  {id:'studio', name:'Studio', sw:'#ef5b4c', bg:'#eef0f3'},
+  {id:'marketer', name:'Marketer', sw:'#4b2e83', bg:'#ecebf2'},
   {id:'dark', name:'Midnight', sw:'#eef0f6', bg:'#0c0e14'},
-  {id:'mint', name:'Mint', sw:'#0e7a53', bg:'#eef4f0'},
-  {id:'ocean', name:'Ocean', sw:'#28407a', bg:'#eef1f8'},
-  {id:'sunset', name:'Sunset', sw:'#c0553f', bg:'#f6efe8'},
-  {id:'rose', name:'Rose', sw:'#a23a63', bg:'#f5eef2'}
+  {id:'onyx', name:'Onyx', sw:'#ff9a3d', bg:'#0e0b09'},
+  {id:'neuro', name:'Neuro', sw:'#5fd6a0', bg:'#0f1116'}
 ];
-function applyTheme(){ var t=App.prefs.theme||'light'; document.body.setAttribute('data-theme', t); var th=THEMES.find(function(x){return x.id===t;}); var m=document.querySelector('meta[name="theme-color"]'); if(m&&th) m.setAttribute('content', th.bg); }
+var DARK_THEMES={dark:1, onyx:1, neuro:1};
+function applyTheme(){ var t=App.prefs.theme||'light'; document.body.setAttribute('data-theme', t); document.body.classList.toggle('is-dark', !!DARK_THEMES[t]); var th=THEMES.find(function(x){return x.id===t;}); var m=document.querySelector('meta[name="theme-color"]'); if(m&&th) m.setAttribute('content', th.bg); }
 function setTheme(name){ App.prefs.theme=name; applyTheme(); Data.savePrefs(); if(App.view==='settings') renderSettings(); }
 function setGender(g){ App.prefs.gender=g; Data.savePrefs();
   if(App.identity){ var id=String(App.identity.employeeId); App._userMeta=App._userMeta||{}; App._userMeta[id]=App._userMeta[id]||{}; App._userMeta[id].gender=g; }
@@ -2577,8 +2626,18 @@ var FBLive = {
     // Team members — keep the assign dropdown & Team list live as staff are added/changed
     db.collection('users').onSnapshot(function(qs){
       var members=[]; App._userMeta=App._userMeta||{};
-      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}, chanRead:u.chanRead||{}, allowedDepartments:(u.allowedDepartments||null), role:u.role, gender:(u.gender||''), avatar:(u.avatar||'')}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role}); });
+      var myId=App.identity?String(App.identity.employeeId):null;
+      var myVisChanged=false, myRoleChanged=false;
+      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}, chanRead:u.chanRead||{}, allowedDepartments:(u.allowedDepartments||null), role:u.role, gender:(u.gender||''), avatar:(u.avatar||'')}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role});
+        // Keep MY own live session in sync when an admin changes my visibility or role — no re-login needed.
+        if(myId && String(u.userId)===myId && App.auth){
+          var newVis=(u.allowedDepartments||null);
+          if(JSON.stringify(App.auth.allowedDepartments||null)!==JSON.stringify(newVis)){ App.auth.allowedDepartments=newVis; myVisChanged=true; }
+          if(u.role && App.identity && App.identity.role!==u.role){ App.identity.role=u.role; App.auth.role=u.role; myRoleChanged=true; }
+        }
+      });
       App.members=members;
+      if(myVisChanged || myRoleChanged){ try{ buildSidebar(); refreshView(); }catch(e){} }
       if(App._chat && App._chat.open) renderChat();   // live read-receipts / presence in the chat
       App._teamCache=null;   // force fresh counts next time Team opens
       if(App.view==='team') renderTeam();
@@ -2675,8 +2734,12 @@ function plusIco(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="current
    SIDEBAR (collapsible department headers)
    ================================================================ */
 function visibleDepartments(){
+  // Admins & Managers always see every department.
+  if(App.identity && isBoss()) return App.departments;
+  // Staff see ONLY the departments an admin has granted them.
+  // No grant yet (null) or an empty grant => they see nothing until admin sets visibility.
   var allowed = App.auth && App.auth.allowedDepartments;
-  if(!allowed || !allowed.length || (App.identity && isBoss())) return App.departments;
+  if(!allowed || !allowed.length) return [];
   return App.departments.filter(function(d){ return allowed.indexOf(d.department)!==-1; });
 }
 function buildSidebar(){
@@ -2687,7 +2750,11 @@ function buildSidebar(){
   h+='<button class="nav-link'+(App.view==='assigned'?' active':'')+'" data-action="nav" data-view="assigned"><span class="nav-ico">'+ico('assigned')+'</span> Assigned by Me</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
   h+='<button class="nav-link'+(App.view==='calendar'?' active':'')+'" data-action="nav" data-view="calendar"><span class="nav-ico">📅</span> Calendar</button>';
-  visibleDepartments().forEach(function(d){
+  var _vis=visibleDepartments();
+  if(!_vis.length && !(App.identity && isBoss())){
+    h+='<div class="sb-noaccess">🔒 No departments yet<span>Your admin will grant department access.</span></div>';
+  }
+  _vis.forEach(function(d){
     var collapsed=!App.prefs.expanded[d.department];
     var dp=deptPending(d.department);
     h+='<div class="dept-group">';
@@ -4051,7 +4118,7 @@ function openTask(taskId, editMode){
   var showEdit = !!editMode && canEdit;             // show the editable form only when explicitly requested
   document.getElementById('det-title').textContent=showEdit?'Edit Task':t.clientName;
   var h='';
-  if(shared) h+='<div class="assign-banner">&#128204; Assigned by '+esc(t.assignedByName||'a teammate')+'</div>';
+  if(shared) h+='<div class="assign-banner"><span class="ab-av">'+avatarHTML(t.assignedByName||'?','sm',t.assignedById)+'</span><div class="ab-tx"><div class="ab-t">Assigned by '+esc(t.assignedByName||'a teammate')+'</div><div class="ab-s">You’re the assignee · update status &amp; comment</div></div></div>';
   if(showEdit){
     // Fully editable — name, department, category (move), details
     h+='<div style="margin-bottom:12px"><span class="d-status '+(t.status==='In Progress'?'ip':'pending')+'">'+(t.status==='In Progress'?'&#9881; In Progress':'&#9679; Pending')+'</span></div>';
@@ -4075,27 +4142,26 @@ function openTask(taskId, editMode){
     h+='<div class="det-statusbar">'+stPill+(t.priority?prioTag(t.priority):'')+(isSnoozed(t)?'<span class="d-status snz">😴 Snoozed</span>':'')+'</div>';
     if(isSnoozed(t)) h+='<div class="det-hint">😴 Snoozed until '+esc(fmtDateTime(t.snoozedUntil))+' — hidden from your lists until then. Use 😴 Snoozed → ⏰ Wake now to bring it back early.</div>';
     // Bordered fact cards — each label clearly owns its value.
+    var di=dueInfo(t);
     h+='<div class="det-facts">';
-    h+=factCell('Department', esc(t.department));
-    h+=factCell('Category', esc(t.category));
-    h+=factCell('Created', esc(fmtDateTime(t.createdTimestamp)));
+    h+=factCell('🏢 Department', esc(t.department));
+    h+=factCell('🗂 Category', esc(t.category));
+    h+=factCell('🕒 Created', esc(fmtDateTime(t.createdTimestamp)));
     if(active){
-      if(t.dueDate) h+=factCell('Due', esc(fmtDue(t.dueDate))+(dueInfo(t)?' <span class="due '+dueInfo(t).cls+'">'+dueInfo(t).label+'</span>':''));
-      else h+=factCell('Due', '<span class="fact-muted">No due date</span>');
+      if(t.dueDate) h+='<div class="fact'+(di&&di.cls==='overdue'?' fact-over':'')+'"><div class="fact-lbl">📅 Due</div><div class="fact-val">'+esc(fmtDue(t.dueDate))+(di?' <span class="due '+di.cls+'">'+di.label+'</span>':'')+'</div></div>';
+      else h+=factCell('📅 Due', '<span class="fact-muted">No due date</span>');
     } else {
-      h+=factCell('Completed', esc(fmtDateTime(t.completedTimestamp)));
+      h+=factCell('✅ Completed', esc(fmtDateTime(t.completedTimestamp)));
     }
     h+='</div>';
-    if(t.reminders && t.reminders.length) h+='<div class="det-block"><div class="det-block-lbl">Reminders</div><div class="det-block-val" style="font-size:.84rem">'+t.reminders.map(function(r){return esc(fmtDue(r.at))+(r.message?' — '+esc(r.message):'');}).join('<br>')+'</div></div>';
-    h+='<div class="det-block"><div class="det-block-lbl">Details</div><div class="det-block-val">'+(t.details?esc(t.details):'<span class="fact-muted">—</span>')+'</div></div>';
-    if(shared && active) h+='<div class="det-hint">You can update the status &amp; comment. Only the person who assigned this can edit the task.</div>';
-    else if(canEdit) h+='<div class="det-hint">This is a committed task. Mark it In Progress / Complete as you work — each update asks for a remark. Tap ✏️ Edit to change its details.</div>';
+    if(t.reminders && t.reminders.length) h+='<div class="det-block"><div class="det-block-lbl">⏰ Reminders</div><div class="det-block-val" style="font-size:.84rem">'+t.reminders.map(function(r){return esc(fmtDue(r.at))+(r.message?' — '+esc(r.message):'');}).join('<br>')+'</div></div>';
+    h+='<div class="det-block"><div class="det-block-lbl">📝 Details</div><div class="det-block-val">'+(t.details?esc(t.details):'<span class="fact-muted">No details added.</span>')+'</div></div>';
+    if(canEdit) h+='<div class="det-hint">💡 Mark it In&nbsp;Progress / Complete as you work — each update asks for a quick remark. Tap ✏️ Edit to change details.</div>';
     h+=checklistBlock(t);
     h+=linksBlock(t);
     h+=remarksBlock(t);
   }
-  if(shared && t.uid) h+=historyBlock(t.uid);
-  if(shared && t.uid) h+=commentsBlock(t.uid);
+  if(shared && t.uid) h+=activityBlock(t.uid);
   document.getElementById('det-body').innerHTML=h;
   if(showEdit){ renderRemindersInto('det-reminders', t.reminders||[]); ClEditor.init('det-checklist-box', t.checklist||[]); }
   var f='';
@@ -5209,8 +5275,7 @@ function openManagedTask(t){
     h+='<div class="d-row"><div class="d-lbl">Details</div><div class="d-val">'+(t.details?esc(t.details):'—')+'</div></div></div>';
   }
   h+=remarksBlock(t);
-  h+=historyBlock(t.uid);
-  h+=commentsBlock(t.uid);
+  h+=activityBlock(t.uid);
   document.getElementById('det-body').innerHTML=h;
   if(canEdit && !isDone) renderRemindersInto('det-reminders', t.reminders||[]);
   var f='<button class="btn btn-ghost" data-action="close-modal" data-modal="detail-modal">Close</button>';
@@ -5259,6 +5324,19 @@ function refreshManagedView(){
   else if(App.view==='assigned') renderAssignedByMe();
   else refreshView();
 }
+/* Combined Activity panel — Comments + History as tabs (no more two sad empty blocks) */
+function activityBlock(uid){
+  return '<div class="det-activity">'
+    +'<div class="act-tabs"><button class="act-tab on" data-action="det-tab" data-tab="comments">💬 Comments</button><button class="act-tab" data-action="det-tab" data-tab="history">🕘 History</button></div>'
+    +'<div class="act-panel" data-panel="comments"><div id="comments-list" class="comments-list"><div class="c-muted">Loading…</div></div>'
+    +'<div class="comment-add"><input type="text" id="comment-input" class="f-input" placeholder="Write a comment…" maxlength="500"><button class="btn btn-primary btn-sm" data-action="add-comment" data-uid="'+esc(uid)+'">Send</button></div></div>'
+    +'<div class="act-panel hidden" data-panel="history"><div id="history-list" class="comments-list"><div class="c-muted">Loading…</div></div></div>'
+    +'</div>';
+}
+function detTab(tab){
+  document.querySelectorAll('#det-body .act-tab').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tab')===tab); });
+  document.querySelectorAll('#det-body .act-panel').forEach(function(p){ p.classList.toggle('hidden', p.getAttribute('data-panel')!==tab); });
+}
 function historyBlock(uid){
   return '<div class="d-row"><div class="d-lbl">History</div><div id="history-list" class="comments-list"><div class="c-muted">Loading…</div></div></div>';
 }
@@ -5268,7 +5346,7 @@ function loadHistoryInto(uid){
   apiCall('getTaskHistory',{uid:uid}).then(function(res){
     var e2=document.getElementById('history-list'); if(!e2) return;
     if(!res||!res.ok){ e2.innerHTML='<div class="c-muted">Could not load history.</div>'; return; }
-    if(!res.entries||!res.entries.length){ e2.innerHTML='<div class="c-muted">No history yet.</div>'; return; }
+    if(!res.entries||!res.entries.length){ e2.innerHTML='<div class="act-empty"><div class="act-empty-ic">🕘</div><div class="act-empty-t">No history yet</div><div class="act-empty-s">Status changes and edits will show up here.</div></div>'; return; }
     e2.innerHTML=res.entries.map(function(x){ return '<div class="comment"><div class="comment-top"><span class="comment-author">'+esc(x.action)+'</span><span class="comment-time">'+esc(x.ts)+'</span></div><div class="comment-text">'+esc(x.actor)+(x.detail?' — '+esc(x.detail):'')+'</div></div>'; }).join('');
   }).catch(function(){});
 }
@@ -5284,7 +5362,7 @@ function loadCommentsInto(uid){
   apiCall('getComments',{taskUid:uid}).then(function(res){
     var e2=document.getElementById('comments-list'); if(!e2) return;
     if(!res||!res.ok){ e2.innerHTML='<div class="c-muted" style="color:var(--danger)">Could not load comments.</div>'; return; }
-    if(!res.comments.length){ e2.innerHTML='<div class="c-muted">No comments yet.</div>'; return; }
+    if(!res.comments.length){ e2.innerHTML='<div class="act-empty"><div class="act-empty-ic">💬</div><div class="act-empty-t">No comments yet</div><div class="act-empty-s">Start the conversation — say what’s done or what’s blocking.</div></div>'; return; }
     e2.innerHTML=res.comments.map(function(c){ return '<div class="comment"><div class="comment-top"><span class="comment-author">'+esc(c.authorName)+'</span><span class="comment-time">'+esc(c.created)+'</span></div><div class="comment-text">'+esc(c.text)+'</div></div>'; }).join('');
   }).catch(function(){});
 }
@@ -5476,9 +5554,9 @@ function channelMembers(key){
   if(!dept) return all.slice();
   return all.filter(function(m){
     var meta=(App._userMeta||{})[String(m.userId)]||{};
-    if(isOverseerRole(m.role)||isOverseerRole(meta.role)) return true;   // admins/managers see every dept
+    if(isOverseerRole(m.role)||isOverseerRole(meta.role)) return true;   // admins/managers belong to every dept
     var allowed=meta.allowedDepartments;
-    if(!allowed||!allowed.length) return true;                          // null/empty = all departments
+    if(!allowed||!allowed.length) return false;                         // no visibility granted => not a member of any dept
     return allowed.indexOf(dept)>=0;
   });
 }
@@ -5822,6 +5900,7 @@ document.addEventListener('click', function(e){
     case 'save-shared-task': saveSharedTask(el.getAttribute('data-uid'), el); break;
     case 'shared-status': { var _shu=el.getAttribute('data-uid'),_sht=el.getAttribute('data-status'),_she=el; askRemark({title:_sht==='Completed'?'Complete this task':'Reopen this task',sub:'Add a remark for this update.',okLabel:_sht==='Completed'?'✓ Complete':'Reopen',ico:_sht==='Completed'?'✅':'↩️'}, function(rk){ sharedStatus(_shu,_sht,rk,_she); }); break; }
     case 'open-audit': renderActivityLog(); break;
+    case 'det-tab': detTab(el.getAttribute('data-tab')); break;
     case 'add-comment': addCommentUI(el.getAttribute('data-uid')); break;
     case 'admin-act': adminAct(el.getAttribute('data-uid'), el.getAttribute('data-status'), el); break;
     case 'notif-open': closeModal('reminders-modal'); openFromNotif(el.getAttribute('data-uid')); break;
