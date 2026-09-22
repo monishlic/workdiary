@@ -3122,12 +3122,12 @@ document.addEventListener('focusin', function(e){ var id=e.target&&e.target.id; 
    Dormant until PUSH_CONFIG is filled in — see the PUSH SETUP guide.
    ================================================================ */
 var PUSH_CONFIG = {
-  vapidKey: '',   /* ← Firebase Console → Project settings → Cloud Messaging → Web Push certificates → "Key pair" */
-  senderUrl: ''   /* ← your free Cloudflare Worker URL that sends the push (see PUSH SETUP guide) */
+  vapidKey: 'BOd_jdSTgK_bQHFfny_PZMkHC0Xf23bHpc5U-BDhPUdoD3_NLooLxKMw6ZmOdPdBnuJ5wExiPUfFbilWh_c2068',
+  senderUrl: 'https://ediary-push.monishlic-8e8.workers.dev/'
 };
 var Push = {
   _msg:null, _token:'',
-  supported:function(){ return ('serviceWorker' in navigator) && ('Notification' in window) && !!(window.firebase && firebase.messaging && firebase.messaging.isSupported && firebase.messaging.isSupported()); },
+  supported:function(){ return ('serviceWorker' in navigator) && ('Notification' in window) && !!(window.firebase && firebase.messaging); },
   configured:function(){ return !!PUSH_CONFIG.vapidKey; },
   init:function(){ if(!this.configured() || !this.supported()) return; if(Notification.permission==='granted') this._register(); },
   enable:function(){
