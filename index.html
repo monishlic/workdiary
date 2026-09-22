@@ -1471,18 +1471,36 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
   #content{ padding:16px 15px calc(64px + env(safe-area-inset-bottom,0px)) !important; }
   /* header respects the notch */
   #header{ padding-top:env(safe-area-inset-top,0px); height:calc(var(--header-h) + env(safe-area-inset-top,0px)); }
-  /* floating balls sit ABOVE the tab bar, stacked on the right */
-  .assistant{ right:14px !important; bottom:calc(78px + env(safe-area-inset-bottom,0px)) !important; }
-  .newtask-fab{ right:14px !important; bottom:calc(140px + env(safe-area-inset-bottom,0px)) !important; }
+  /* floating balls sit ABOVE the tab bar — voice on the RIGHT, new-task on the LEFT
+     so the voice ball's pop-up menu never collides with the + button */
+  .assistant{ right:14px !important; left:auto !important; bottom:calc(80px + env(safe-area-inset-bottom,0px)) !important; }
+  .newtask-fab{ left:14px !important; right:auto !important; bottom:calc(80px + env(safe-area-inset-bottom,0px)) !important; }
   .chat-fab{ display:none !important; }   /* Chat lives in the bottom bar on mobile */
   /* comfortable tap targets */
   .nav-link{ min-height:46px; }
   .btn{ min-height:42px; }
   .filter-chip,.mt-rchip,.pill-opt{ min-height:38px; }
-  /* modals a touch wider on phones */
-  .overlay{ padding:12px; }
-  .modal{ width:100%; max-width:100%; }
+  /* modals fit the screen — no side-scroll, no pinch-zoom needed */
+  .overlay{ padding:10px; }
+  .modal{ width:100%; max-width:100%; max-height:88vh; overflow-x:hidden; }
+  .modal-b{ overflow-x:hidden; }
+  /* stack side-by-side fields so nothing runs off the edge */
+  .row2{ flex-direction:column !important; }
+  .d-grid{ grid-template-columns:1fr !important; }
+  .stats{ grid-template-columns:repeat(2,1fr) !important; }
+  .dt-row{ flex-wrap:wrap; }
+  /* keep everything inside the viewport width */
+  #content, #content *{ max-width:100%; }
+  table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
+/* ---- Slate on phones: reflow sticky notes into a tidy, fully-visible grid
+   (absolute drag positions from desktop would push notes off a small screen). ---- */
+@media(max-width:820px){
+  .slate-board{ min-height:auto !important; display:flex !important; flex-wrap:wrap; align-content:flex-start; gap:12px; padding:12px !important; cursor:default; background-image:none !important; border-style:solid; }
+  .slate-note{ position:static !important; transform:none !important; margin:0 !important; width:calc(50% - 6px) !important; min-height:84px; touch-action:auto !important; cursor:default; animation:none !important; }
+  .slate-empty{ position:static !important; width:100%; }
+}
+@media(max-width:430px){ .slate-note{ width:100% !important; } }
 /* iOS standalone (installed app): pad the very bottom safe area on the canvas */
 @media(max-width:820px) and (display-mode:standalone){
   body{ min-height:100vh; }
@@ -3065,7 +3083,7 @@ var Mentions = {
     if(!list.length){ this._close(); return; }
     this._items=list; this._idx=0; this._input=input; this._tok=t; this._render(input);
   },
-  _render:function(input){ this._close(); var box=document.createElement('div'); box.className='mention-box'; box.id='mention-box';
+  _render:function(input){ if(this._box){ this._box.remove(); this._box=null; } var box=document.createElement('div'); box.className='mention-box'; box.id='mention-box';
     box.innerHTML=this._items.map(function(m,i){ return '<div class="mention-opt'+(i===0?' on':'')+'" data-i="'+i+'">'+avatarHTML(m.name,'sm',m.userId)+'<span>'+esc(m.name)+'</span></div>'; }).join('');
     document.body.appendChild(box);
     var r=input.getBoundingClientRect(); var bh=box.offsetHeight;
@@ -4632,6 +4650,8 @@ function completeTask(taskId,remark,btn){
   var run=function(){
     Data.complete(taskId,remark).then(function(){
       buildSidebar();
+      // Notify the person who assigned it (lock-screen push once push is set up)
+      try{ var _ct=App.tasks.find(function(x){return x.taskId===taskId;}); if(_ct && _ct.assignedById && String(_ct.assignedById)!==String(App.identity.employeeId)){ Push.send(_ct.assignedById, App.identity.employeeName+' completed a task', (_ct.clientName||'')+' · '+(_ct.category||'Task'), 'complete-'+Date.now()); } }catch(e){}
       if(card){ toastAction('✓ Completed','Undo',function(){ Data.reopen(taskId,'Undone').then(function(){ buildSidebar(); refreshView(); }); },'success'); }
       else { toast('✓ Marked as completed','success'); }
       closeModal('detail-modal'); refreshView(); celebrateIfClear();
