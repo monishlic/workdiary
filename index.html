@@ -4037,13 +4037,21 @@ function voiceStart(){
   if(!SR){ if(lb){ lb.disabled=true; lb.textContent='🎤 n/a'; } if(hint) hint.textContent='Voice isn\'t supported in this browser — type your command and press Use.'; if(title) title.textContent='Type your command'; return; }
   try{ if(App._rec){ App._rec.onend=null; App._rec.stop(); } }catch(_){}
   var r; try{ r=new SR(); }catch(_){ return; } App._rec=r;
-  r.lang=App._voiceLang||'en-IN'; r.interimResults=true; r.continuous=true; r.maxAlternatives=3;
+  // continuous=false + auto-restart avoids the Android duplicate-phrase bug.
+  r.lang=App._voiceLang||'en-IN'; r.interimResults=true; r.continuous=false; r.maxAlternatives=3;
   App._recWant=true; voiceMeterStart();
-  var base=(document.getElementById('voice-text').value||'');
-  r.onresult=function(ev){ var interim='',fin=''; for(var i=ev.resultIndex;i<ev.results.length;i++){ var res=ev.results[i]; if(res.isFinal) fin+=voicePickAlt(res); else interim+=res[0].transcript; } var ta=document.getElementById('voice-text'); if(ta){ if(fin) base=(base?base+' ':'')+fin.trim(); ta.value=(base+(interim?(' '+interim):'')).trim(); } };
+  var committed=(document.getElementById('voice-text').value||'').trim();   // text already there (typed / prior)
+  var sessionText='';
+  r.onresult=function(ev){
+    var interim='', fin='';
+    for(var i=0;i<ev.results.length;i++){ var res=ev.results[i]; if(res.isFinal) fin+=voicePickAlt(res)+' '; else interim+=res[0].transcript+' '; }
+    sessionText=fin.trim();
+    var ta=document.getElementById('voice-text'); if(ta){ ta.value=[committed, sessionText, interim.trim()].filter(Boolean).join(' '); }
+  };
   r.onerror=function(e){ var er=e&&e.error; if(er==='not-allowed'||er==='service-not-allowed'){ App._recWant=false; if(hint) hint.textContent='Microphone blocked — allow mic access, or just type.'; } };
   r.onend=function(){
-    if(App._recWant){ clearTimeout(App._recRestart); App._recRestart=setTimeout(function(){ if(App._recWant){ try{ r.start(); }catch(_){} } }, 250); return; }
+    if(sessionText){ committed=(committed?committed+' ':'')+sessionText; sessionText=''; var ta=document.getElementById('voice-text'); if(ta) ta.value=committed; }
+    if(App._recWant){ clearTimeout(App._recRestart); App._recRestart=setTimeout(function(){ if(App._recWant){ try{ r.start(); }catch(_){} } }, 300); return; }
     App._recActive=false; voiceMeterStop(); if(mic) mic.classList.remove('rec'); if(lb) lb.textContent='🎤 Listen'; if(title) title.textContent='Tap Listen to speak, or type';
   };
   try{ r.start(); App._recActive=true; if(mic) mic.classList.add('rec'); if(lb) lb.textContent='⏹ Stop'; if(title) title.textContent='Listening…'; }catch(_){}
