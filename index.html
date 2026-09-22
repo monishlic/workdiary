@@ -1354,6 +1354,92 @@ body[data-theme="swiss"] .fact-lbl,body[data-theme="swiss"] .d-lbl{ letter-spaci
   .ed-motion *{ transition:none !important; }
   .ed-motion .card:hover,.ed-motion .tcard:hover,.ed-motion .focus-card:hover,.ed-motion .stat-card:hover,.ed-motion .dept-card:hover,.ed-motion .mt-row:hover,.ed-motion .lb-row:hover,.ed-motion .fact:hover,.ed-motion .filter-chip:hover,.ed-motion .mt-rchip:hover,.ed-motion .chat-tab:hover,.ed-motion .ra-mode:hover,.ed-motion .act-tab:hover,.ed-motion .btn:hover,.ed-motion .nav-link:hover{ transform:none !important; padding-left:inherit; }
 }
+
+/* ================================================================
+   THEME PERSONALITY — each theme gets its OWN component grammar
+   (card shape, tab shape, button shape, hero, headings), not just color.
+   Scoped body[data-theme=…] beats the uniform "glass" layer.
+   ================================================================ */
+
+/* ---- EDITORIAL PROFESSIONAL: paper blocks, top rules, big serif, text tabs ---- */
+body[data-theme="editorial"] .card,
+body[data-theme="editorial"] .mt-row,
+body[data-theme="editorial"] .focus-card,
+body[data-theme="editorial"] .set-sec,
+body[data-theme="editorial"] .lb-row{ box-shadow:none !important; border:none !important; border-top:1px solid #ddd0bd !important; border-radius:0 !important; background:transparent !important; padding-left:2px; padding-right:2px; }
+body[data-theme="editorial"] .tcard{ border-left:3px solid var(--brand) !important; padding-left:14px; background:var(--bg-card) !important; }
+body[data-theme="editorial"] .dash-hero{ background:transparent !important; border:none !important; border-top:3px solid var(--text) !important; border-radius:0 !important; box-shadow:none !important; padding:22px 2px !important; }
+body[data-theme="editorial"] .cat-title,
+body[data-theme="editorial"] h1,body[data-theme="editorial"] h2,body[data-theme="editorial"] .dash-hero h2{ font-family:var(--font-display); font-weight:600; letter-spacing:-.02em; }
+body[data-theme="editorial"] .cat-title{ font-size:2rem; }
+body[data-theme="editorial"] .filter-chip,
+body[data-theme="editorial"] .mt-rchip{ background:transparent !important; border:none !important; border-bottom:2px solid transparent !important; border-radius:0 !important; padding:6px 4px !important; color:var(--text-sec) !important; }
+body[data-theme="editorial"] .filter-chip.on,
+body[data-theme="editorial"] .mt-rchip.on{ background:transparent !important; color:var(--text) !important; border-bottom-color:var(--brand) !important; }
+body[data-theme="editorial"] .btn{ border-radius:4px; }
+body[data-theme="editorial"] .btn-primary{ background:var(--brand); }
+
+/* ---- SWISS PRECISION: flat, sharp, 1px borders, no shadows, square tabs ---- */
+body[data-theme="swiss"] .card,
+body[data-theme="swiss"] .mt-row,
+body[data-theme="swiss"] .focus-card,
+body[data-theme="swiss"] .board-col,
+body[data-theme="swiss"] .set-sec,
+body[data-theme="swiss"] .stat-card,
+body[data-theme="swiss"] .dept-card,
+body[data-theme="swiss"] .lb-row{ box-shadow:none !important; border:1px solid var(--border) !important; border-radius:6px !important; }
+body[data-theme="swiss"] .card{ padding:12px 14px; }
+body[data-theme="swiss"] .dash-hero{ background:var(--bg-card) !important; border:1px solid var(--border) !important; border-radius:6px !important; box-shadow:none !important; color:var(--text) !important; }
+body[data-theme="swiss"] .filter-chip,
+body[data-theme="swiss"] .mt-rchip{ border-radius:5px !important; background:var(--bg-card) !important; border:1px solid var(--border) !important; }
+body[data-theme="swiss"] .filter-chip.on,
+body[data-theme="swiss"] .mt-rchip.on{ background:var(--brand) !important; color:#fff !important; border-color:var(--brand) !important; }
+body[data-theme="swiss"] .btn{ border-radius:5px; }
+body[data-theme="swiss"] .cat-title{ text-transform:uppercase; letter-spacing:.02em; font-size:1.3rem; }
+body[data-theme="swiss"] .pill-opt{ border-radius:5px !important; }
+
+/* ---- MODERN PRODUCT STUDIO: borderless soft-elevation cards, pill segments ---- */
+body[data-theme="studio"] .card,
+body[data-theme="studio"] .focus-card,
+body[data-theme="studio"] .set-sec,
+body[data-theme="studio"] .stat-card,
+body[data-theme="studio"] .dept-card{ border:none !important; border-radius:16px !important; box-shadow:0 6px 20px -10px rgba(40,50,90,.28) !important; }
+body[data-theme="studio"] .dash-hero{ background:linear-gradient(135deg,var(--accent),#7d8bff) !important; color:#fff !important; border:none !important; border-radius:18px !important; box-shadow:0 18px 40px -18px rgba(65,82,230,.55) !important; }
+body[data-theme="studio"] .dash-hero .hero-eyebrow,body[data-theme="studio"] .dash-hero h2,body[data-theme="studio"] .dash-hero p{ color:#fff !important; }
+body[data-theme="studio"] .filter-chip,
+body[data-theme="studio"] .mt-rchip{ border-radius:999px !important; }
+body[data-theme="studio"] .btn{ border-radius:999px; }
+
+/* ---- WARM PROFESSIONAL: big radius, soft shadow, no borders, roomy ---- */
+body[data-theme="warm"] .card,
+body[data-theme="warm"] .focus-card,
+body[data-theme="warm"] .set-sec,
+body[data-theme="warm"] .stat-card,
+body[data-theme="warm"] .dept-card,
+body[data-theme="warm"] .lb-row{ border:none !important; border-radius:20px !important; box-shadow:0 12px 26px -16px rgba(80,80,50,.4) !important; }
+body[data-theme="warm"] .card{ padding:16px 18px; }
+body[data-theme="warm"] .dash-hero{ background:var(--grad-warm) !important; border:none !important; border-radius:24px !important; box-shadow:0 16px 34px -18px rgba(95,115,69,.45) !important; }
+body[data-theme="warm"] .filter-chip,
+body[data-theme="warm"] .mt-rchip{ border-radius:999px !important; padding:8px 16px !important; }
+body[data-theme="warm"] .btn{ border-radius:999px; }
+
+/* ---- EXECUTIVE NOIR: flat dark cards, restrained, segmented chips ---- */
+body[data-theme="noir"] .card,
+body[data-theme="noir"] .focus-card,
+body[data-theme="noir"] .set-sec,
+body[data-theme="noir"] .stat-card{ box-shadow:none !important; border:1px solid var(--border) !important; border-radius:12px !important; }
+body[data-theme="noir"] .dash-hero{ background:var(--grad-cool) !important; border:1px solid var(--border) !important; box-shadow:none !important; }
+body[data-theme="noir"] .filter-chip,
+body[data-theme="noir"] .mt-rchip{ border-radius:8px !important; }
+
+/* ---- EXECUTIVE CLARITY (default): crisp hairline cards, underline tabs ---- */
+body[data-theme="clarity"] .card,
+body[data-theme="clarity"] .focus-card,
+body[data-theme="clarity"] .stat-card{ box-shadow:0 1px 2px rgba(20,30,60,.04),0 8px 20px -14px rgba(20,30,60,.16) !important; border:1px solid var(--border) !important; border-radius:12px !important; }
+body[data-theme="clarity"] .dash-hero{ background:linear-gradient(135deg,var(--accent),#3f6bef) !important; color:#fff !important; border:none !important; }
+body[data-theme="clarity"] .dash-hero .hero-eyebrow,body[data-theme="clarity"] .dash-hero h2,body[data-theme="clarity"] .dash-hero p{ color:#fff !important; }
+body[data-theme="clarity"] .filter-chip,
+body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
 </style>
 </head>
 <body>
