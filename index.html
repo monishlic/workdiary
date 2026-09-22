@@ -2472,7 +2472,7 @@ function collectReminders(cid){ var c=document.getElementById(cid); if(!c) retur
 function initials(name){ return String(name||'').trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase()||'?'; }
 function genUid(){ return 'U-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); }
 function uniqI(arr){ var seen={},out=[]; arr.forEach(function(x){ var k=String(x).toLowerCase(); if(!seen[k]){seen[k]=1;out.push(x);} }); return out; }
-function toast(msg,type){ type=type||'info'; var c=document.getElementById('toasts'); var t=document.createElement('div'); t.className='toast '+type; t.innerHTML=esc(msg); c.appendChild(t); setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ if(t.parentNode)c.removeChild(t); },300); },3200); }
+function toast(msg,type,ms){ type=type||'info'; ms=ms||3200; var c=document.getElementById('toasts'); var t=document.createElement('div'); t.className='toast '+type; t.innerHTML=esc(msg); c.appendChild(t); setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ if(t.parentNode)c.removeChild(t); },300); },ms); }
 function toastAction(msg,label,fn,type){ type=type||'success'; var c=document.getElementById('toasts'); var t=document.createElement('div'); t.className='toast '+type; t.innerHTML='<span>'+esc(msg)+'</span>'; var b=document.createElement('button'); b.className='toast-action'; b.textContent=label; var done=false; b.onclick=function(){ if(done)return; done=true; try{fn();}catch(e){} if(t.parentNode)c.removeChild(t); }; t.appendChild(b); c.appendChild(t); setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(function(){ if(t.parentNode)c.removeChild(t); },300); },6000); }
 
 /* ================================================================
@@ -3155,6 +3155,21 @@ var Push = {
     try{ db.collection('users').doc(uid).set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() }, {merge:true}); }catch(e){}
   },
   _foreground:function(payload){ var n=(payload&&payload.notification)||{}; toast('🔔 '+(n.title||'New notification')+(n.body?(' — '+n.body):''),'info'); if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
+  /* Diagnostic self-test: reports whether this device registered a token and whether the sender worked. */
+  test:function(){
+    if(!App.identity || typeof db==='undefined'){ toast('Not signed in.','warn'); return; }
+    if(!PUSH_CONFIG.senderUrl){ toast('Push sender isn’t configured.','warn'); return; }
+    var uid=String(App.identity.employeeId);
+    toast('Checking this device…','info');
+    db.collection('users').doc(uid).get().then(function(d){
+      var u=d.exists?d.data():{}; var tokens=(u&&u.fcmTokens)||[];
+      if(!tokens.length){ toast('This device isn’t registered yet — the notification token didn’t save. Usually firebase-messaging-sw.js isn’t uploaded. Fix that, then tap Enable again.','error',7000); return; }
+      fetch(PUSH_CONFIG.senderUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokens:tokens,title:'E-Diary test 🔔',body:'Push is working on your devices.',tag:'test-'+Date.now()})})
+        .then(function(r){ return r.json().then(function(j){return {s:r.status,j:j};}).catch(function(){return {s:r.status,j:null};}); })
+        .then(function(o){ if(o.j&&o.j.ok){ toast('✓ Sender delivered to '+(o.j.sent||0)+' device(s). If the app is open you’ll see it in-app; lock the screen to see the lock-screen alert.','success',7000); } else { toast('Sender reachable but returned '+o.s+' (not sent). We’ll check the Cloudflare logs.','warn',7000); } })
+        .catch(function(e){ toast('Couldn’t reach the sender — likely the site address doesn’t match ALLOWED_ORIGIN. ('+(e.message||'network')+')','error',7000); });
+    }).catch(function(){ toast('Couldn’t read your devices from the database.','error'); });
+  },
   /* Fire a push to a teammate's devices (called right after assigning them a task). */
   send:function(toUserId, title, body, tag){
     if(!PUSH_CONFIG.senderUrl || typeof db==='undefined' || !toUserId) return;
@@ -6366,7 +6381,7 @@ document.addEventListener('click', function(e){
     case 'pwa-install': pwaInstall(); break;
     case 'pwa-dismiss': pwaDismiss(); break;
     case 'push-enable': Push.enable(); break;
-    case 'push-test': { if(App.identity){ Push.send(App.identity.employeeId, 'E-Diary test 🔔', 'Push notifications are working on your devices.', 'test-'+Date.now()); toast('Test sent — check your notifications (background the app to see the lock-screen version).','info'); } break; }
+    case 'push-test': Push.test(); break;
     case 'toggle-dept': toggleDept(el.getAttribute('data-dept')); break;
     case 'nav': navigate(el.getAttribute('data-view'), el.getAttribute('data-dept'), el.getAttribute('data-cat')); break;
     case 'show-list': showList(el.getAttribute('data-filter')); break;
