@@ -3142,26 +3142,26 @@ var Push = {
   _register:function(){
     try{
       if(!this._msg) this._msg=firebase.messaging();
-      navigator.serviceWorker.register('firebase-messaging-sw.js').then(function(reg){
-        return Push._msg.getToken({ vapidKey:PUSH_CONFIG.vapidKey, serviceWorkerRegistration:reg });
-      }).then(function(token){
+      // Let FCM auto-register firebase-messaging-sw.js at its own push scope (no clash with sw.js).
+      this._msg.getToken({ vapidKey:PUSH_CONFIG.vapidKey }).then(function(token){
         if(!token) return; Push._token=token; Push._save(token);
         try{ Push._msg.onMessage(function(payload){ Push._foreground(payload); }); }catch(e){}
       }).catch(function(){});
     }catch(e){}
   },
   _save:function(token){
-    if(!App.identity || typeof db==='undefined') return; var uid=String(App.identity.employeeId);
-    try{ db.collection('users').doc(uid).set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() }, {merge:true}); }catch(e){}
+    if(!App.identity || !window.firebase || !firebase.firestore) return; var uid=String(App.identity.employeeId);
+    try{ firebase.firestore().collection('users').doc(uid).set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() }, {merge:true}); }catch(e){}
   },
   _foreground:function(payload){ var n=(payload&&payload.notification)||{}; toast('🔔 '+(n.title||'New notification')+(n.body?(' — '+n.body):''),'info'); if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
   /* Diagnostic self-test: reports whether this device registered a token and whether the sender worked. */
   test:function(){
-    if(!App.identity || typeof db==='undefined'){ toast('Not signed in.','warn'); return; }
+    if(!App.identity){ toast('Not signed in.','warn'); return; }
+    if(!window.firebase || !firebase.firestore){ toast('Database not ready — reload and try again.','warn'); return; }
     if(!PUSH_CONFIG.senderUrl){ toast('Push sender isn’t configured.','warn'); return; }
     var uid=String(App.identity.employeeId);
     toast('Checking this device…','info');
-    db.collection('users').doc(uid).get().then(function(d){
+    firebase.firestore().collection('users').doc(uid).get().then(function(d){
       var u=d.exists?d.data():{}; var tokens=(u&&u.fcmTokens)||[];
       if(!tokens.length){ toast('This device isn’t registered yet — the notification token didn’t save. Usually firebase-messaging-sw.js isn’t uploaded. Fix that, then tap Enable again.','error',7000); return; }
       fetch(PUSH_CONFIG.senderUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokens:tokens,title:'E-Diary test 🔔',body:'Push is working on your devices.',tag:'test-'+Date.now()})})
@@ -3172,8 +3172,8 @@ var Push = {
   },
   /* Fire a push to a teammate's devices (called right after assigning them a task). */
   send:function(toUserId, title, body, tag){
-    if(!PUSH_CONFIG.senderUrl || typeof db==='undefined' || !toUserId) return;
-    try{ db.collection('users').doc(String(toUserId)).get().then(function(d){
+    if(!PUSH_CONFIG.senderUrl || !toUserId || !window.firebase || !firebase.firestore) return;
+    try{ firebase.firestore().collection('users').doc(String(toUserId)).get().then(function(d){
       var u=d.exists?d.data():{}; var tokens=(u&&u.fcmTokens)||[]; if(!tokens.length) return;
       var post=function(idTok){ fetch(PUSH_CONFIG.senderUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ tokens:tokens, title:title, body:body, tag:tag||'ediary', idToken:idTok||'' }) }).catch(function(){}); };
       try{ var cu=firebase.auth().currentUser; if(cu&&cu.getIdToken){ cu.getIdToken().then(post, function(){ post(''); }); } else post(''); }catch(e){ post(''); }
