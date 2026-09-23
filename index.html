@@ -998,6 +998,9 @@ body{ background:var(--bg); }
 .si-add{ margin-left:auto; border:none; background:#3a3552; color:#fff; border-radius:9px; padding:6px 16px; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; transition:transform .12s,background .14s; }
 .si-add:hover{ background:#26213a; transform:translateY(-1px); }
 .sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 7px; border-radius:20px; }
+.sn-edit-row{ margin-top:6px; }
+.sn-edit-time{ border:1px solid rgba(58,53,82,.22); background:rgba(255,255,255,.6); color:#3a3552; border-radius:999px; padding:4px 10px; font:inherit; font-size:.72rem; font-weight:700; cursor:pointer; }
+.sn-edit-time.on{ border-color:#1f4bd8; color:#1f4bd8; background:rgba(31,75,216,.08); }
 /* Compact custom time picker */
 .edtime-pop{ position:fixed; z-index:1200; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:16px; box-shadow:0 20px 44px -14px rgba(20,22,40,.4); padding:14px; width:auto; animation:etIn .14s ease; }
 @keyframes etIn{ from{ opacity:0; transform:translateY(-4px);} to{ opacity:1; transform:none; } }
@@ -3086,6 +3089,7 @@ function bootApp(){
   buildSidebar(); navigate('slate');
   initAssistant();
   startNudgeCycle();
+  startReminderScan();
   Sync.updatePill();
   requestNotifPermission();
   handleLaunchParams();
@@ -3464,6 +3468,7 @@ var EdTime = {
   close:function(){ if(EdTime._el){ EdTime._el.remove(); EdTime._el=null; } document.removeEventListener('mousedown', EdTime._out, true); window.removeEventListener('resize', EdTime._position); }
 };
 function hhmmFriendly(hhmm){ if(!hhmm) return ''; var p=String(hhmm).split(':'); var h=parseInt(p[0],10)||0, m=parseInt(p[1],10)||0; var ap=h>=12?'PM':'AM'; var h12=h%12; if(h12===0)h12=12; return h12+':'+('0'+m).slice(-2)+' '+ap; }
+function isoToHHMM(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
 /* Time-only → an ISO for today at that time, or tomorrow if that time already passed. */
 function timeToNextISO(hhmm){
   if(!hhmm) return ''; var p=String(hhmm).split(':'); var d=new Date();
@@ -3482,6 +3487,35 @@ function noteRemSync(note){
     loop:[], title:'', clientName:'', message:String(note.text||'').slice(0,160),
     atMillis:at, due:String(note.remindAt), kind:'note'
   }).catch(function(){}); }catch(e){}
+}
+/* ---- Client-side reminder scanner ----
+   While the app is open, this fires due reminders itself (note / snooze / task),
+   independent of the Cloudflare cron — so notifications arrive reliably whenever the
+   app is online, and it also catches anything the cron missed. It CLAIMS each reminder
+   by deleting the dueReminders doc first, so the cron never double-fires it. */
+function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(scanDueReminders, 30000); setTimeout(scanDueReminders, 4000); }
+function stopReminderScan(){ if(App._remTimer){ clearInterval(App._remTimer); App._remTimer=null; } }
+function scanDueReminders(){
+  if(!App.identity || !window.firebase || !firebase.firestore || !Sync.online()) return;
+  var uid=String(App.identity.employeeId), now=Date.now();
+  try{
+    firebase.firestore().collection('dueReminders').where('ownerId','==',uid).get().then(function(qs){
+      qs.forEach(function(doc){
+        var r=doc.data(); if(!r) return; var at=Number(r.atMillis); if(isNaN(at) || at>now) return;
+        // Claim it (delete first) so neither the cron nor another tab fires it again.
+        doc.ref.delete().then(function(){ fireLocalReminder(r); }).catch(function(){});
+      });
+    }).catch(function(){});
+  }catch(e){}
+}
+function fireLocalReminder(r){
+  var title, body;
+  if(r.kind==='note'){ title='🗒️ Slate note reminder'; body=r.message||'A note wanted your attention.'; }
+  else if(r.kind==='snooze'){ title='😴 Back on your list'; body=r.message||(r.title||r.clientName||'Task'); }
+  else { title='⏰ Reminder: '+(r.title||r.clientName||'Task'); body=(r.message||'')+((r.clientName&&r.title)?' · '+r.clientName:''); }
+  try{ if(navigator.serviceWorker && navigator.serviceWorker.ready){ navigator.serviceWorker.ready.then(function(reg){ if(reg&&reg.showNotification) reg.showNotification(title,{ body:body, icon:'icon-192.png?v=3', badge:'icon-192.png?v=3', tag:'localrem-'+(r.taskUid||Date.now()), requireInteraction:true }); }).catch(function(){}); } }catch(e){}
+  try{ toast('🔔 '+title+(body?' — '+body:''),'info',9000); }catch(e){}
+  try{ App._bannerDismissed=false; loadReminders&&loadReminders(); }catch(e){}
 }
 /* Snooze = a personal wake-up the assignee sets for themselves. Same cron engine,
    but it fires only to the snoozer (no loop) and reads as "back on your list". */
@@ -4240,18 +4274,38 @@ function slateEdit(id){
   slateTouch();
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
   var el=document.querySelector('.slate-note[data-note="'+id+'"]'); if(!el) return;
-  var txt=el.querySelector('.sn-text'); if(!txt || el.querySelector('.sn-edit-box')) return;
+  var txt=el.querySelector('.sn-text'); if(!txt || el.querySelector('.sn-edit-wrap')) return;
+  var wrap=document.createElement('div'); wrap.className='sn-edit-wrap';
   var ta=document.createElement('textarea'); ta.className='sn-edit-box'; ta.value=n.text; ta.maxLength=600;
-  txt.replaceWith(ta);
+  var row=document.createElement('div'); row.className='sn-edit-row';
+  var tbtn=document.createElement('button'); tbtn.type='button'; tbtn.className='sn-edit-time';
+  var newRemind = n.remindAt || '';
+  var tlabel=function(){ tbtn.textContent = newRemind ? ('⏰ '+hhmmFriendly(isoToHHMM(newRemind))) : '⏰ Add time'; tbtn.classList.toggle('on', !!newRemind); };
+  tlabel(); row.appendChild(tbtn);
+  wrap.appendChild(ta); wrap.appendChild(row);
+  txt.replaceWith(wrap);
   ta.addEventListener('mousedown', function(e){ e.stopPropagation(); });
   ta.focus(); try{ ta.setSelectionRange(ta.value.length, ta.value.length); }catch(e){}
   var done=false;
-  var save=function(){ if(done) return; done=true; var v=(ta.value||'').trim();
-    if(v && v!==n.text){ n.text=v; n.updated=nowISO(); Slate.saveLocal(); if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid, text:v}).catch(function(){}); }
+  var commit=function(){
+    if(done) return; done=true;
+    var v=(ta.value||'').trim(), changed=false;
+    if(v && v!==n.text){ n.text=v; changed=true; }
+    if((newRemind||'') !== (n.remindAt||'')){ n.remindAt=newRemind||''; changed=true; }
+    if(changed){ n.updated=nowISO(); Slate.saveLocal();
+      var noteId = n.sid || n.id;
+      if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid, text:n.text, remindAt:n.remindAt}).catch(function(){});
+      try{ noteRemSync({ id:noteId, remindAt:n.remindAt, text:n.text }); }catch(e){}   // empty remindAt clears it
+    }
     if(App.view==='slate' && !App._slateView) renderSlate();
   };
-  ta.addEventListener('blur', save);
-  ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); ta.blur(); } else if(e.key==='Escape'){ ta.value=n.text; ta.blur(); } });
+  // Save only when focus fully leaves the edit box AND the time picker is closed.
+  var maybeSave=function(){ setTimeout(function(){ if(EdTime._el) return; if(wrap.contains(document.activeElement)) return; commit(); }, 150); };
+  ta.addEventListener('blur', maybeSave);
+  tbtn.addEventListener('click', function(){
+    EdTime.open(tbtn, isoToHHMM(newRemind), function(hhmm){ newRemind = hhmm ? timeToNextISO(hhmm) : ''; tlabel(); try{ ta.focus(); }catch(e){} });
+  });
+  ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); ta.blur(); } else if(e.key==='Escape'){ ta.value=n.text; newRemind=n.remindAt||''; ta.blur(); } });
 }
 function slateTask(id){ slateToTask(id); }
 function slateToTask(id){
