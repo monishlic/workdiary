@@ -3,7 +3,9 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v33';
+const CACHE = 'workdiary-v36';
+/* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
+const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
 /* ---- Lock-screen / background notifications (raw Web Push) ---- */
 self.addEventListener('push', function(event){
@@ -16,25 +18,74 @@ self.addEventListener('push', function(event){
   var body  = d.body  || n.body  || '';
   var tag   = d.tag   || n.tag   || 'ediary';
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: body,
-      icon: 'icon-192.png?v=3',
-      badge: 'icon-192.png?v=3',
-      tag: tag,
-      renotify: true,
-      data: d
+    clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
+      // If an app window is focused, it shows its own in-app alert — skip the OS popup
+      // to avoid a duplicate. Otherwise (closed / background) show the lock-screen popup.
+      var focused = list.some(function(c){ return c.focused === true || c.visibilityState === 'visible'; });
+      if(focused) return;
+      var opts = {
+        body: body,
+        icon: 'icon-192.png?v=3',
+        badge: 'icon-192.png?v=3',
+        tag: tag,
+        renotify: true,
+        requireInteraction: true,   // stay on screen until the user acts (no 5s auto-hide)
+        data: d
+      };
+      // Chat / DM / mention notifications get quick-reply buttons.
+      // Desktop shows the first two; Android shows all three (and an inline text box for Reply).
+      if(d.quick === '1'){
+        opts.actions = [
+          { action:'reply',    type:'text', title:'Reply', placeholder:'Type a reply…' },
+          { action:'thumbsup', title:'👍 Thumbs up' },
+          { action:'okay',     title:'Okay' }
+        ];
+      }
+      return self.registration.showNotification(title, opts);
     })
   );
 });
 
+function focusApp(){
+  return clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
+    for(var i=0;i<list.length;i++){ if('focus' in list[i]) return list[i].focus(); }
+    if(clients.openWindow) return clients.openWindow('./');
+  });
+}
+
+/* Post a quick reply to the Worker, which writes it to Firestore and pushes the
+   other person. Then show a small confirmation so the user knows it went through. */
+function sendQuickReply(d, text){
+  return fetch(PUSH_ENDPOINT, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({ type:'reply', kind:d.kind || 'dm', meId:d.meId || '', peerId:d.peerId || '', channel:d.channel || '', text: text })
+  }).then(function(r){
+    if(!r.ok) throw new Error('reply failed');
+    return self.registration.showNotification('E-Diary', {
+      body: '✓ Sent: ' + text, icon:'icon-192.png?v=3', badge:'icon-192.png?v=3',
+      tag: (d.tag || 'ediary') + '-sent', requireInteraction:false
+    });
+  }).catch(function(){
+    return self.registration.showNotification('E-Diary', {
+      body: '⚠️ Couldn’t send your reply — tap to open and try again.',
+      icon:'icon-192.png?v=3', badge:'icon-192.png?v=3', tag:(d.tag || 'ediary') + '-fail'
+    });
+  });
+}
+
 self.addEventListener('notificationclick', function(event){
+  var d = (event.notification && event.notification.data) || {};
+  var act = event.action;
   event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
-      for(var i=0;i<list.length;i++){ if('focus' in list[i]) return list[i].focus(); }
-      if(clients.openWindow) return clients.openWindow('./');
-    })
-  );
+  if(d.quick === '1' && (act === 'thumbsup' || act === 'okay' || act === 'reply')){
+    var text = act === 'thumbsup' ? '👍' : (act === 'okay' ? 'Okay' : (event.reply || ''));
+    // Reply tapped with no inline text (e.g. desktop) → open the app to type.
+    if(act === 'reply' && !text){ event.waitUntil(focusApp()); return; }
+    event.waitUntil(sendQuickReply(d, text));
+    return;
+  }
+  event.waitUntil(focusApp());
 });
 
 /* ---- Offline shell (same-origin GET only) ---- */
