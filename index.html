@@ -990,12 +990,32 @@ body{ background:var(--bg); }
 .sn-done:hover{ color:#0f9d6f; } .sn-task:hover{ color:var(--accent); }
 .slate-input{ cursor:text; z-index:30; box-shadow:0 18px 36px -10px rgba(80,72,150,.5); user-select:text; -webkit-user-select:text; }
 .slate-input textarea{ width:100%; border:none; background:transparent; resize:none; font:inherit; font-size:.9rem; color:#3a3552; outline:none; }
-.slate-input-foot{ display:flex; align-items:center; gap:8px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(58,53,82,.14); }
-.si-remind{ display:inline-flex; align-items:center; gap:4px; font-size:.8rem; color:#3a3552; cursor:pointer; }
-.si-remind input[type=time]{ border:none; background:rgba(255,255,255,.55); border-radius:7px; padding:3px 6px; font:inherit; font-size:.78rem; color:#3a3552; outline:none; }
-.si-add{ margin-left:auto; border:none; background:rgba(58,53,82,.85); color:#fff; border-radius:8px; padding:5px 14px; font:inherit; font-size:.8rem; font-weight:700; cursor:pointer; }
-.si-add:hover{ background:#3a3552; }
+.slate-input-foot{ display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(58,53,82,.14); }
+.si-time{ display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(58,53,82,.22); background:rgba(255,255,255,.55); color:#3a3552; border-radius:999px; padding:5px 11px; font:inherit; font-size:.78rem; font-weight:600; cursor:pointer; transition:background .14s,border-color .14s; }
+.si-time:hover{ background:#fff; }
+.si-time.on{ border-color:#1f4bd8; color:#1f4bd8; background:rgba(31,75,216,.08); }
+.si-time-ic{ font-size:.9rem; }
+.si-add{ margin-left:auto; border:none; background:#3a3552; color:#fff; border-radius:9px; padding:6px 16px; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; transition:transform .12s,background .14s; }
+.si-add:hover{ background:#26213a; transform:translateY(-1px); }
 .sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 7px; border-radius:20px; }
+/* Compact custom time picker */
+.edtime-pop{ position:fixed; z-index:1200; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:16px; box-shadow:0 20px 44px -14px rgba(20,22,40,.4); padding:14px; width:auto; animation:etIn .14s ease; }
+@keyframes etIn{ from{ opacity:0; transform:translateY(-4px);} to{ opacity:1; transform:none; } }
+.et-row{ display:flex; align-items:center; gap:8px; }
+.et-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+.et-step{ border:none; background:var(--bg-soft,rgba(120,120,140,.1)); color:var(--text,#1e2a44); width:46px; height:22px; border-radius:7px; cursor:pointer; font-size:.7rem; line-height:1; }
+.et-step:hover{ background:rgba(31,75,216,.14); color:#1f4bd8; }
+.et-num{ width:52px; height:46px; text-align:center; border:1px solid var(--border,#e2e6ef); border-radius:10px; font:inherit; font-size:1.5rem; font-weight:800; color:var(--text,#1e2a44); background:var(--bg-soft,rgba(120,120,140,.06)); outline:none; }
+.et-num:focus{ border-color:#1f4bd8; }
+.et-colon{ font-size:1.4rem; font-weight:800; color:var(--text-muted,#7a8399); }
+.et-ap{ display:flex; flex-direction:column; gap:4px; margin-left:4px; }
+.et-ap-b{ border:1px solid var(--border,#e2e6ef); background:transparent; color:var(--text-muted,#7a8399); border-radius:8px; padding:6px 12px; font:inherit; font-size:.78rem; font-weight:800; cursor:pointer; }
+.et-ap-b.on{ background:#1f4bd8; color:#fff; border-color:#1f4bd8; }
+.et-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+.et-clear{ border:none; background:transparent; color:var(--text-muted,#7a8399); font:inherit; font-size:.8rem; font-weight:700; cursor:pointer; }
+.et-clear:hover{ color:var(--danger-dark,#c62b30); }
+.et-set{ border:none; background:#1f4bd8; color:#fff; border-radius:9px; padding:8px 20px; font:inherit; font-size:.85rem; font-weight:700; cursor:pointer; }
+.et-set:hover{ background:#1740b8; }
 .slate-note.sn-removing{ animation:snPeel .26s ease forwards; }
 /* Slate multi-select mode */
 .slate-board.selmode .slate-note{ cursor:pointer; }
@@ -2391,13 +2411,13 @@ var FB = (function(){
         }
         case 'saveNote': {
           var u2=me(); var id=newId('SN'); var ts=nowISO();
-          var note={ id:id, ownerId:u2.userId, ownerName:u2.name, text:String(b.text||'').slice(0,600), color:String(b.color||''), x:Number(b.x)||0, y:Number(b.y)||0, created:ts, updated:ts, done:false, taskRef:'' };
+          var note={ id:id, ownerId:u2.userId, ownerName:u2.name, text:String(b.text||'').slice(0,600), color:String(b.color||''), x:Number(b.x)||0, y:Number(b.y)||0, created:ts, updated:ts, done:false, taskRef:'', remindAt:String(b.remindAt||'') };
           return col('notes').doc(id).set(note).then(function(){ return {ok:true, id:id, created:ts}; });
         }
         case 'updateNote': {
           if(!b.id) throw new Error('Missing note id.');
           var patch2={ updated:nowISO() };
-          ['text','color','x','y','done','taskRef'].forEach(function(k){ if(b[k]!==undefined) patch2[k]=b[k]; });
+          ['text','color','x','y','done','taskRef','remindAt'].forEach(function(k){ if(b[k]!==undefined) patch2[k]=b[k]; });
           return col('notes').doc(String(b.id)).set(patch2,{merge:true}).then(function(){ return {ok:true}; });
         }
         case 'deleteNote': {
@@ -3384,6 +3404,66 @@ function dueRemClear(uid){
   try{ firebase.firestore().collection('dueReminders').where('taskUid','==',String(uid)).get()
     .then(function(qs){ qs.forEach(function(d){ d.ref.delete().catch(function(){}); }); }).catch(function(){}); }catch(e){}
 }
+/* ---- Compact custom time picker (replaces the ugly native wheel) ----
+   A small popover: big HH:MM, tap-or-type, minute steppers, AM/PM toggle. */
+var EdTime = {
+  _el:null, _cb:null, _anchor:null, _h:9, _m:0, _pm:false,
+  open:function(anchor, cur, cb){
+    EdTime.close(); EdTime._cb=cb; EdTime._anchor=anchor;
+    var h=9,m=0;
+    if(cur){ var p=String(cur).split(':'); h=parseInt(p[0],10)||0; m=parseInt(p[1],10)||0; }
+    else { var d=new Date(); h=d.getHours(); m=Math.round(d.getMinutes()/5)*5; if(m>=60){m=0;h++;} }
+    EdTime._pm = h>=12; var h12=h%12; if(h12===0) h12=12; EdTime._h=h12; EdTime._m=m%60;
+    var b=document.createElement('div'); b.className='edtime-pop'; b.id='edtime-pop';
+    b.innerHTML=
+      '<div class="et-row">'+
+        '<div class="et-col"><button type="button" class="et-step" data-et="h+">▲</button><input class="et-num" id="et-h" inputmode="numeric" maxlength="2"><button type="button" class="et-step" data-et="h-">▼</button></div>'+
+        '<div class="et-colon">:</div>'+
+        '<div class="et-col"><button type="button" class="et-step" data-et="m+">▲</button><input class="et-num" id="et-m" inputmode="numeric" maxlength="2"><button type="button" class="et-step" data-et="m-">▼</button></div>'+
+        '<div class="et-ap"><button type="button" class="et-ap-b" id="et-am" data-et="am">AM</button><button type="button" class="et-ap-b" id="et-pm" data-et="pm">PM</button></div>'+
+      '</div>'+
+      '<div class="et-foot"><button type="button" class="et-clear" data-et="clear">Clear</button><button type="button" class="et-set" data-et="set">Set</button></div>';
+    document.body.appendChild(b); EdTime._el=b;
+    b.addEventListener('mousedown', function(e){ if(e.target.tagName!=='INPUT') e.preventDefault(); });   // keep focus off page
+    b.addEventListener('click', EdTime._click);
+    b.querySelector('#et-h').addEventListener('input', function(){ var v=parseInt(this.value,10); if(!isNaN(v)){ EdTime._h=Math.min(12,Math.max(1,v)); } });
+    b.querySelector('#et-m').addEventListener('input', function(){ var v=parseInt(this.value,10); if(!isNaN(v)){ EdTime._m=Math.min(59,Math.max(0,v)); } });
+    b.querySelector('#et-h').addEventListener('blur', EdTime._paint);
+    b.querySelector('#et-m').addEventListener('blur', EdTime._paint);
+    EdTime._paint(); EdTime._position();
+    setTimeout(function(){ document.addEventListener('mousedown', EdTime._out, true); window.addEventListener('resize', EdTime._position); }, 0);
+  },
+  _click:function(e){
+    var t=e.target.closest('[data-et]'); if(!t) return; var a=t.getAttribute('data-et');
+    if(a==='h+'){ EdTime._h=EdTime._h%12+1; }
+    else if(a==='h-'){ EdTime._h=(EdTime._h+10)%12+1; }
+    else if(a==='m+'){ EdTime._m=(Math.round(EdTime._m/5)*5+5)%60; }
+    else if(a==='m-'){ EdTime._m=(Math.round(EdTime._m/5)*5+55)%60; }
+    else if(a==='am'){ EdTime._pm=false; }
+    else if(a==='pm'){ EdTime._pm=true; }
+    else if(a==='clear'){ if(EdTime._cb) EdTime._cb(''); EdTime.close(); return; }
+    else if(a==='set'){ var h=EdTime._h%12 + (EdTime._pm?12:0); var hh=('0'+h).slice(-2), mm=('0'+EdTime._m).slice(-2); if(EdTime._cb) EdTime._cb(hh+':'+mm); EdTime.close(); return; }
+    EdTime._paint();
+  },
+  _paint:function(){
+    var b=EdTime._el; if(!b) return;
+    b.querySelector('#et-h').value=('0'+EdTime._h).slice(-2);
+    b.querySelector('#et-m').value=('0'+EdTime._m).slice(-2);
+    b.querySelector('#et-am').classList.toggle('on', !EdTime._pm);
+    b.querySelector('#et-pm').classList.toggle('on', EdTime._pm);
+  },
+  _position:function(){
+    var b=EdTime._el, a=EdTime._anchor; if(!b||!a) return;
+    var r=a.getBoundingClientRect(); var bw=b.offsetWidth||236, bh=b.offsetHeight||150;
+    var top=r.bottom+6, left=r.left;
+    if(top+bh>window.innerHeight-8) top=Math.max(8, r.top-bh-6);
+    if(left+bw>window.innerWidth-8) left=Math.max(8, window.innerWidth-bw-8);
+    b.style.top=top+'px'; b.style.left=left+'px';
+  },
+  _out:function(e){ if(EdTime._el && !EdTime._el.contains(e.target) && e.target!==EdTime._anchor && !EdTime._anchor.contains(e.target)) EdTime.close(); },
+  close:function(){ if(EdTime._el){ EdTime._el.remove(); EdTime._el=null; } document.removeEventListener('mousedown', EdTime._out, true); window.removeEventListener('resize', EdTime._position); }
+};
+function hhmmFriendly(hhmm){ if(!hhmm) return ''; var p=String(hhmm).split(':'); var h=parseInt(p[0],10)||0, m=parseInt(p[1],10)||0; var ap=h>=12?'PM':'AM'; var h12=h%12; if(h12===0)h12=12; return h12+':'+('0'+m).slice(-2)+' '+ap; }
 /* Time-only → an ISO for today at that time, or tomorrow if that time already passed. */
 function timeToNextISO(hhmm){
   if(!hhmm) return ''; var p=String(hhmm).split(':'); var d=new Date();
@@ -3938,14 +4018,15 @@ var Slate = {
     if(!App.slateNotes) App.slateNotes=[];
     var n={ id:'nl-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), sid:'', text:text, color:color||Slate.pick(), x:x, y:y, done:false, taskRef:'', created:nowISO(), remindAt:remindAt||'' };
     App.slateNotes.push(n); Slate.saveLocal();
-    if(remindAt){ try{ noteRemSync(n); }catch(e){} }
     if(Sync.online()){
-      apiCall('saveNote',{text:text,color:n.color,x:x,y:y}).then(function(res){
+      apiCall('saveNote',{text:text,color:n.color,x:x,y:y,remindAt:n.remindAt}).then(function(res){
         if(res&&res.ok){ n.sid=res.id; n.created=res.created||n.created; Slate.saveLocal();
+          // Arm the reminder keyed to the SERVER id so the live sync can't wipe it and it clears cleanly.
+          if(n.remindAt){ try{ noteRemSync({ id:res.id, remindAt:n.remindAt, text:n.text }); }catch(e){} }
           if(Math.round(n.x)!==x || Math.round(n.y)!==y) apiCall('updateNote',{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}).catch(function(){});
         }
-      }).catch(function(){ toast('Note saved on this device — will sync when online.','warn'); });
-    } else { toast('Note saved on this device — will sync when online.','warn'); }
+      }).catch(function(){ if(n.remindAt){ try{ noteRemSync(n); }catch(e){} } toast('Note saved on this device — will sync when online.','warn'); });
+    } else { if(n.remindAt){ try{ noteRemSync(n); }catch(e){} } toast('Note saved on this device — will sync when online.','warn'); }
     return n;
   },
   move:function(n){
@@ -4079,15 +4160,25 @@ function spawnNoteInput(x,y){
   var color=Slate.pick();
   var w=document.createElement('div'); w.id='slate-input-wrap'; w.className='slate-note slate-input'; w.style.left=x+'px'; w.style.top=y+'px'; w.style.background=color; w.style.setProperty('--rot','0deg');
   w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type your note…" maxlength="600"></textarea>'
-    +'<div class="slate-input-foot"><label class="si-remind" title="Optional — remind me at this time today (or tomorrow if it\'s already passed)">⏰ <input type="time" id="slate-input-time"></label><button type="button" class="si-add" data-action="slate-input-save">Add</button></div>';
+    +'<div class="slate-input-foot"><input type="hidden" id="slate-input-time">'
+    +'<button type="button" class="si-time" id="slate-time-btn" data-action="slate-time-open"><span class="si-time-ic">⏰</span><span id="slate-time-lbl">Set time</span></button>'
+    +'<button type="button" class="si-add" data-action="slate-input-save">Add note</button></div>';
   board.appendChild(w);
   var ta=document.getElementById('slate-input'); ta._x=x; ta._y=y; ta._color=color;
-  // Commit only when focus leaves the whole box (so tapping the time field doesn't cut typing short).
-  var commitIfDone=function(){ setTimeout(function(){ var box=document.getElementById('slate-input-wrap'); if(!box) return; if(box.contains(document.activeElement)) return; commitSlateInput(); }, 130); };
+  // Commit only when focus leaves the whole box — and never while the time picker is open.
+  var commitIfDone=function(){ setTimeout(function(){ if(EdTime._el) return; var box=document.getElementById('slate-input-wrap'); if(!box) return; if(box.contains(document.activeElement)) return; commitSlateInput(); }, 150); };
   ta.addEventListener('blur', commitIfDone);
-  var tm=document.getElementById('slate-input-time'); if(tm) tm.addEventListener('blur', commitIfDone);
   ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); commitSlateInput(); } });
   setTimeout(function(){ ta.focus(); }, 10);
+}
+function slateTimeOpen(){
+  var btn=document.getElementById('slate-time-btn'); var hid=document.getElementById('slate-input-time'); if(!btn||!hid) return;
+  EdTime.open(btn, hid.value, function(hhmm){
+    hid.value=hhmm||'';
+    var lbl=document.getElementById('slate-time-lbl'); if(lbl) lbl.textContent= hhmm ? hhmmFriendly(hhmm) : 'Set time';
+    btn.classList.toggle('on', !!hhmm);
+    var ta=document.getElementById('slate-input'); if(ta){ try{ ta.focus(); }catch(e){} }
+  });
 }
 function commitSlateInput(){
   var ta=document.getElementById('slate-input'); if(!ta) return;
@@ -6615,6 +6706,7 @@ document.addEventListener('click', function(e){
     case 'slate-click': slateClick(e); break;
     case 'slate-new': slateNew(); break;
     case 'slate-input-save': commitSlateInput(); break;
+    case 'slate-time-open': slateTimeOpen(); break;
     case 'slate-done': slateDone(el.getAttribute('data-id')); break;
     case 'slate-task': slateToTask(el.getAttribute('data-id')); break;
     case 'slate-edit': slateEdit(el.getAttribute('data-id')); break;
