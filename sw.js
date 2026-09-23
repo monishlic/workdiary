@@ -3,7 +3,7 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v36';
+const CACHE = 'workdiary-v37';
 /* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
 const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
@@ -23,13 +23,15 @@ self.addEventListener('push', function(event){
       // to avoid a duplicate. Otherwise (closed / background) show the lock-screen popup.
       var focused = list.some(function(c){ return c.focused === true || c.visibilityState === 'visible'; });
       if(focused) return;
+      // sticky by default; FYI notifications (e.g. "looped in") pass sticky:'0' → auto-dismiss.
+      var sticky = (d.sticky !== '0');
       var opts = {
         body: body,
         icon: 'icon-192.png?v=3',
         badge: 'icon-192.png?v=3',
         tag: tag,
         renotify: true,
-        requireInteraction: true,   // stay on screen until the user acts (no 5s auto-hide)
+        requireInteraction: sticky,   // sticky stays until acted on; FYI ones auto-hide
         data: d
       };
       // Chat / DM / mention notifications get quick-reply buttons.
@@ -41,7 +43,14 @@ self.addEventListener('push', function(event){
           { action:'okay',     title:'Okay' }
         ];
       }
-      return self.registration.showNotification(title, opts);
+      return self.registration.showNotification(title, opts).then(function(){
+        // Time-bound FYI notifications: close after ~6.5s so they don't linger.
+        if(!sticky){
+          return new Promise(function(res){ setTimeout(res, 6500); }).then(function(){
+            return self.registration.getNotifications({ tag: tag }).then(function(ns){ ns.forEach(function(nn){ nn.close(); }); });
+          });
+        }
+      });
     })
   );
 });
