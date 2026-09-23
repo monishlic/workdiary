@@ -3506,12 +3506,16 @@ function pingReminderServer(){
 function scanDueReminders(){
   if(!App.identity || !window.firebase || !firebase.firestore || !Sync.online()) return;
   var uid=String(App.identity.employeeId), now=Date.now();
+  if(!App._remScheduled) App._remScheduled={};
   try{
     firebase.firestore().collection('dueReminders').where('ownerId','==',uid).get().then(function(qs){
       qs.forEach(function(doc){
-        var r=doc.data(); if(!r) return; var at=Number(r.atMillis); if(isNaN(at) || at>now) return;
-        // Claim it (delete first) so neither the cron nor another tab fires it again.
-        doc.ref.delete().then(function(){ fireLocalReminder(r); }).catch(function(){});
+        var r=doc.data(); if(!r) return; var at=Number(r.atMillis); if(isNaN(at)) return; var id=doc.id;
+        var claimFire=function(){ if(App._remScheduled[id]){ clearTimeout(App._remScheduled[id]); delete App._remScheduled[id]; } doc.ref.delete().then(function(){ fireLocalReminder(r); }).catch(function(){}); };
+        if(at<=now){ claimFire(); }                                   // already due → fire now
+        else if(at <= now+70000 && !App._remScheduled[id]){           // due soon → fire ON TIME, not at the next poll
+          App._remScheduled[id]=setTimeout(claimFire, Math.max(0, at-now));
+        }
       });
     }).catch(function(){});
   }catch(e){}
