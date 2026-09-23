@@ -3493,8 +3493,16 @@ function noteRemSync(note){
    independent of the Cloudflare cron — so notifications arrive reliably whenever the
    app is online, and it also catches anything the cron missed. It CLAIMS each reminder
    by deleting the dueReminders doc first, so the cron never double-fires it. */
-function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(scanDueReminders, 30000); setTimeout(scanDueReminders, 4000); }
+function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(remTick, 40000); setTimeout(remTick, 4000); }
 function stopReminderScan(){ if(App._remTimer){ clearInterval(App._remTimer); App._remTimer=null; } }
+function remTick(){ scanDueReminders(); pingReminderServer(); }
+/* Ask the Worker to fire any due reminders now. This runs the same logic as the cron, so
+   while any teammate has the app open, reminders reach even closed/offline devices. */
+function pingReminderServer(){
+  try{ if(!Sync.online() || !PUSH_CONFIG || !PUSH_CONFIG.senderUrl || document.hidden) return;
+    fetch(PUSH_CONFIG.senderUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'runReminders' }) }).catch(function(){});
+  }catch(e){}
+}
 function scanDueReminders(){
   if(!App.identity || !window.firebase || !firebase.firestore || !Sync.online()) return;
   var uid=String(App.identity.employeeId), now=Date.now();
@@ -4145,11 +4153,19 @@ function refreshSlateMeta(){
   var ac=document.getElementById('arch-count'); if(ac) ac.textContent=arch.length?(' ('+arch.length+')'):'';
   var sm=document.getElementById('slate-summary'); if(sm) sm.innerHTML=active.length+' note'+(active.length!==1?'s':'')+(angry?(' · <b class="angry-count">'+angry+' getting angry 😤</b>'):'')+' · click anywhere to add';
 }
-function paintSlate(){
+function paintSlate(force){
   var board=document.getElementById('slate-board'); if(!board) return;
   var ro=!!App._slateView;
   var all = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
   var notes = all.filter(function(n){return !n.done;});
+  // Signature of everything that affects the rendered board. If it hasn't changed since
+  // the last paint, DON'T rebuild the DOM — this kills the flicker/jump from redundant
+  // live-sync repaints (each rebuild otherwise replayed the note animation).
+  var sig = 'q='+(App._slateQuery||'')+'|sel='+(App._slateSel?1:0)+'|ro='+(ro?1:0)+'|'+notes.map(function(n){
+    return n.id+':'+Math.round(n.x||0)+','+Math.round(n.y||0)+':'+(n.color||'')+':'+(n.remindAt||'')+':'+((App._slateSelIds&&App._slateSelIds[n.id])?1:0)+':'+(n.text||'');
+  }).join('~');
+  if(!force && board._sig===sig && board.childElementCount){ return; }
+  board._sig = sig;
   var html = notes.map(function(n){ return slateNoteHTML(n,ro); }).join('');
   if(!notes.length) html += '<div class="slate-empty">'+(ro?'This slate is empty.':'Your slate is clear — click anywhere and start typing.')+'</div>';
   board.innerHTML = html;
