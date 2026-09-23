@@ -304,14 +304,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .at-back:hover{ background:var(--bg-soft,rgba(120,120,140,.12)); }
 .at-more{ display:inline-flex; align-items:center; gap:6px; font-size:.8rem; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
 .at-more input{ accent-color:var(--accent); width:15px; height:15px; }
-.at-hero{ border:1px solid var(--border); background:var(--bg-card); border-radius:16px; padding:4px 16px; margin:12px 0; box-shadow:0 1px 2px rgba(20,22,40,.04); transition:border-color .15s, box-shadow .15s; }
-.at-hero:focus-within{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft,rgba(31,75,216,.10)); }
-.at-hr{ height:1px; background:var(--border); margin:2px -16px; opacity:.7; }
-.at-title,.at-client,.at-desc{ width:100%; border:none; background:transparent; outline:none; color:var(--text); font-family:inherit; padding:12px 2px; display:block; }
-.at-title{ font-size:1.3rem; font-weight:800; letter-spacing:-.02em; }
-.at-client{ font-size:.98rem; font-weight:600; }
-.at-desc{ font-size:.95rem; resize:vertical; min-height:46px; }
-.at-title::placeholder,.at-client::placeholder,.at-desc::placeholder{ color:var(--text-muted); font-weight:500; }
+.at-field{ width:100%; border:1px solid var(--border); background:var(--bg-card); border-radius:14px; padding:12px 15px; font-family:inherit; color:var(--text); outline:none; display:block; margin:9px 0; transition:border-color .15s, box-shadow .15s; }
+.at-field:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft,rgba(31,75,216,.10)); }
+.at-field::placeholder{ color:var(--text-muted); font-weight:500; }
+.at-title{ font-size:1.15rem; font-weight:800; letter-spacing:-.01em; margin-top:2px; }
+.at-client{ font-size:.95rem; font-weight:600; }
+.at-desc{ font-size:.95rem; resize:vertical; min-height:56px; }
 .at-collapse{ display:flex; align-items:center; justify-content:space-between; width:100%; border:none; background:transparent; color:var(--accent); font:inherit; font-weight:700; font-size:.9rem; padding:12px 2px; cursor:pointer; border-top:1px solid var(--border); margin-top:10px; }
 .at-collapse .at-chev{ transition:transform .18s; }
 .at-collapse.on .at-chev{ transform:rotate(180deg); }
@@ -1679,12 +1677,28 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
     <div class="modal-b at-body">
       <div id="assign-tpl-picker"></div>
 
-      <!-- Top: who &amp; when — Assign to + In Loop side by side, then Due Date -->
-      <div class="at-pills at-pills-top">
+      <!-- Title, Client, Description — separate clean fields -->
+      <input type="text" id="assign-title-input" class="at-field at-title" maxlength="140" placeholder="Task title" autocomplete="off">
+      <input type="text" id="assign-client" class="at-field at-client" maxlength="120" placeholder="Client name (optional)" autocomplete="off">
+      <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add a description…"></textarea>
+
+      <!-- Collapsible checklist -->
+      <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add Checklist <span class="at-chev">▾</span></button>
+      <div id="assign-panel-checklist" class="at-panel hidden">
+        <div id="assign-checklist-box"></div>
+        <button type="button" class="btn btn-ghost btn-sm cl-add-btn" data-action="cl-add" data-target="assign-checklist-box">+ Add item</button>
+      </div>
+
+      <!-- Everything else: assign to, loop, due, priority, category -->
+      <div class="at-pills">
         <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Assign to</span></button>
         <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
         <button type="button" class="at-pill" id="pill-due" data-action="at-toggle" data-panel="assign-panel-due"><span class="at-pi">📅</span><span id="sum-due">Due Date</span></button>
+        <button type="button" class="at-pill prio-med" id="pill-prio" data-action="at-toggle" data-panel="assign-panel-prio"><span class="at-pi">🚩</span><span id="sum-prio">Priority</span></button>
+        <button type="button" class="at-pill" id="pill-cat" data-action="at-toggle" data-panel="assign-panel-cat"><span class="at-pi">🏢</span><span id="sum-cat">Category</span></button>
       </div>
+
+      <!-- Pill panels (one open at a time) -->
       <div id="assign-panel-users" class="at-panel hidden">
         <label class="f-label">Assign to <span class="req">*</span> <span class="opt">(pick one or more — each gets their own copy)</span></label>
         <div id="assign-to-chips"></div>
@@ -1703,28 +1717,6 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
           <button type="button" data-action="due-preset" data-when="in2">In 2 days</button>
           <button type="button" data-action="due-preset" data-when="clear">Clear</button>
         </div>
-      </div>
-
-      <!-- Hero card: title, client, description -->
-      <div class="at-hero">
-        <input type="text" id="assign-title-input" class="at-title" maxlength="140" placeholder="Task title" autocomplete="off">
-        <div class="at-hr"></div>
-        <input type="text" id="assign-client" class="at-client" maxlength="120" placeholder="🧑 Client name (optional)" autocomplete="off">
-        <div class="at-hr"></div>
-        <textarea id="assign-details" class="at-desc" rows="2" maxlength="2000" placeholder="Add a description…"></textarea>
-      </div>
-
-      <!-- Collapsible checklist -->
-      <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add Checklist <span class="at-chev">▾</span></button>
-      <div id="assign-panel-checklist" class="at-panel hidden">
-        <div id="assign-checklist-box"></div>
-        <button type="button" class="btn btn-ghost btn-sm cl-add-btn" data-action="cl-add" data-target="assign-checklist-box">+ Add item</button>
-      </div>
-
-      <!-- Secondary pills: how it's classified -->
-      <div class="at-pills">
-        <button type="button" class="at-pill prio-med" id="pill-prio" data-action="at-toggle" data-panel="assign-panel-prio"><span class="at-pi">🚩</span><span id="sum-prio">Priority</span></button>
-        <button type="button" class="at-pill" id="pill-cat" data-action="at-toggle" data-panel="assign-panel-cat"><span class="at-pi">🏢</span><span id="sum-cat">Category</span></button>
       </div>
 
       <!-- Secondary pill panels -->
@@ -2022,7 +2014,7 @@ var FB = (function(){
         }
 
         case 'assignTask': {
-          if(!b.assigneeId||!b.clientName||!b.department||!b.category) throw new Error('Missing assignment details.');
+          if(!b.assigneeId||!b.department||!b.category) throw new Error('Missing assignment details.');
           var u=me();
           return col('users').doc(String(b.assigneeId)).get().then(function(s){
             if(!s.exists) throw new Error('Assignee not found.');
@@ -5711,13 +5703,13 @@ function submitAssign(){
     var jobs = others.map(function(to){ return apiCall('assignTask', Object.assign({assigneeId:to}, base)); });
     Promise.all([selfJob].concat(jobs)).then(function(results){
       var fails = results.slice(1).filter(function(r){ return !r||!r.ok; }).length;
-      if(fails){ toast('“'+client+'” — '+fails+' assignment(s) didn’t sync. Try again.','error'); }
+      if(fails){ toast('“'+_lbl+'” — '+fails+' assignment(s) didn’t sync. Try again.','error'); }
       App._assignedCache=null; if(App.view==='assigned') renderAssignedByMe();
       // Lock-screen push to each assignee (delivered even if their app is closed; queued if offline)
       try{ others.forEach(function(to){ Push.send(to, 'New task from '+App.identity.employeeName, taskNotifBody(base), 'task-'+Date.now()); }); }catch(e){}
       // Looped-in people get a light, time-bound heads-up (auto-dismisses; not action-required).
       try{ (base.loop||[]).forEach(function(lid){ var s=String(lid); if(s===meId || others.map(String).indexOf(s)>=0) return; Push.send(lid, App.identity.employeeName+' looped you in', taskNotifBody(base), 'loop-'+Date.now(), { sticky:'0' }); }); }catch(e){}
-    }).catch(function(e){ toast('“'+client+'” didn’t fully sync: '+(e.message||'offline'),'error'); App._assignedCache=null; if(App.view==='assigned') renderAssignedByMe(); });
+    }).catch(function(e){ toast('“'+_lbl+'” didn’t fully sync: '+(e.message||'offline'),'error'); App._assignedCache=null; if(App.view==='assigned') renderAssignedByMe(); });
     if(hasSelf){ selfJob.then(function(){ buildSidebar(); if(others.length===0) navigate('category',n.dept,n.cat); }); }
     return null;
   }).catch(function(e){ App._asBusy=false; b.disabled=false; b.innerHTML='🚀 Assign Task'; toast('Could not save. '+(e.message||''),'error'); });
