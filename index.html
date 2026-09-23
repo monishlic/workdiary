@@ -687,6 +687,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   #sidebar{transform:translateX(-100%);z-index:150;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}#sidebar.open{transform:translateX(0)}
   #sb-ov{z-index:145}#sb-ov.open{display:block}.sb-x{display:block}
   body.sb-open #bottom-nav{display:none}
+  body.sb-open .newtask-fab, body.sb-open .assistant, body.sb-open .install-bar{display:none !important}
   #main{margin-left:0}#menu-btn{display:flex}
   .stats{grid-template-columns:repeat(2,1fr)}#content{padding:16px}
   .card{flex-direction:column;gap:11px}
@@ -1586,6 +1587,7 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
 .install-bar .ib-x{ background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer; padding:4px 6px; }
 @keyframes fadeUp{ from{ opacity:0; transform:translateY(12px);} to{ opacity:1; transform:none; } }
 @media(min-width:821px){ .install-bar{ display:none; } }
+body.modal-open .install-bar{ display:none !important; }
 </style>
 </head>
 <body>
@@ -3911,9 +3913,20 @@ function appViewBusy(){
 function slateIsBusy(){
   if(App._slateBusy) return true;
   if(document.getElementById('slate-input-wrap')) return true;   // inline "add note" box is open
+  // Cooldown: for a moment after any tap on the board, hold off full repaints so a
+  // live snapshot can't wipe the note the finger is on (mobile taps are fragile).
+  if(App._slateActAt && (Date.now()-App._slateActAt) < 1400) return true;
   var a=document.activeElement;
   if(a && (a.id==='slate-input' || a.id==='slate-search' || (a.closest && a.closest('#slate-board')))) return true;
   return false;
+}
+// Mark a slate interaction; schedule a single reconcile pull once the user goes idle.
+function slateTouch(){
+  App._slateActAt=Date.now();
+  clearTimeout(App._slateReconcile);
+  App._slateReconcile=setTimeout(function(){
+    if(App.view==='slate' && !App._slateView && !slateIsBusy() && Sync.online()){ try{ Slate.pull(); }catch(e){} }
+  }, 1650);
 }
 function noteAge(created){ var t=new Date(created).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(created); }
 function renderSlate(){
@@ -3981,6 +3994,7 @@ function slateNoteHTML(n, ro){
 function slateNew(){ var board=document.getElementById('slate-board'); var active=(App.slateNotes||[]).filter(function(n){return !n.done;}); var pad=20,colW=192,rowH=124; var cols=board?Math.max(1,Math.floor((board.clientWidth-pad)/colW)):5; var i=active.length; spawnNoteInput(pad+(i%cols)*colW, pad+Math.floor(i/cols)*rowH); }
 function slateClick(e){
   if(App._slateView) return;
+  slateTouch();
   if(App._slateSel) return;   // in select mode, clicking empty space does nothing (don't spawn a note)
   var board=document.getElementById('slate-board'); if(!board || e.target!==board) return;
   var rect=board.getBoundingClientRect();
@@ -4017,6 +4031,7 @@ function attachSlateDnD(){
 function attachOneNoteDnD(el){
   var board=document.getElementById('slate-board'); if(!board) return;
   el.addEventListener('pointerdown', function(e){
+    slateTouch();
     if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked')) return;
     var id=el.getAttribute('data-note');
     // In select mode a tap toggles selection instead of dragging.
@@ -4038,6 +4053,7 @@ function attachOneNoteDnD(el){
   });
 }
 function appendNote(n){
+  slateTouch();
   var board=document.getElementById('slate-board'); if(!board) return;
   var empty=board.querySelector('.slate-empty'); if(empty) empty.remove();
   var tmp=document.createElement('div'); tmp.innerHTML=slateNoteHTML(n,false);
@@ -4045,6 +4061,7 @@ function appendNote(n){
   board.appendChild(el); attachOneNoteDnD(el);
 }
 function slateDone(id){
+  slateTouch();
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
   Slate.archive(n);   // mark done + protect immediately, so a refresh can't re-show it during the animation
   var el=document.querySelector('.slate-note[data-note="'+id+'"]');
@@ -4053,6 +4070,7 @@ function slateDone(id){
   if(el && !_reduceMotion){ el.classList.add('sn-removing'); setTimeout(fin,260); } else fin();
 }
 function slateEdit(id){
+  slateTouch();
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
   var el=document.querySelector('.slate-note[data-note="'+id+'"]'); if(!el) return;
   var txt=el.querySelector('.sn-text'); if(!txt || el.querySelector('.sn-edit-box')) return;
@@ -4070,6 +4088,7 @@ function slateEdit(id){
 }
 function slateTask(id){ slateToTask(id); }
 function slateToTask(id){
+  slateTouch();
   var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
   App._slateTaskNoteId=id;
   openAssign();
@@ -6483,8 +6502,8 @@ function openConfirm(o){
   ok.className = 'btn '+(o.okClass||'btn-primary');
   openModal('confirm-modal');
 }
-function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id){ document.getElementById(id).classList.add('hidden'); if(id==='add-modal') hideSuggs(); }
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.body.classList.add('modal-open'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); if(id==='add-modal') hideSuggs(); if(!document.querySelector('.overlay:not(.hidden)')) document.body.classList.remove('modal-open'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-ov').classList.remove('open'); document.body.classList.remove('sb-open'); }
 function toggleSidebar(){ var open=document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sb-ov').classList.toggle('open'); document.body.classList.toggle('sb-open', open); }
 
