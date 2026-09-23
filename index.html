@@ -990,6 +990,12 @@ body{ background:var(--bg); }
 .sn-done:hover{ color:#0f9d6f; } .sn-task:hover{ color:var(--accent); }
 .slate-input{ cursor:text; z-index:30; box-shadow:0 18px 36px -10px rgba(80,72,150,.5); user-select:text; -webkit-user-select:text; }
 .slate-input textarea{ width:100%; border:none; background:transparent; resize:none; font:inherit; font-size:.9rem; color:#3a3552; outline:none; }
+.slate-input-foot{ display:flex; align-items:center; gap:8px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(58,53,82,.14); }
+.si-remind{ display:inline-flex; align-items:center; gap:4px; font-size:.8rem; color:#3a3552; cursor:pointer; }
+.si-remind input[type=time]{ border:none; background:rgba(255,255,255,.55); border-radius:7px; padding:3px 6px; font:inherit; font-size:.78rem; color:#3a3552; outline:none; }
+.si-add{ margin-left:auto; border:none; background:rgba(58,53,82,.85); color:#fff; border-radius:8px; padding:5px 14px; font:inherit; font-size:.8rem; font-weight:700; cursor:pointer; }
+.si-add:hover{ background:#3a3552; }
+.sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 7px; border-radius:20px; }
 .slate-note.sn-removing{ animation:snPeel .26s ease forwards; }
 /* Slate multi-select mode */
 .slate-board.selmode .slate-note{ cursor:pointer; }
@@ -2031,7 +2037,7 @@ var FB = (function(){
             return col('tasks').doc(uid).set(task)
               .then(function(){ return addNotif(a.userId, u.name, u.name+' assigned you: '+(task.title||task.clientName)+' ('+task.category+')', uid, 'assignment'); })
               .then(function(){ return logAudit('Assigned', uid, task.clientName, 'to '+a.name+' · '+task.department+' / '+task.category); })
-              .then(function(){ return {ok:true, task:task}; });
+              .then(function(){ try{ dueRemSync(uid, a.userId, a.name, task.loop, task.title, task.clientName, task.reminders); }catch(e){} return {ok:true, task:task}; });
           });
         }
 
@@ -2107,7 +2113,7 @@ var FB = (function(){
             return col('tasks').doc(String(b.uid)).set(patch,{merge:true})
               .then(function(){ if(String(t.ownerId)!==String(me().userId)) return addNotif(t.ownerId, me().name, me().name+' updated: '+(b.clientName||t.clientName), t.uid, 'status'); })
               .then(function(){ return logAudit('Edited shared task', t.uid, b.clientName||t.clientName, ''); })
-              .then(function(){ return {ok:true}; });
+              .then(function(){ if(b.reminders!==undefined || b.status==='Completed'){ try{ if(b.status==='Completed') dueRemClear(t.uid); else dueRemSync(t.uid, t.ownerId, t.ownerName, t.loop, (b.title||t.title), (b.clientName||t.clientName), b.reminders); }catch(e){} } return {ok:true}; });
           });
         }
 
@@ -2620,14 +2626,14 @@ var Data = {
         repeat:d.repeat||'', repeatDay:(d.repeatDay!=null?d.repeatDay:''), repeatUntil:d.repeatUntil||'', priority:d.priority||'medium', checklist:Array.isArray(d.checklist)?d.checklist:[], links:Array.isArray(d.links)?d.links:[], loop:Array.isArray(d.loop)?d.loop:[],
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:App.identity.employeeName, completedBy:'', assignedById:d.assignedById||'', assignedByName:d.assignedByName||'', syncStatus:'PENDING_SYNC' };
-      return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending',d.clientName+' → '+d.category); Sync.afterChange(); return task; });
+      return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending',(d.clientName||d.title||'Task')+' → '+d.category); try{ dueRemSync(task.uid, App.identity.employeeId, App.identity.employeeName, task.loop, task.title, task.clientName, task.reminders); }catch(e){} Sync.afterChange(); return task; });
     });
   },
   deleteTask:function(taskId){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.resolve();
     var uid=t.uid; App.tasks=App.tasks.filter(function(x){return x.taskId!==taskId;});
     try{ FBLive.rewriteTasks(); }catch(e){}
-    if(uid){ try{ FB.col('tasks').doc(String(uid)).delete(); }catch(e){} }
+    if(uid){ try{ FB.col('tasks').doc(String(uid)).delete(); }catch(e){} try{ dueRemClear(uid); }catch(e){} }
     return Promise.resolve();
   },
   toggleCheck:function(taskId,i){
@@ -2654,12 +2660,12 @@ var Data = {
     if(f.links!==undefined) t.links=f.links;
     t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
     var note=moved?('Moved to '+f.department+' › '+f.category):(renamed?'Renamed & edited':'Edited');
-    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'EDITED',t.status,t.status,note); Sync.afterChange(); });
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'EDITED',t.status,t.status,note); if(f.reminders!==undefined){ try{ dueRemSync(t.uid, (t.ownerId||App.identity.employeeId), (t.ownerName||App.identity.employeeName), t.loop, t.title, t.clientName, t.reminders); }catch(e){} } Sync.afterChange(); });
   },
   setStatus:function(taskId,status,remark){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
     var oldS=t.status; t.status=status;
-    if(status==='Completed'){ t.completedTimestamp=nowISO(); t.completedBy=App.identity.employeeName; }
+    if(status==='Completed'){ t.completedTimestamp=nowISO(); t.completedBy=App.identity.employeeName; try{ dueRemClear(t.uid); }catch(e){} }
     else { t.completedTimestamp=''; t.completedBy=''; }
     pushRemark(t, status==='In Progress'?'Marked In Progress':'Set to Pending', remark);
     t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
@@ -2671,7 +2677,7 @@ var Data = {
     var ts=nowISO(); t.status='Completed'; t.completedTimestamp=ts; t.lastUpdatedTimestamp=ts; t.completedBy=App.identity.employeeName;
     pushRemark(t, 'Completed', remark);
     t.syncStatus='PENDING_SYNC';
-    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'COMPLETED','Pending','Completed',remark||t.clientName); Sync.afterChange(); if(t.repeat) return Data.spawnRecurrence(t); });
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'COMPLETED','Pending','Completed',remark||t.clientName); try{ dueRemClear(t.uid); }catch(e){} Sync.afterChange(); if(t.repeat) return Data.spawnRecurrence(t); });
   },
   spawnRecurrence:function(t){
     if(!t||!t.repeat) return Promise.resolve();
@@ -2687,12 +2693,13 @@ var Data = {
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:t.createdBy||App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
       if(t.assignedById){ task.assignedById=t.assignedById; task.assignedByName=t.assignedByName; task.createdById=t.createdById; task.createdByName=t.createdByName; }
-      return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending','Recurring ('+t.repeat+') · '+t.clientName); Sync.afterChange(); return task; });
+      return Store.put('tasks',task.uid,task).then(function(){ App.tasks.push(task); Data.log(taskId,'CREATED','','Pending','Recurring ('+t.repeat+') · '+t.clientName); try{ dueRemSync(task.uid, (t.ownerId||t.employeeId), (t.ownerName||t.employeeName), task.loop, t.title, task.clientName, task.reminders); }catch(e){} Sync.afterChange(); return task; });
     });
   },
   setSnooze:function(taskId,iso){
     var t=App.tasks.find(function(x){return x.taskId===taskId;}); if(!t) return Promise.reject(new Error('Task not found.'));
     t.snoozedUntil=iso||''; t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
+    try{ snoozeRemSync(t, iso||''); }catch(e){}
     return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId, iso?'SNOOZED':'UNSNOOZED', t.status, t.status, iso?('until '+fmtDateTime(iso)):'woken'); Sync.afterChange(); });
   },
   reopen:function(taskId,remark){
@@ -3350,6 +3357,65 @@ function taskNotifBody(t){
   var f=pushDueShort(t.dueDate); if(f) bits.push('Due '+f); else bits.push('No due date');
   return line1 + '\n' + bits.join(' · ');
 }
+/* ---- Scheduled reminders: mirror a task's reminder times into a queryable
+   `dueReminders` collection so the Cloudflare Worker cron can fire them even when
+   every app is closed. We clear-then-write on each save so edits stay accurate. ---- */
+function dueRemSync(uid, ownerId, ownerName, loop, title, clientName, reminders){
+  if(!window.firebase || !firebase.firestore || !uid) return;
+  var col=firebase.firestore().collection('dueReminders');
+  var writeAll=function(){
+    (reminders||[]).forEach(function(r,i){
+      if(!r || !r.at) return; var at=Date.parse(r.at); if(isNaN(at)) return;
+      if(at < Date.now()-60000) return;   // skip times already well in the past
+      try{ col.doc(String(uid)+'__'+i).set({
+        taskUid:String(uid), ownerId:String(ownerId||''), ownerName:String(ownerName||''),
+        loop:(loop||[]).map(String), title:String(title||''), clientName:String(clientName||''),
+        message:String(r.message||''), atMillis:at, due:String(r.at)
+      }).catch(function(){}); }catch(e){}
+    });
+  };
+  try{ col.where('taskUid','==',String(uid)).get().then(function(qs){
+    var dels=[]; qs.forEach(function(d){ dels.push(d.ref.delete()); });
+    Promise.all(dels).then(writeAll, writeAll);
+  }, writeAll); }catch(e){ writeAll(); }
+}
+function dueRemClear(uid){
+  if(!window.firebase || !firebase.firestore || !uid) return;
+  try{ firebase.firestore().collection('dueReminders').where('taskUid','==',String(uid)).get()
+    .then(function(qs){ qs.forEach(function(d){ d.ref.delete().catch(function(){}); }); }).catch(function(){}); }catch(e){}
+}
+/* Time-only → an ISO for today at that time, or tomorrow if that time already passed. */
+function timeToNextISO(hhmm){
+  if(!hhmm) return ''; var p=String(hhmm).split(':'); var d=new Date();
+  d.setHours(parseInt(p[0],10)||0, parseInt(p[1],10)||0, 0, 0);
+  if(d.getTime() <= Date.now()) d.setDate(d.getDate()+1);
+  return d.toISOString();
+}
+/* Slate note reminder — a personal ping for the note owner at the chosen time. */
+function noteRemSync(note){
+  if(!window.firebase || !firebase.firestore || !note || !note.id || !App.identity) return;
+  var col=firebase.firestore().collection('dueReminders'), id='note__'+String(note.id);
+  if(!note.remindAt){ try{ col.doc(id).delete().catch(function(){}); }catch(e){} return; }
+  var at=Date.parse(note.remindAt); if(isNaN(at)) return;
+  try{ col.doc(id).set({
+    taskUid:String(note.id), ownerId:String(App.identity.employeeId), ownerName:String(App.identity.employeeName),
+    loop:[], title:'', clientName:'', message:String(note.text||'').slice(0,160),
+    atMillis:at, due:String(note.remindAt), kind:'note'
+  }).catch(function(){}); }catch(e){}
+}
+/* Snooze = a personal wake-up the assignee sets for themselves. Same cron engine,
+   but it fires only to the snoozer (no loop) and reads as "back on your list". */
+function snoozeRemSync(t, iso){
+  if(!window.firebase || !firebase.firestore || !t || !t.uid || !App.identity) return;
+  var col=firebase.firestore().collection('dueReminders'), id='snz__'+String(t.uid);
+  if(!iso){ try{ col.doc(id).delete().catch(function(){}); }catch(e){} return; }
+  var at=Date.parse(iso); if(isNaN(at)) return;
+  try{ col.doc(id).set({
+    taskUid:String(t.uid), ownerId:String(App.identity.employeeId), ownerName:String(App.identity.employeeName),
+    loop:[], title:String(t.title||''), clientName:String(t.clientName||''),
+    message:'Snoozed task is back — time to pick it up.', atMillis:at, due:String(iso), kind:'snooze'
+  }).catch(function(){}); }catch(e){}
+}
 function toggleDept(dept){ App.prefs.expanded[dept]=!App.prefs.expanded[dept]; Data.savePrefs(); buildSidebar(); }
 
 /* ================================================================
@@ -3868,10 +3934,11 @@ var Slate = {
     Slate._pulling = p.then(function(){ Slate._pulling=null; }, function(){ Slate._pulling=null; });
     return p;
   },
-  add:function(text,x,y,color){
+  add:function(text,x,y,color,remindAt){
     if(!App.slateNotes) App.slateNotes=[];
-    var n={ id:'nl-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), sid:'', text:text, color:color||Slate.pick(), x:x, y:y, done:false, taskRef:'', created:nowISO() };
+    var n={ id:'nl-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), sid:'', text:text, color:color||Slate.pick(), x:x, y:y, done:false, taskRef:'', created:nowISO(), remindAt:remindAt||'' };
     App.slateNotes.push(n); Slate.saveLocal();
+    if(remindAt){ try{ noteRemSync(n); }catch(e){} }
     if(Sync.online()){
       apiCall('saveNote',{text:text,color:n.color,x:x,y:y}).then(function(res){
         if(res&&res.ok){ n.sid=res.id; n.created=res.created||n.created; Slate.saveLocal();
@@ -3897,10 +3964,10 @@ var Slate = {
     App.slateNotes.push(n); Slate.saveLocal();
     if(App.view==='slate' && !App._slateView){ if(document.getElementById('slate-board')) appendNote(n); refreshSlateMeta(); }
   },
-  archive:function(n){ n.done=true; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:true}); },
+  archive:function(n){ n.done=true; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:true}); try{ if(n.remindAt) dueRemClear(n.id); }catch(e){} },
   restore:function(n){ n.done=false; Slate.saveLocal(); Slate._push(n,{id:n.sid,done:false}); },
   setTasked:function(n,ref){ n.taskRef=ref||'task'; Slate.saveLocal(); Slate._push(n,{id:n.sid,taskRef:n.taskRef}); },
-  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); if(n.sid){ Slate._tomb[n.sid]=Date.now(); if(Sync.online()) apiCall('deleteNote',{id:n.sid}).catch(function(){}); } }
+  remove:function(n){ App.slateNotes=(App.slateNotes||[]).filter(function(x){return x!==n;}); Slate.saveLocal(); try{ if(n.remindAt) dueRemClear(n.id); }catch(e){} if(n.sid){ Slate._tomb[n.sid]=Date.now(); if(Sync.online()) apiCall('deleteNote',{id:n.sid}).catch(function(){}); } }
 };
 function noteAnger(created){ var t=new Date(created).getTime(); if(!t) return 0; var days=(Date.now()-t)/86400000; return Math.max(0,Math.min(1,(days-1)/6)); }
 // True while the user is mid-action on a task view — a live refresh must not interrupt them.
@@ -3981,6 +4048,8 @@ function slateNoteHTML(n, ro){
   var q=(App._slateQuery||'').toLowerCase();
   var dim=(!ro && q && String(n.text).toLowerCase().indexOf(q)<0)?' dim':'';
   var badge=n.taskRef ? '<span class="sn-tasked" data-action="slate-open-task" data-id="'+esc(n.id)+'" title="Tasked — find it">✓ task</span>' : '';
+  var remB='';
+  if(!ro && n.remindAt){ var _rd=new Date(n.remindAt); if(!isNaN(_rd.getTime()) && _rd.getTime()>Date.now()){ remB='<span class="sn-remind" title="Reminder set">⏰ '+esc(_rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}))+'</span>'; } }
   var actions = ro ? '' : '<button class="sn-btn sn-edit" data-action="slate-edit" data-id="'+esc(n.id)+'" title="Edit note">✎</button><button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Archive (done)">✓</button>';
   var seld=(!ro && App._slateSelIds && App._slateSelIds[n.id])?' sel':'';
   var check=ro ? '' : '<div class="sn-check">✓</div>';
@@ -3988,7 +4057,7 @@ function slateNoteHTML(n, ro){
     check+
     '<div class="sn-actions">'+actions+'</div>'+
     '<div class="sn-text">'+esc(n.text)+'</div>'+
-    '<div class="sn-foot">'+badge+'<span class="sn-age">'+esc(noteAge(n.created))+'</span></div>'+
+    '<div class="sn-foot">'+badge+remB+'<span class="sn-age">'+esc(noteAge(n.created))+'</span></div>'+
   '</div>';
 }
 function slateNew(){ var board=document.getElementById('slate-board'); var active=(App.slateNotes||[]).filter(function(n){return !n.done;}); var pad=20,colW=192,rowH=124; var cols=board?Math.max(1,Math.floor((board.clientWidth-pad)/colW)):5; var i=active.length; spawnNoteInput(pad+(i%cols)*colW, pad+Math.floor(i/cols)*rowH); }
@@ -4009,19 +4078,26 @@ function spawnNoteInput(x,y){
   var maxX=Math.max(4, board.clientWidth-184); if(x>maxX)x=maxX; if(x<4)x=4; if(y<4)y=4;
   var color=Slate.pick();
   var w=document.createElement('div'); w.id='slate-input-wrap'; w.className='slate-note slate-input'; w.style.left=x+'px'; w.style.top=y+'px'; w.style.background=color; w.style.setProperty('--rot','0deg');
-  w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type, then Enter…" maxlength="600"></textarea>';
+  w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type your note…" maxlength="600"></textarea>'
+    +'<div class="slate-input-foot"><label class="si-remind" title="Optional — remind me at this time today (or tomorrow if it\'s already passed)">⏰ <input type="time" id="slate-input-time"></label><button type="button" class="si-add" data-action="slate-input-save">Add</button></div>';
   board.appendChild(w);
   var ta=document.getElementById('slate-input'); ta._x=x; ta._y=y; ta._color=color;
-  ta.addEventListener('blur', function(){ commitSlateInput(); });
+  // Commit only when focus leaves the whole box (so tapping the time field doesn't cut typing short).
+  var commitIfDone=function(){ setTimeout(function(){ var box=document.getElementById('slate-input-wrap'); if(!box) return; if(box.contains(document.activeElement)) return; commitSlateInput(); }, 130); };
+  ta.addEventListener('blur', commitIfDone);
+  var tm=document.getElementById('slate-input-time'); if(tm) tm.addEventListener('blur', commitIfDone);
+  ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); commitSlateInput(); } });
   setTimeout(function(){ ta.focus(); }, 10);
 }
 function commitSlateInput(){
   var ta=document.getElementById('slate-input'); if(!ta) return;
   var text=(ta.value||'').trim(), x=ta._x, y=ta._y, color=ta._color;
+  var tm=document.getElementById('slate-input-time'); var remindAt=(tm && tm.value) ? timeToNextISO(tm.value) : '';
   var wrap=document.getElementById('slate-input-wrap'); if(wrap) wrap.remove();
   if(!text) return;
-  var n=Slate.add(text,x,y,color);
+  var n=Slate.add(text,x,y,color,remindAt);
   appendNote(n);
+  if(remindAt){ try{ var d=new Date(remindAt); toast('⏰ Reminder set for '+d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+(d.toDateString()!==new Date().toDateString()?' (tomorrow)':''),'success'); }catch(e){} }
 }
 function cancelSlateInput(){ var wrap=document.getElementById('slate-input-wrap'); if(wrap){ var ta=document.getElementById('slate-input'); if(ta) ta.value=''; wrap.remove(); } }
 function attachSlateDnD(){
@@ -6538,6 +6614,7 @@ document.addEventListener('click', function(e){
     case 'remark-ok': { var _ta=document.getElementById('remark-text'); var _txt=(_ta.value||'').trim(); if(!_txt){ document.getElementById('remark-err').classList.add('show'); try{_ta.focus();}catch(_e){} break; } var _rf=App._remarkFn; App._remarkFn=null; closeModal('remark-modal'); if(_rf) setTimeout(function(){ _rf(_txt); },10); break; }
     case 'slate-click': slateClick(e); break;
     case 'slate-new': slateNew(); break;
+    case 'slate-input-save': commitSlateInput(); break;
     case 'slate-done': slateDone(el.getAttribute('data-id')); break;
     case 'slate-task': slateToTask(el.getAttribute('data-id')); break;
     case 'slate-edit': slateEdit(el.getAttribute('data-id')); break;
