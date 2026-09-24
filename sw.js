@@ -3,7 +3,7 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v37';
+const CACHE = 'workdiary-v38';
 /* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
 const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
@@ -23,15 +23,20 @@ self.addEventListener('push', function(event){
       // to avoid a duplicate. Otherwise (closed / background) show the lock-screen popup.
       var focused = list.some(function(c){ return c.focused === true || c.visibilityState === 'visible'; });
       if(focused) return;
-      // sticky by default; FYI notifications (e.g. "looped in") pass sticky:'0' → auto-dismiss.
-      var sticky = (d.sticky !== '0');
+      // Duration model:
+      //   d.close = number of seconds → auto-dismiss after that (e.g. 3 or 6).
+      //   no d.close (and not sticky:'0') → "stay until tapped".
+      //   legacy sticky:'0' → treat as a 6s auto-dismiss.
+      var closeSecs = parseInt(d.close, 10);
+      if(isNaN(closeSecs) && d.sticky === '0') closeSecs = 6;
+      var timed = !isNaN(closeSecs) && closeSecs > 0;
       var opts = {
         body: body,
         icon: 'icon-192.png?v=3',
         badge: 'icon-192.png?v=3',
         tag: tag,
         renotify: true,
-        requireInteraction: sticky,   // sticky stays until acted on; FYI ones auto-hide
+        requireInteraction: !timed,   // stay until tapped, unless a close-time is given
         data: d
       };
       // Chat / DM / mention notifications get quick-reply buttons.
@@ -44,9 +49,9 @@ self.addEventListener('push', function(event){
         ];
       }
       return self.registration.showNotification(title, opts).then(function(){
-        // Time-bound FYI notifications: close after ~6.5s so they don't linger.
-        if(!sticky){
-          return new Promise(function(res){ setTimeout(res, 6500); }).then(function(){
+        // Auto-dismiss timed notifications after the requested number of seconds.
+        if(timed){
+          return new Promise(function(res){ setTimeout(res, closeSecs*1000 + 200); }).then(function(){
             return self.registration.getNotifications({ tag: tag }).then(function(ns){ ns.forEach(function(nn){ nn.close(); }); });
           });
         }

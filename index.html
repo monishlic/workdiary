@@ -2695,6 +2695,13 @@ var Data = {
     else { t.completedTimestamp=''; t.completedBy=''; }
     pushRemark(t, status==='In Progress'?'Marked In Progress':'Set to Pending', remark);
     t.lastUpdatedTimestamp=nowISO(); t.syncStatus='PENDING_SYNC';
+    if(status==='In Progress' && oldS!=='In Progress'){
+      // Low-urgency FYI → 3-second notification to the assigner and anyone looped in.
+      try{ var meS=String(App.identity.employeeId); var _lbl=(t.title||t.clientName||'Task')+'\n⚙ In Progress';
+        if(t.assignedById && String(t.assignedById)!==meS){ Push.send(t.assignedById, App.identity.employeeName+' started a task', _lbl, 'prog-'+Date.now(), {close:3}); }
+        (Array.isArray(t.loop)?t.loop:[]).forEach(function(lid){ var s=String(lid); if(s===meS||s===String(t.assignedById)) return; Push.send(lid, App.identity.employeeName+' started a task', _lbl, 'progloop-'+Date.now(), {close:3}); });
+      }catch(e){}
+    }
     return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'STATUS',oldS,status,remark||status); Sync.afterChange(); });
   },
   complete:function(taskId,remark){
@@ -3409,7 +3416,7 @@ function dueRemSync(uid, ownerId, ownerName, loop, title, clientName, reminders)
       if(at < Date.now()-60000) return;   // skip times already well in the past
       try{ col.doc(String(uid)+'__'+i).set({
         taskUid:String(uid), ownerId:String(ownerId||''), ownerName:String(ownerName||''),
-        loop:(loop||[]).map(String), title:String(title||''), clientName:String(clientName||''),
+        loop:[], title:String(title||''), clientName:String(clientName||''),   // reminders go to the assignee only
         message:String(r.message||''), atMillis:at, due:String(r.at)
       }).catch(function(){}); }catch(e){}
     });
@@ -5136,9 +5143,10 @@ function completeTask(taskId,remark,btn){
     Data.complete(taskId,remark).then(function(){
       buildSidebar();
       // Notify the person who assigned it (lock-screen push once push is set up)
-      try{ var _ct=App.tasks.find(function(x){return x.taskId===taskId;}); if(_ct && _ct.assignedById && String(_ct.assignedById)!==String(App.identity.employeeId)){ Push.send(_ct.assignedById, App.identity.employeeName+' completed a task', (_ct.title||_ct.clientName||'Task')+'\n✅ Completed · '+(_ct.clientName||_ct.category||''), 'complete-'+Date.now()); }
-        // Time-bound heads-up to anyone looped in (auto-dismisses).
-        var _me=String(App.identity.employeeId); (Array.isArray(_ct.loop)?_ct.loop:[]).forEach(function(lid){ var s=String(lid); if(s===_me || s===String(_ct.assignedById)) return; Push.send(lid, App.identity.employeeName+' completed a task', (_ct.title||_ct.clientName||'Task')+'\n✅ Completed', 'loopdone-'+Date.now(), { sticky:'0' }); }); }catch(e){}
+      try{ var _ct=App.tasks.find(function(x){return x.taskId===taskId;}); var _me=String(App.identity.employeeId);
+        // Completion is a low-urgency FYI → 3-second notification to assigner AND loop.
+        if(_ct && _ct.assignedById && String(_ct.assignedById)!==_me){ Push.send(_ct.assignedById, App.identity.employeeName+' completed a task', (_ct.title||_ct.clientName||'Task')+'\n✅ Completed · '+(_ct.clientName||_ct.category||''), 'complete-'+Date.now(), { close:3 }); }
+        (_ct&&Array.isArray(_ct.loop)?_ct.loop:[]).forEach(function(lid){ var s=String(lid); if(s===_me || s===String(_ct.assignedById)) return; Push.send(lid, App.identity.employeeName+' completed a task', (_ct.title||_ct.clientName||'Task')+'\n✅ Completed', 'loopdone-'+Date.now(), { close:3 }); }); }catch(e){}
       if(card){ toastAction('✓ Completed','Undo',function(){ Data.reopen(taskId,'Undone').then(function(){ buildSidebar(); refreshView(); }); },'success'); }
       else { toast('✓ Marked as completed','success'); }
       closeModal('detail-modal'); refreshView(); celebrateIfClear();
@@ -6002,7 +6010,7 @@ function submitAssign(){
       // Lock-screen push to each assignee (delivered even if their app is closed; queued if offline)
       try{ others.forEach(function(to){ Push.send(to, 'New task from '+App.identity.employeeName, taskNotifBody(base), 'task-'+Date.now()); }); }catch(e){}
       // Looped-in people get a light, time-bound heads-up (auto-dismisses; not action-required).
-      try{ (base.loop||[]).forEach(function(lid){ var s=String(lid); if(s===meId || others.map(String).indexOf(s)>=0) return; Push.send(lid, App.identity.employeeName+' looped you in', taskNotifBody(base), 'loop-'+Date.now(), { sticky:'0' }); }); }catch(e){}
+      try{ (base.loop||[]).forEach(function(lid){ var s=String(lid); if(s===meId || others.map(String).indexOf(s)>=0) return; Push.send(lid, App.identity.employeeName+' looped you in', taskNotifBody(base), 'loop-'+Date.now(), { close:6 }); }); }catch(e){}
     }).catch(function(e){ toast('“'+_lbl+'” didn’t fully sync: '+(e.message||'offline'),'error'); App._assignedCache=null; if(App.view==='assigned') renderAssignedByMe(); });
     if(hasSelf){ selfJob.then(function(){ buildSidebar(); if(others.length===0) navigate('category',n.dept,n.cat); }); }
     return null;
@@ -6375,6 +6383,27 @@ function loadCommentsInto(uid){
     e2.innerHTML=res.comments.map(function(c){ return '<div class="comment"><div class="comment-top"><span class="comment-author">'+esc(c.authorName)+'</span><span class="comment-time">'+esc(c.created)+'</span></div><div class="comment-text">'+esc(c.text)+'</div></div>'; }).join('');
   }).catch(function(){});
 }
+/* Push routing for a task comment: the counterpart (assigner⇄owner) STAYS until tapped,
+   loop gets 3s, anyone @mentioned in the comment gets 6s — merged so no one doubles. */
+function notifyOnComment(uid, text){
+  var t=(App.tasks||[]).find(function(x){return String(x.uid)===String(uid);})
+      || (App._assignedCache||[]).find(function(x){return String(x.uid)===String(uid);})
+      || ((App._adminTaskCache||{})[uid]);
+  if(!t) return;
+  var me=String(App.identity.employeeId);
+  var ownerId=String(t.ownerId||t.employeeId||'');
+  var assignerId=String(t.assignedById||'');
+  var counterpart = (me===ownerId) ? assignerId : ownerId;   // the other side of the task
+  var targets={};
+  var want=function(id, close){ id=String(id||''); if(!id || id===me) return;
+    if(!(id in targets)){ targets[id]=close; return; }
+    var cur=targets[id]; if(cur===null) return; if(close===null){ targets[id]=null; return; } targets[id]=Math.max(cur, close); };
+  want(counterpart, null);                                    // stay until tapped
+  (Array.isArray(t.loop)?t.loop:[]).forEach(function(l){ want(l, 3); });
+  try{ Mentions.parse(text).forEach(function(u){ want(u.userId, 6); }); }catch(e){}
+  var body=(t.title||t.clientName||'Task')+'\n💬 '+String(text).slice(0,90);
+  Object.keys(targets).forEach(function(id){ var c=targets[id]; try{ Push.send(id, App.identity.employeeName+' commented', body, 'cmt-'+Date.now(), c===null?{}:{close:c}); }catch(e){} });
+}
 function addCommentUI(uid){
   if(App._cBusy) return;
   var input=document.getElementById('comment-input'); if(!input) return;
@@ -6387,6 +6416,7 @@ function addCommentUI(uid){
     done();
     if(!res||!res.ok){ toast(res&&res.error?res.error:'Could not comment.','error'); return; }
     input.value=''; input.focus(); loadCommentsInto(uid);
+    try{ notifyOnComment(uid, text); }catch(e){}
   }).catch(function(e){ done(); toast(e.message||'Could not comment.','error'); });
 }
 
@@ -6644,10 +6674,22 @@ function chatSend(){
   var inp=document.getElementById('chat-input'); if(!inp) return; var text=(inp.value||'').trim(); if(!text) return;
   var st=App._chat, ref=App._chatRef; inp.value=''; App._chatRef=null;
   var done=function(){}; var fail=function(){ toast('Message didn’t send — try again.','error'); };
+  var me=String(App.identity.employeeId);
   if(st.tab==='channels'){ apiCall('sendChat',{channel:st.channel,text:text,taskRef:ref}).then(done,fail); }
-  else if(st.dm){ apiCall('sendDM',{toId:st.dm,text:text,taskRef:ref}).then(done,fail); try{ Push.send(st.dm, 'Message from '+App.identity.employeeName, text, 'dm-'+st.dm, { kind:'dm', meId:st.dm, peerId:App.identity.employeeId, quick:'1' }); }catch(e){} }
-  // @mention: alert anyone named in a channel message
-  if(st.tab==='channels'){ try{ Mentions.parse(text).forEach(function(u){ if(String(u.userId)!==String(App.identity.employeeId)){ Push.send(u.userId, App.identity.employeeName+' mentioned you', text, 'mention-'+st.channel, { kind:'chan', meId:u.userId, channel:st.channel, quick:'1' }); } }); }catch(e){} }
+  else if(st.dm){ apiCall('sendDM',{toId:st.dm,text:text,taskRef:ref}).then(done,fail);
+    // Private DM → 6-second notification to the recipient.
+    try{ Push.send(st.dm, 'Message from '+App.identity.employeeName, text, 'dm-'+st.dm, { kind:'dm', meId:st.dm, peerId:me, quick:'1', close:6 }); }catch(e){}
+  }
+  // @mention → 6s, but ONLY to people who actually belong to that channel/dept.
+  if(st.tab==='channels'){
+    try{ var mem=channelMembers(st.channel), memSet={}; mem.forEach(function(m){ memSet[String(m.userId)]=1; });
+      Mentions.parse(text).forEach(function(u){ var uid=String(u.userId); if(uid===me || !memSet[uid]) return; Push.send(uid, App.identity.employeeName+' mentioned you', text, 'mention-'+st.channel, { kind:'chan', meId:uid, channel:st.channel, quick:'1', close:6 }); });
+    }catch(e){}
+  }
+  // Task reference → 6s to the referenced task's owner + assigner (not the sender, not the DM recipient again).
+  if(ref && (ref.ownerId || ref.assignedById)){
+    try{ var seen={}; [ref.ownerId, ref.assignedById].forEach(function(id){ id=String(id||''); if(!id || id===me || id===String(st.dm||'') || seen[id]) return; seen[id]=1; Push.send(id, App.identity.employeeName+' referenced your task', (ref.client||'a task')+(ref.cat?' · '+ref.cat:''), 'ref-'+Date.now(), { close:6 }); }); }catch(e){}
+  }
   renderChat();
 }
 /* Task reference picker */
