@@ -315,6 +315,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .at-collapse.on .at-chev{ transform:rotate(180deg); }
 .at-panel{ border:1px solid var(--border); background:var(--bg-soft,rgba(120,120,140,.05)); border-radius:14px; padding:14px; margin:10px 0; animation:atPanelIn .18s ease; }
 @keyframes atPanelIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+/* Floating pickers — a panel opened from a pill pops OVER the drawer instead of
+   growing it, so the drawer stays a fixed, compact height and never scrolls. */
+.at-panel.at-floating{ position:fixed; z-index:340; width:340px; max-width:calc(100vw - 16px); max-height:min(66vh,440px); overflow:auto; margin:0 !important; background:var(--bg-card); box-shadow:0 20px 50px -14px rgba(15,23,42,.45),0 6px 16px -8px rgba(15,23,42,.3); animation:atFloatIn .15s ease; }
+@keyframes atFloatIn{ from{ opacity:0; transform:translateY(-6px) scale(.98); } to{ opacity:1; transform:none; } }
+.at-backdrop{ position:fixed; inset:0; z-index:330; background:transparent; }
 .at-pills{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 2px; }
 .at-pills-top{ margin:2px 0; }
 .at-pill-primary{ border-color:var(--accent); color:var(--accent); font-weight:700; }
@@ -1733,10 +1738,11 @@ body.modal-open .install-bar{ display:none !important; }
     <div class="modal-b at-body">
       <div id="assign-tpl-picker"></div>
 
-      <!-- Title, Client, Description — separate clean fields -->
-      <input type="text" id="assign-title-input" class="at-field at-title" maxlength="140" placeholder="Task title" autocomplete="off">
-      <input type="text" id="assign-client" class="at-field at-client" maxlength="120" placeholder="Client name (optional)" autocomplete="off">
-      <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add a description…"></textarea>
+      <!-- Title + Description. Client stays as a hidden field: still set by voice / templates /
+           tapping a client, but no longer a visible row (keeps the drawer short, per the reference). -->
+      <input type="text" id="assign-title-input" class="at-field at-title" maxlength="140" placeholder="Add Title" autocomplete="off">
+      <input type="hidden" id="assign-client">
+      <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add Description"></textarea>
 
       <!-- Collapsible checklist -->
       <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add Checklist <span class="at-chev">▾</span></button>
@@ -1747,11 +1753,11 @@ body.modal-open .install-bar{ display:none !important; }
 
       <!-- Everything else: assign to, loop, due, priority, category -->
       <div class="at-pills">
-        <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Assign to</span></button>
-        <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
+        <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Users</span></button>
         <button type="button" class="at-pill" id="pill-due" data-action="at-toggle" data-panel="assign-panel-due"><span class="at-pi">📅</span><span id="sum-due">Due Date</span></button>
         <button type="button" class="at-pill prio-med" id="pill-prio" data-action="at-toggle" data-panel="assign-panel-prio"><span class="at-pi">🚩</span><span id="sum-prio">Priority</span></button>
         <button type="button" class="at-pill" id="pill-cat" data-action="at-toggle" data-panel="assign-panel-cat"><span class="at-pi">🏢</span><span id="sum-cat">Category</span></button>
+        <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
       </div>
 
       <!-- Pill panels (one open at a time) -->
@@ -6008,9 +6014,8 @@ function openAssign(dept,cat){
     var tn=document.getElementById('assign-tplname'); if(tn){ tn.value=''; tn.classList.add('hidden'); }
     renderTplPicker();
     var b=document.getElementById('assign-submit'); b.disabled=false; b.innerHTML='🚀 Assign Task';
-    // Reset the drawer chrome: collapse every panel, clear triggers, uncheck "Assign More".
-    document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); });
-    document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
+    // Reset the drawer chrome: close every panel (and detach floating listeners), uncheck "Assign More".
+    atCloseAll();
     var am=document.getElementById('assign-more'); if(am) am.checked=false;
     updateAssignPills();
     hideSuggs(); openModal('assign-modal');
@@ -6024,15 +6029,57 @@ function openAtPanel(pid){
   var p=document.getElementById(pid); if(!p || !p.classList.contains('hidden')) return;
   var el=document.querySelector('#assign-modal [data-panel="'+pid+'"]'); if(el) atToggle(el);
 }
+/* Close any open pill panel and detach its floating listeners. */
+function atCloseAll(){
+  document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
+  document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
+  App._atOpen=null;
+  document.removeEventListener('mousedown', atOutsideClose, true);
+  document.removeEventListener('keydown', atEsc, true);
+  window.removeEventListener('resize', atReposition, true);
+}
+function atEsc(e){ if(e.key==='Escape'){ atCloseAll(); updateAssignPills(); } }
+function atReposition(){ var o=App._atOpen; if(o && o.floating) atPositionPanel(o.p, o.trigger); }
+/* Close the floating popover when the click is outside it — but let clicks on another
+   pill/trigger through, so tapping a different pill just switches panels. */
+function atOutsideClose(e){
+  var o=App._atOpen; if(!o || !o.floating) return;
+  if(o.p.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('#assign-modal .at-pill, #assign-modal .at-foot-toggle, #assign-modal .at-ico, #assign-modal .at-collapse')) return;
+  atCloseAll(); updateAssignPills();
+}
+/* Place a floating panel just under its pill, flipping above / clamping to the viewport. */
+function atPositionPanel(p, trigger){
+  try{
+    var r=trigger.getBoundingClientRect();
+    var pw=p.offsetWidth||340, ph=p.offsetHeight||220;
+    var left=r.left; if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8; if(left<8) left=8;
+    var top=r.bottom+6;
+    if(top+ph>window.innerHeight-8){ var above=r.top-ph-6; top = above>=8 ? above : Math.max(8, window.innerHeight-ph-8); }
+    p.style.left=left+'px'; p.style.top=top+'px';
+  }catch(e){}
+}
 function atToggle(el){
   var id=el.getAttribute('data-panel'); var p=document.getElementById(id); if(!p) return;
   var willOpen=p.classList.contains('hidden');
-  // Close every panel and clear every trigger's active state (one open at a time).
-  document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); });
-  document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
-  if(willOpen){ p.classList.remove('hidden'); el.classList.add('on'); }
+  atCloseAll();                                  // one open at a time
+  if(!willOpen){ updateAssignPills(); return; }  // it was open → we just closed it
+  var inline = el.classList.contains('at-collapse');   // the "+ Add Checklist" row stays inline
+  p.classList.remove('hidden'); el.classList.add('on');
+  if(inline){
+    updateAssignPills();
+    setTimeout(function(){ try{ p.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){ } var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }, 30);
+    return;
+  }
+  // Float the picker over the drawer so the drawer never grows / scrolls.
+  p.classList.add('at-floating');
+  App._atOpen={ p:p, trigger:el, floating:true };
+  atPositionPanel(p, el);
+  document.addEventListener('mousedown', atOutsideClose, true);
+  document.addEventListener('keydown', atEsc, true);
+  window.addEventListener('resize', atReposition, true);
   updateAssignPills();
-  if(willOpen){ setTimeout(function(){ try{ p.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){ } var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }, 30); }
+  setTimeout(function(){ atPositionPanel(p, el); var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }, 20);
 }
 function fmtPillDue(){
   var d=(document.getElementById('assign-due-d')||{}).value, t=(document.getElementById('assign-due-t')||{}).value;
@@ -6945,7 +6992,7 @@ function openConfirm(o){
   openModal('confirm-modal');
 }
 function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.body.classList.add('modal-open'); }
-function closeModal(id){ document.getElementById(id).classList.add('hidden'); if(id==='add-modal') hideSuggs(); if(!document.querySelector('.overlay:not(.hidden)')) document.body.classList.remove('modal-open'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); if(id==='add-modal') hideSuggs(); if(id==='assign-modal'){ try{ atCloseAll(); }catch(e){} } if(!document.querySelector('.overlay:not(.hidden)')) document.body.classList.remove('modal-open'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-ov').classList.remove('open'); document.body.classList.remove('sb-open'); }
 function toggleSidebar(){ var open=document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sb-ov').classList.toggle('open'); document.body.classList.toggle('sb-open', open); }
 
