@@ -3546,7 +3546,7 @@ function noteRemSync(note){
    only cleans the doc up after a grace window so other open surfaces get their turn. */
 function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(remTick, 90000); setTimeout(remTick, 5000); }
 function stopReminderScan(){ if(App._remTimer){ clearInterval(App._remTimer); App._remTimer=null; } }
-function remTick(){ scanDueReminders(); }
+function remTick(){ scanDueReminders(); try{ if(App.view==='slate' && !App._slateView) paintSlate(); }catch(e){} }
 /* Per-device record of reminders already shown here, keyed by docId@atMillis (so re-arming
    a note with a NEW time fires again). Persisted so a reload can't replay one; pruned to 24h. */
 function remFiredMap(){ try{ return JSON.parse(localStorage.getItem('edRemFired')||'{}')||{}; }catch(e){ return {}; } }
@@ -4237,7 +4237,7 @@ function paintSlate(force){
   // the last paint, DON'T rebuild the DOM — this kills the flicker/jump from redundant
   // live-sync repaints (each rebuild otherwise replayed the note animation).
   var sig = 'q='+(App._slateQuery||'')+'|sel='+(App._slateSel?1:0)+'|ro='+(ro?1:0)+'|'+notes.map(function(n){
-    return n.id+':'+Math.round(n.x||0)+','+Math.round(n.y||0)+':'+(n.color||'')+':'+(n.remindAt||'')+':'+((App._slateSelIds&&App._slateSelIds[n.id])?1:0)+':'+(n.text||'');
+    return n.id+':'+Math.round(n.x||0)+','+Math.round(n.y||0)+':'+(n.color||'')+':'+(n.remindAt||'')+':'+(n.remindAt?(new Date(n.remindAt).getTime()>Date.now()?'F':'P'):'')+':'+((App._slateSelIds&&App._slateSelIds[n.id])?1:0)+':'+(n.text||'');
   }).join('~');
   if(!force && board._sig===sig && board.childElementCount){ return; }
   board._sig = sig;
@@ -4256,7 +4256,11 @@ function slateNoteHTML(n, ro){
   var badge=n.taskRef ? '<span class="sn-tasked" data-action="slate-open-task" data-id="'+esc(n.id)+'" title="Tasked — find it">✓ task</span>' : '';
   var remB='';
   if(!ro && n.remindAt){ var _rd=new Date(n.remindAt); if(!isNaN(_rd.getTime())){
-    if(_rd.getTime()>Date.now()){ remB='<span class="sn-remind" data-action="slate-remind" data-id="'+esc(n.id)+'" title="Change reminder">⏰ '+esc(_rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}))+'</span>'; }
+    if(_rd.getTime()>Date.now()){
+      var _tm=_rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+      var _tdy=new Date(), _tmw=new Date(_tdy.getTime()+86400000), _lab=_tm;
+      if(_rd.toDateString()!==_tdy.toDateString()){ _lab=(_rd.toDateString()===_tmw.toDateString()?'Tomorrow ':(_rd.toLocaleDateString([],{month:'short',day:'numeric'})+' '))+_tm; }
+      remB='<span class="sn-remind" data-action="slate-remind" data-id="'+esc(n.id)+'" title="Change reminder">⏰ '+esc(_lab)+'</span>'; }
     else { remB='<span class="sn-remind sn-remind-done" data-action="slate-remind" data-id="'+esc(n.id)+'" title="Reminder sent — tap to remind again">⏰ reminded</span>'; }
   } }
   var actions = ro ? '' : '<button class="sn-btn sn-edit" data-action="slate-edit" data-id="'+esc(n.id)+'" title="Edit note">✎</button><button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Archive (done)">✓</button>';
