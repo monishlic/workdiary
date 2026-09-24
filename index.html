@@ -307,9 +307,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .at-field{ width:100%; border:1px solid var(--border); background:var(--bg-card); border-radius:14px; padding:12px 15px; font-family:inherit; color:var(--text); outline:none; display:block; margin:9px 0; transition:border-color .15s, box-shadow .15s; }
 .at-field:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft,rgba(31,75,216,.10)); }
 .at-field::placeholder{ color:var(--text-muted); font-weight:500; }
-.at-title{ font-size:1.15rem; font-weight:800; letter-spacing:-.01em; margin-top:2px; }
+/* Title + description read as clean, borderless text (like the reference) so the
+   drawer feels light instead of a stack of heavy boxes. */
+.at-title{ border:none; border-radius:0; border-bottom:1px solid var(--border); background:transparent; padding:6px 2px; margin:2px 0 2px; font-size:1.18rem; font-weight:800; letter-spacing:-.01em; }
+.at-title:focus{ box-shadow:none; border-bottom-color:var(--accent); }
 .at-client{ font-size:.95rem; font-weight:600; }
-.at-desc{ font-size:.95rem; resize:vertical; min-height:56px; }
+.at-desc{ border:none; border-radius:0; background:transparent; padding:6px 2px; margin:2px 0 4px; font-size:.95rem; resize:vertical; min-height:46px; }
+.at-desc:focus{ box-shadow:none; }
+/* Reference-style people picker: a searchable, scrollable list you multi-select, then Add. */
+.chips.chips-listbox{ border:none; background:none; padding:0; min-height:0; display:block; }
+.chips-search{ width:100%; border:1px solid var(--border); border-radius:10px; padding:9px 12px; font:inherit; font-size:.9rem; outline:none; background:var(--bg-card); color:var(--text); }
+.chips-search:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft,rgba(31,75,216,.10)); }
+.chips-list{ max-height:240px; overflow:auto; margin:8px 0; display:flex; flex-direction:column; gap:2px; }
+.chips-litem{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; cursor:pointer; font-size:.9rem; }
+.chips-litem:hover{ background:var(--bg-soft,rgba(120,120,140,.10)); }
+.chips-litem.on{ background:var(--accent-soft,rgba(31,75,216,.12)); }
+.chips-litem .cli-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chips-litem .cli-check{ color:var(--accent); font-weight:800; width:16px; text-align:center; flex:none; }
+.chips-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid var(--border); padding-top:10px; margin-top:2px; }
+.chips-selcount{ font-size:.82rem; color:var(--text-muted); font-weight:600; }
+.chips-add{ border:none; background:var(--accent); color:#fff; border-radius:10px; padding:8px 18px; font:inherit; font-weight:700; cursor:pointer; }
+.chips-add:hover{ filter:brightness(1.06); }
 .at-collapse{ display:flex; align-items:center; justify-content:space-between; width:100%; border:none; background:transparent; color:var(--accent); font:inherit; font-weight:700; font-size:.9rem; padding:12px 2px; cursor:pointer; border-top:1px solid var(--border); margin-top:10px; }
 .at-collapse .at-chev{ transition:transform .18s; }
 .at-collapse.on .at-chev{ transform:rotate(180deg); }
@@ -3892,25 +3910,50 @@ var Chips={
   init:function(id, members, opts){
     opts=opts||{};
     var box=document.getElementById(id); if(!box) return;
+    var wantList=!!opts.list;
     var st=Chips.state[id];
-    if(!st || !box._chipsBuilt){
-      st={members:[], sel:[], single:false, placeholder:''}; Chips.state[id]=st;
-      box.classList.add('chips');
-      box.innerHTML='<span class="chips-wrap" style="display:contents"></span><input type="text" class="chips-input" autocomplete="off"><div class="chips-drop hidden"></div>';
-      var input=box.querySelector('.chips-input');
-      input.addEventListener('input', function(){ Chips._drop(id); });
-      input.addEventListener('focus', function(){ Chips._drop(id); });
-      input.addEventListener('keydown', function(e){ if(e.key==='Backspace' && !input.value && st.sel.length){ st.sel.pop(); Chips._paint(id); Chips._drop(id); } else if(e.key==='Escape'){ Chips._hideDrop(id); input.blur(); } });
-      box.addEventListener('mousedown', function(e){
-        var x=e.target.closest('.chip-x'); if(x){ e.preventDefault(); var uid=x.getAttribute('data-id'); st.sel=st.sel.filter(function(v){return String(v)!==String(uid);}); Chips._paint(id); Chips._drop(id); return; }
-        var op=e.target.closest('.chips-opt'); if(op){ e.preventDefault(); var aid=op.getAttribute('data-id'); if(st.single){ st.sel=[aid]; } else if(st.sel.map(String).indexOf(String(aid))<0){ st.sel.push(aid); } box.querySelector('.chips-input').value=''; Chips._paint(id); if(st.single){ Chips._hideDrop(id); } else { Chips._drop(id); } return; }
-        if(e.target===box || e.target.classList.contains('chips-wrap')){ box.querySelector('.chips-input').focus(); }
-      });
-      box._chipsBuilt=true;
+    if(!st || box._chipsMode !== (wantList?'list':'chips')){
+      st={members:[], sel:[], single:false, placeholder:'', list:wantList}; Chips.state[id]=st;
+      box.classList.add('chips'); box.classList.toggle('chips-listbox', wantList);
+      if(wantList){
+        // Reference-style: a search box + a scrollable member list you multi-select, then "Add".
+        box.innerHTML='<input type="text" class="chips-search" autocomplete="off" placeholder="Search people…"><div class="chips-list"></div><div class="chips-foot"><span class="chips-selcount">None selected</span><button type="button" class="chips-add" data-action="at-done">Add</button></div>';
+        box.querySelector('.chips-search').addEventListener('input', function(){ Chips._paintList(id); });
+        box.addEventListener('mousedown', function(e){
+          var it=e.target.closest('.chips-litem'); if(!it) return; e.preventDefault();
+          var aid=it.getAttribute('data-id');
+          if(st.single){ st.sel=[aid]; }
+          else { var i=st.sel.map(String).indexOf(String(aid)); if(i>=0) st.sel.splice(i,1); else st.sel.push(aid); }
+          Chips._paintList(id); try{ updateAssignPills(); }catch(_){ }
+        });
+      } else {
+        box.innerHTML='<span class="chips-wrap" style="display:contents"></span><input type="text" class="chips-input" autocomplete="off"><div class="chips-drop hidden"></div>';
+        var input=box.querySelector('.chips-input');
+        input.addEventListener('input', function(){ Chips._drop(id); });
+        input.addEventListener('focus', function(){ Chips._drop(id); });
+        input.addEventListener('keydown', function(e){ if(e.key==='Backspace' && !input.value && st.sel.length){ st.sel.pop(); Chips._paint(id); Chips._drop(id); } else if(e.key==='Escape'){ Chips._hideDrop(id); input.blur(); } });
+        box.addEventListener('mousedown', function(e){
+          var x=e.target.closest('.chip-x'); if(x){ e.preventDefault(); var uid=x.getAttribute('data-id'); st.sel=st.sel.filter(function(v){return String(v)!==String(uid);}); Chips._paint(id); Chips._drop(id); return; }
+          var op=e.target.closest('.chips-opt'); if(op){ e.preventDefault(); var aid=op.getAttribute('data-id'); if(st.single){ st.sel=[aid]; } else if(st.sel.map(String).indexOf(String(aid))<0){ st.sel.push(aid); } box.querySelector('.chips-input').value=''; Chips._paint(id); if(st.single){ Chips._hideDrop(id); } else { Chips._drop(id); } return; }
+          if(e.target===box || e.target.classList.contains('chips-wrap')){ box.querySelector('.chips-input').focus(); }
+        });
+      }
+      box._chipsMode = wantList?'list':'chips'; box._chipsBuilt=true;
     }
-    st.members=(members||[]).slice(); st.sel=(opts.selected||[]).slice(); st.single=!!opts.single;
+    st.members=(members||[]).slice(); st.sel=(opts.selected||[]).slice(); st.single=!!opts.single; st.list=wantList;
     st.placeholder=opts.placeholder||'Type a name…';
-    Chips._paint(id); Chips._hideDrop(id);
+    if(wantList){ var s=box.querySelector('.chips-search'); if(s) s.value=''; Chips._paintList(id); }
+    else { Chips._paint(id); Chips._hideDrop(id); }
+  },
+  _paintList:function(id){
+    var st=Chips.state[id]; var box=document.getElementById(id); if(!st||!box) return;
+    var list=box.querySelector('.chips-list'); if(!list) return;
+    var q=((box.querySelector('.chips-search')||{}).value||'').toLowerCase().trim();
+    var selSet={}; st.sel.forEach(function(v){ selSet[String(v)]=1; });
+    var rows=st.members.filter(function(m){ return !q || String(m.name).toLowerCase().indexOf(q)>=0; });
+    if(!rows.length){ list.innerHTML='<div class="chips-empty">No matches</div>'; }
+    else list.innerHTML=rows.map(function(m){ var on=selSet[String(m.userId)]; return '<div class="chips-litem'+(on?' on':'')+'" data-id="'+esc(m.userId)+'"><span class="co-av">'+esc(Chips._initials(m.name))+'</span><span class="cli-name">'+esc(m.name)+'</span>'+(m.role?'<span class="co-role">'+esc(m.role)+'</span>':'')+'<span class="cli-check">'+(on?'✓':'')+'</span></div>'; }).join('');
+    var cnt=box.querySelector('.chips-selcount'); if(cnt) cnt.textContent = st.sel.length ? (st.sel.length+' selected') : 'None selected';
   },
   _paint:function(id){
     var st=Chips.state[id]; var box=document.getElementById(id); if(!st||!box) return;
@@ -5995,9 +6038,9 @@ function openAssign(dept,cat){
     var meId=App.identity.employeeId;
     var assignees=[{userId:meId, name:App.identity.employeeName+' (me)', role:''}];
     App.members.forEach(function(m){ if(String(m.userId)!==String(meId)) assignees.push({userId:m.userId, name:m.name, role:m.role||''}); });
-    Chips.init('assign-to-chips', assignees, {selected:[meId], placeholder:'Add staff…'});
+    Chips.init('assign-to-chips', assignees, {selected:[meId], placeholder:'Add staff…', list:true});
     var others=(App.members||[]).filter(function(m){ return String(m.userId)!==String(meId); }).map(function(m){ return {userId:m.userId, name:m.name, role:(m.role&&m.role!=='Staff'?m.role:'')}; });
-    Chips.init('assign-loop-chips', others, {selected:[], placeholder:'Add people to loop…'});
+    Chips.init('assign-loop-chips', others, {selected:[], placeholder:'Add people to loop…', list:true});
     fillDeptSelect('assign-dept', dept||App.dept||'');
     document.getElementById('assign-cat').value=cat||App.cat||'';
     var _tin=document.getElementById('assign-title-input'); if(_tin) _tin.value='';
@@ -7092,6 +7135,7 @@ document.addEventListener('click', function(e){
     case 'toggle-check': Data.toggleCheck(el.getAttribute('data-id'), parseInt(el.getAttribute('data-i'),10)); break;
     case 'due-preset': setDuePreset(el.getAttribute('data-when')); updateAssignPills(); break;
     case 'at-toggle': atToggle(el); break;
+    case 'at-done': atCloseAll(); updateAssignPills(); break;
     case 'cal-prev': App._cal.m--; if(App._cal.m<0){App._cal.m=11;App._cal.y--;} renderCalendar(); break;
     case 'cal-next': App._cal.m++; if(App._cal.m>11){App._cal.m=0;App._cal.y++;} renderCalendar(); break;
     case 'cal-day': App._calSel=el.getAttribute('data-date'); renderCalendar(); break;

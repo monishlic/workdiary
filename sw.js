@@ -3,7 +3,7 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v43';
+const CACHE = 'workdiary-v44';
 /* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
 const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
