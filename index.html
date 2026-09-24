@@ -378,6 +378,28 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .det-block-val{font-size:.9rem;color:var(--text);line-height:1.55;white-space:pre-wrap}
 .det-hint{font-size:.8rem;color:var(--text-sec);background:var(--accent-soft);border-radius:11px;padding:10px 12px;margin:2px 0 14px;line-height:1.45}
 .det-taskid{font-size:.72rem;color:var(--text-muted);margin-top:14px;letter-spacing:.02em;text-align:right}
+/* ---- Compact read-only detail (pill style, like the New Task drawer) ---- */
+.det-titletext{font-size:1.12rem;font-weight:800;line-height:1.32;color:var(--text);margin:0 0 4px}
+.det-clientline{font-size:.86rem;color:var(--text-sec);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.det-pills{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 14px}
+.dpill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--bg-card);border-radius:999px;padding:6px 12px;font-size:.8rem;font-weight:600;color:var(--text);line-height:1.2;box-shadow:0 4px 12px -12px rgba(20,22,40,.5)}
+.dpill .dp-ic{font-size:.95rem;line-height:1}
+.dpill .dp-lbl{color:var(--text-muted);font-weight:600}
+.dpill .dp-val{font-weight:700}
+.dpill.over{border-color:color-mix(in srgb,var(--danger) 50%,transparent);color:var(--danger);background:var(--danger-bg,rgba(239,68,68,.08))}
+.dpill.over .dp-lbl{color:var(--danger)}
+/* Tucked-away sections so the detail opens short and scrolls little. */
+.det-fold{border:1px solid var(--border);border-radius:14px;margin:0 0 10px;background:var(--bg-card);overflow:hidden}
+.det-fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:11px 14px;font-size:.8rem;font-weight:700;color:var(--text);user-select:none}
+.det-fold>summary::-webkit-details-marker{display:none}
+.det-fold>summary .ds-caret{margin-left:auto;transition:transform .18s;color:var(--text-muted);font-size:.8rem}
+.det-fold[open]>summary .ds-caret{transform:rotate(90deg)}
+.det-fold>summary .ds-count{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 8px;font-size:.72rem;font-weight:700}
+.det-fold-body{padding:2px 14px 13px}
+/* Blocks placed inside a fold shed their own frame + header (the fold provides both). */
+.det-fold-body .det-sec,.det-fold-body .rmk-wrap,.det-fold-body .det-block{border:none;border-top:none;padding:0;margin:0;background:none}
+.det-fold-body .det-sec-h,.det-fold-body .rmk-head,.det-fold-body .det-block-lbl{display:none}
+.det-fold-body .act-wrap{margin:0}
 /* Remarks list */
 .rmk-wrap{border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:6px 0 12px;background:var(--bg-card)}
 .rmk-head{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-sec);margin-bottom:10px;display:flex;align-items:center;gap:7px}
@@ -3516,16 +3538,13 @@ function noteRemSync(note){
    independent of the Cloudflare cron — so notifications arrive reliably whenever the
    app is online, and it also catches anything the cron missed. It CLAIMS each reminder
    by deleting the dueReminders doc first, so the cron never double-fires it. */
-function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(remTick, 40000); setTimeout(remTick, 4000); }
+function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(remTick, 90000); setTimeout(remTick, 5000); }
 function stopReminderScan(){ if(App._remTimer){ clearInterval(App._remTimer); App._remTimer=null; } }
-function remTick(){ scanDueReminders(); pingReminderServer(); }
-/* Ask the Worker to fire any due reminders now. This runs the same logic as the cron, so
-   while any teammate has the app open, reminders reach even closed/offline devices. */
-function pingReminderServer(){
-  try{ if(!Sync.online() || !PUSH_CONFIG || !PUSH_CONFIG.senderUrl || document.hidden) return;
-    fetch(PUSH_CONFIG.senderUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'runReminders' }) }).catch(function(){});
-  }catch(e){}
-}
+/* Closed/offline delivery is handled by the Cloudflare cron (every minute). This client
+   scan only fires the CURRENT user's due reminders while their app is open, and schedules
+   precise on-time timers for ones coming up soon. It no longer pings the server every tick
+   (that was redundant with the cron and wasted the Firestore daily quota). */
+function remTick(){ scanDueReminders(); }
 function scanDueReminders(){
   if(!App.identity || !window.firebase || !firebase.firestore || !Sync.online()) return;
   var uid=String(App.identity.employeeId), now=Date.now();
@@ -5058,30 +5077,36 @@ function openTask(taskId, editMode){
     h+='<div class="d-grid" style="margin-top:16px"><div class="d-row"><div class="d-lbl">Created</div><div class="d-val">'+esc(fmtDateTime(t.createdTimestamp))+'</div></div>';
     h+='<div class="d-row"><div class="d-lbl">Ageing</div><div class="d-val">'+daysSince(t.createdTimestamp)+' day(s) pending</div></div></div>';
   } else {
-    var stPill = t.status==='Completed' ? '<span class="d-status done">'+ico('check')+' Completed</span>' : (t.status==='In Progress' ? '<span class="d-status ip">&#9881; In Progress</span>' : '<span class="d-status pending">&#9679; Pending</span>');
-    // Lifted status pill up top so the current state reads at a glance.
-    h+='<div class="det-statusbar">'+stPill+(t.priority?prioTag(t.priority):'')+(isSnoozed(t)?'<span class="d-status snz">😴 Snoozed</span>':'')+'</div>';
-    if(isSnoozed(t)) h+='<div class="det-hint">😴 Snoozed until '+esc(fmtDateTime(t.snoozedUntil))+' — hidden from your lists until then. Use 😴 Snoozed → ⏰ Wake now to bring it back early.</div>';
-    // Bordered fact cards — each label clearly owns its value.
+    // ---- Compact, pill-style read-only view (matches the New Task drawer) ----
     var di=dueInfo(t);
-    h+='<div class="det-facts">';
-    if(t.clientName) h+=factCell('🧑 Client', esc(t.clientName));
-    h+=factCell('🏢 Department', esc(t.department));
-    h+=factCell('🗂 Category', esc(t.category));
-    h+=factCell('🕒 Created', esc(fmtDateTime(t.createdTimestamp)));
+    var stPill = t.status==='Completed' ? '<span class="d-status done">'+ico('check')+' Completed</span>' : (t.status==='In Progress' ? '<span class="d-status ip">&#9881; In Progress</span>' : '<span class="d-status pending">&#9679; Pending</span>');
+    // Title on top, client as a quiet subline, then status/priority chips — reads at a glance.
+    h+='<div class="det-titletext">'+esc(t.title||t.clientName||'Task')+'</div>';
+    if(t.title && t.clientName) h+='<div class="det-clientline">🧑 '+esc(t.clientName)+'</div>';
+    h+='<div class="det-statusbar">'+stPill+(t.priority?prioTag(t.priority):'')+(isSnoozed(t)?'<span class="d-status snz">😴 Snoozed</span>':'')+'</div>';
+    // Key facts as compact pills instead of a tall grid of cards.
+    h+='<div class="det-pills">';
+    if(shared) h+='<span class="dpill"><span class="dp-ic">👤</span><span class="dp-lbl">By</span> <span class="dp-val">'+esc(t.assignedByName||'teammate')+'</span></span>';
+    h+='<span class="dpill"><span class="dp-ic">🏢</span> <span class="dp-val">'+esc(t.department)+' › '+esc(t.category)+'</span></span>';
     if(active){
-      if(t.dueDate) h+='<div class="fact'+(di&&di.cls==='overdue'?' fact-over':'')+'"><div class="fact-lbl">📅 Due</div><div class="fact-val">'+esc(fmtDue(t.dueDate))+(di?' <span class="due '+di.cls+'">'+di.label+'</span>':'')+'</div></div>';
-      else h+=factCell('📅 Due', '<span class="fact-muted">No due date</span>');
+      if(t.dueDate) h+='<span class="dpill'+(di&&di.cls==='overdue'?' over':'')+'"><span class="dp-ic">📅</span><span class="dp-lbl">Due</span> <span class="dp-val">'+esc(fmtDue(t.dueDate))+'</span>'+(di?' <span class="due '+di.cls+'">'+di.label+'</span>':'')+'</span>';
+      else h+='<span class="dpill"><span class="dp-ic">📅</span><span class="dp-lbl">No due date</span></span>';
     } else {
-      h+=factCell('✅ Completed', esc(fmtDateTime(t.completedTimestamp)));
+      h+='<span class="dpill"><span class="dp-ic">✅</span><span class="dp-lbl">Done</span> <span class="dp-val">'+esc(fmtDateTime(t.completedTimestamp))+'</span></span>';
     }
+    h+='<span class="dpill"><span class="dp-ic">🕒</span><span class="dp-lbl">Created</span> <span class="dp-val">'+esc(fmtDate(t.createdTimestamp))+'</span></span>';
+    if(t.repeat) h+='<span class="dpill"><span class="dp-ic">🔁</span> <span class="dp-val">'+esc(t.repeat)+'</span></span>';
     h+='</div>';
+    if(isSnoozed(t)) h+='<div class="det-hint">😴 Snoozed until '+esc(fmtDateTime(t.snoozedUntil))+' — hidden from your lists until then. Use 😴 Snoozed → ⏰ Wake now to bring it back early.</div>';
+    // Details — the main content, shown open (only when there is any).
+    if(t.details) h+='<div class="det-block"><div class="det-block-lbl">📝 Details</div><div class="det-block-val">'+esc(t.details)+'</div></div>';
     if(t.reminders && t.reminders.length) h+='<div class="det-block"><div class="det-block-lbl">⏰ Reminders</div><div class="det-block-val" style="font-size:.84rem">'+t.reminders.map(function(r){return esc(fmtDue(r.at))+(r.message?' — '+esc(r.message):'');}).join('<br>')+'</div></div>';
-    h+='<div class="det-block"><div class="det-block-lbl">📝 Details</div><div class="det-block-val">'+(t.details?esc(t.details):'<span class="fact-muted">No details added.</span>')+'</div></div>';
     if(canEdit) h+='<div class="det-hint">💡 Mark it In&nbsp;Progress / Complete as you work — each update asks for a quick remark. Tap ✏️ Edit to change details.</div>';
     h+=checklistBlock(t);
     h+=linksBlock(t);
-    h+=remarksBlock(t);
+    // Remarks tucked into a collapsible fold so the view opens short.
+    var _rmk=remarksBlock(t);
+    if(_rmk){ var _rn=(Array.isArray(t.remarks)?t.remarks.length:0); h+='<details class="det-fold"><summary>📝 Remarks <span class="ds-count">'+_rn+'</span><span class="ds-caret">▸</span></summary><div class="det-fold-body">'+_rmk+'</div></details>'; }
   }
   if(shared && t.uid) h+=activityBlock(t.uid);
   document.getElementById('det-body').innerHTML=h;
@@ -5586,11 +5611,8 @@ function openStaff(staffId,name){
       h+='</div>';
     }
     h+='<div id="rem-form" style="display:none;margin-bottom:18px" class="set-sec"><label class="f-label">Reminder for '+esc(name)+'</label><textarea id="rem-msg" class="f-area" rows="2" placeholder="e.g. Please follow up on Raul Shah today"></textarea><div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary" data-action="raise-reminder" data-id="'+esc(staffId)+'">Send Reminder</button><button class="btn btn-ghost" data-action="cancel-reminder">Cancel</button></div></div>';
-    h+='<div class="sec-title">Pending ('+pend.length+')</div><div class="task-list">';
-    if(!pend.length) h+='<div class="empty" style="padding:26px"><div class="empty-t">Nothing pending 🎉</div></div>'; else pend.forEach(function(t){ h+=taskCardAdmin(t); });
-    h+='</div><div style="height:22px"></div><div class="sec-title">Completed ('+done.length+')</div><div class="task-list">';
-    if(!done.length) h+='<div class="empty" style="padding:26px"><div class="empty-t">Nothing completed yet</div></div>'; else done.forEach(function(t){ h+=taskCardAdmin(t); });
-    h+='</div>';
+    // Full "<Name>'s Tasks" window — same tabs + range filters as My Tasks.
+    h+='<div id="staff-tasks-wrap">'+staffTasksSection(tasks, staffId, name)+'</div>';
     if(App.view==='staff' && App._staffView && App._staffView.id===staffId) document.getElementById('content').innerHTML=h;
   };
   if(App._staffCache[staffId]) paint(App._staffCache[staffId]);
@@ -5601,6 +5623,67 @@ function openStaff(staffId,name){
     App._staffCache[staffId]=res.tasks||[]; paint(App._staffCache[staffId]);
   }).catch(function(e){ if(!App._staffCache[staffId]) showContentError_(e.message||'Could not load.'); });
 }
+
+/* "<Name>'s Tasks" — the My Tasks window (Pending / Overdue / Completed / All
+   + date-range filters) rendered for ANOTHER user's tasks inside their profile.
+   Rows use taskCardAdmin so the viewer only gets their granted actions (admins
+   get the delete control; managers see read-only oversight). */
+function staffTasksSection(tasks, staffId, name){
+  var f=App._stFilter||'all';
+  var range=App._stRange||'all';
+  var all=(tasks||[]).slice();
+  all.sort(function(a,b){
+    var ac=a.status==='Completed', bc=b.status==='Completed';
+    if(ac!==bc) return ac?1:-1;                       // active first, completed last
+    if(!ac){ var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; return new Date(a.createdTimestamp)-new Date(b.createdTimestamp); }
+    return new Date(b.completedTimestamp||0)-new Date(a.completedTimestamp||0);
+  });
+  var bounds=mtRangeBounds(range);
+  var ranged = bounds ? all.filter(function(t){ var a=new Date(mtAnchor(t)||0).getTime(); return a>=bounds.s && a<bounds.e; }) : all;
+  var counts={all:ranged.length,overdue:0,pending:0,inprog:0,done:0};
+  ranged.forEach(function(t){ counts[myTaskState(t)]++; });
+  var list = f==='all'? ranged : ranged.filter(function(t){ return myTaskState(t)===f; });
+  var first=esc((String(name||'').trim().split(/\s+/)[0])||name||'Their');
+  var h='<div class="sec-title" style="margin-top:6px">'+first+'’s Tasks</div>';
+  // Date-range row
+  h+='<div class="mt-range"><span class="mt-range-lbl">Range</span>';
+  [['today','Today'],['yesterday','Yesterday'],['week','This week'],['month','This month'],['lastmonth','Last month'],['all','All time'],['custom','Custom…']].forEach(function(c){
+    h+='<button class="mt-rchip'+(range===c[0]?' on':'')+'" data-action="staff-range" data-r="'+c[0]+'">'+c[1]+'</button>';
+  });
+  h+='</div>';
+  if(range==='custom'){
+    h+='<div class="mt-custom"><input type="date" id="st-from" value="'+esc(App._stFrom||'')+'"><span class="mt-cx">to</span><input type="date" id="st-to" value="'+esc(App._stTo||'')+'"><button class="btn btn-primary btn-sm" data-action="staff-custom-apply">Apply</button></div>';
+  }
+  // Type tabs
+  h+='<div class="mt-filters">';
+  [['all','All'],['overdue','Overdue'],['pending','Pending'],['inprog','In Progress'],['done','Completed']].forEach(function(c){
+    h+='<button class="mt-chip mt-chip-'+c[0]+(f===c[0]?' on':'')+'" data-action="staff-filter" data-f="'+c[0]+'">'+c[1]+'<span class="mt-c">'+counts[c[0]]+'</span></button>';
+  });
+  h+='</div>';
+  if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🎉</div><div class="empty-t">Nothing here</div><div class="empty-s">No tasks match this range &amp; filter.</div></div>'; }
+  else if(f==='all'){
+    var glabel={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'};
+    ['overdue','pending','inprog','done'].forEach(function(st){
+      var g=list.filter(function(t){ return myTaskState(t)===st; });
+      if(!g.length) return;
+      h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div><div class="task-list">';
+      g.forEach(function(t){ h+=taskCardAdmin(t); });
+      h+='</div>';
+    });
+  } else {
+    h+='<div class="task-list">'; list.forEach(function(t){ h+=taskCardAdmin(t); }); h+='</div>';
+  }
+  return h;
+}
+/* Repaint just the tasks window from cache — no network read on each tab/filter click. */
+function repaintStaffTasks(){
+  var w=document.getElementById('staff-tasks-wrap'); if(!w||!App._staffView) return;
+  var tasks=(App._staffCache&&App._staffCache[App._staffView.id])||[];
+  w.innerHTML=staffTasksSection(tasks, App._staffView.id, App._staffView.name);
+}
+function staffTaskFilter(f){ App._stFilter=f; repaintStaffTasks(); }
+function staffTaskRange(r){ App._stRange=r; repaintStaffTasks(); }
+function staffTaskCustomApply(){ var fr=(document.getElementById('st-from')||{}).value||''; var to=(document.getElementById('st-to')||{}).value||''; if(!fr||!to){ toast('Pick both a start and end date.','error'); return; } if(fr>to){ var tmp=fr; fr=to; to=tmp; } App._stFrom=fr; App._stTo=to; App._stRange='custom'; repaintStaffTasks(); }
 
 /* ================================================================
    ROLE SWITCH (bulk) + TASK HAND-OVER (single) — admin only
@@ -6957,6 +7040,9 @@ document.addEventListener('click', function(e){
     case 'mytask-filter': myTaskFilter(el.getAttribute('data-f')); break;
     case 'mytask-range': myTaskRange(el.getAttribute('data-r')); break;
     case 'mytask-custom-apply': myTaskCustomApply(); break;
+    case 'staff-filter': staffTaskFilter(el.getAttribute('data-f')); break;
+    case 'staff-range': staffTaskRange(el.getAttribute('data-r')); break;
+    case 'staff-custom-apply': staffTaskCustomApply(); break;
     case 'dismiss-banner': App._bannerDismissed=true; var nb=document.getElementById('notif-banner'); if(nb)nb.style.display='none'; break;
     case 'add-reminder-row': addReminderRow(el.getAttribute('data-target')); break;
     case 'del-reminder-row': var rr=el.closest('.rem-row'); if(rr&&rr.parentNode) rr.parentNode.removeChild(rr); break;
