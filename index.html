@@ -314,6 +314,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .at-client{ font-size:.95rem; font-weight:600; }
 .at-desc{ border:none; border-radius:0; background:transparent; padding:6px 2px; margin:2px 0 4px; font-size:.95rem; resize:vertical; min-height:46px; }
 .at-desc:focus{ box-shadow:none; }
+.at-deptcat{ margin:8px 0 4px; }
+.at-deptcat .f-label{ margin-top:0; }
 /* Reference-style people picker: a searchable, scrollable list you multi-select, then Add. */
 .chips.chips-listbox{ border:none; background:none; padding:0; min-height:0; display:block; }
 .chips-search{ width:100%; border:1px solid var(--border); border-radius:10px; padding:9px 12px; font:inherit; font-size:.9rem; outline:none; background:var(--bg-card); color:var(--text); }
@@ -1762,6 +1764,12 @@ body.modal-open .install-bar{ display:none !important; }
       <input type="hidden" id="assign-client">
       <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add Description"></textarea>
 
+      <!-- Department + Category — two selectors side by side, always visible (not behind a pill) -->
+      <div class="row2 at-deptcat">
+        <div><label class="f-label">Department <span class="req">*</span></label><select id="assign-dept" class="f-input"></select></div>
+        <div class="combo"><label class="f-label">Category <span class="req">*</span></label><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
+      </div>
+
       <!-- Collapsible checklist -->
       <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add Checklist <span class="at-chev">▾</span></button>
       <div id="assign-panel-checklist" class="at-panel hidden">
@@ -1774,7 +1782,6 @@ body.modal-open .install-bar{ display:none !important; }
         <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Users</span></button>
         <button type="button" class="at-pill" id="pill-due" data-action="at-toggle" data-panel="assign-panel-due"><span class="at-pi">📅</span><span id="sum-due">Due Date</span></button>
         <button type="button" class="at-pill prio-med" id="pill-prio" data-action="at-toggle" data-panel="assign-panel-prio"><span class="at-pi">🚩</span><span id="sum-prio">Priority</span></button>
-        <button type="button" class="at-pill" id="pill-cat" data-action="at-toggle" data-panel="assign-panel-cat"><span class="at-pi">🏢</span><span id="sum-cat">Category</span></button>
         <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
       </div>
 
@@ -1809,13 +1816,6 @@ body.modal-open .install-bar{ display:none !important; }
           <button type="button" class="pill-opt prio-low" data-action="pick-pill" data-target="assign-priority" data-val="low">🟢 Low</button>
         </div>
       </div>
-      <div id="assign-panel-cat" class="at-panel hidden">
-        <div class="row2">
-          <div><label class="f-label">Department <span class="req">*</span></label><select id="assign-dept" class="f-input"></select></div>
-          <div class="combo"><label class="f-label">Category <span class="req">*</span></label><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
-        </div>
-      </div>
-
       <!-- Footer-triggered panels -->
       <div id="assign-panel-repeat" class="at-panel hidden">
         <label class="f-label">Repeat <span class="opt">(a fresh copy appears when this one is completed)</span></label>
@@ -6154,8 +6154,7 @@ function updateAssignPills(){
   var pv=gv('assign-priority')||'medium'; var sp=g('sum-prio'); if(sp) sp.textContent=({high:'High',medium:'Medium',low:'Low'}[pv]||'Priority');
   var pp=g('pill-prio'); if(pp){ pp.classList.remove('prio-high','prio-med','prio-low'); pp.classList.add(pv==='high'?'prio-high':(pv==='low'?'prio-low':'prio-med')); }
   // Category
-  var cat=gv('assign-cat'); var sc=g('sum-cat'); if(sc) sc.textContent=cat?cat:'Category';
-  if(g('pill-cat')) g('pill-cat').classList.toggle('has-val', !!cat);
+  // Department + Category are now inline selectors (not a pill), so nothing to summarise here.
   // Loop
   var lp=haveChips?Chips.get('assign-loop-chips'):[]; var sl=g('sum-loop'); if(sl) sl.textContent=lp.length?(lp.length+' in loop'):'In Loop';
   if(g('pill-loop')) g('pill-loop').classList.toggle('has-val', lp.length>0);
@@ -6185,7 +6184,8 @@ function submitAssign(){
   var tplName=(document.getElementById('assign-tplname')||{}).value||'';
   if(!title){ toast('Task title is required.','error'); var _ti=document.getElementById('assign-title-input'); if(_ti) _ti.focus(); return; }
   if(!toList.length){ toast('Pick who this is for — tap the Assign to pill.','error'); openAtPanel('assign-panel-users'); return; }
-  if(!dept||!cat){ toast('Choose a department and category — tap the Category pill.','error'); openAtPanel('assign-panel-cat'); return; }
+  if(!dept){ toast('Choose a department.','error'); var _dd=document.getElementById('assign-dept'); if(_dd) _dd.focus(); return; }
+  if(!cat){ toast('Enter a category.','error'); var _ac=document.getElementById('assign-cat'); if(_ac) _ac.focus(); return; }
   var hasSelf = toList.map(String).indexOf(meId)>=0;
   var others = toList.filter(function(id){ return String(id)!==meId; });
   if(others.length && !Sync.online()){ toast('You are offline — you can only add tasks to yourself right now.','error'); return; }
