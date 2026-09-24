@@ -6031,7 +6031,11 @@ function openAtPanel(pid){
 }
 /* Close any open pill panel and detach its floating listeners. */
 function atCloseAll(){
-  document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
+  // Close inline panels AND any popover we portaled out to <body> (hence the global query).
+  document.querySelectorAll('.at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
+  // Return any portaled popovers to the drawer body so reopen / reset stays consistent.
+  var abody=document.querySelector('#assign-modal .at-body');
+  if(abody) document.querySelectorAll('body > .at-panel').forEach(function(x){ abody.appendChild(x); });
   document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
   App._atOpen=null;
   document.removeEventListener('mousedown', atOutsideClose, true);
@@ -6072,7 +6076,11 @@ function atToggle(el){
     return;
   }
   // Float the picker over the drawer so the drawer never grows / scrolls.
-  p.classList.add('at-floating');
+  // Portal it to <body>: the drawer's blurred overlay creates a containing block that made
+  // position:fixed anchor to the wrong box (the popover flew to the screen corner). At <body>
+  // level, fixed is viewport-relative, so it sits exactly under its pill.
+  document.body.appendChild(p);
+  p.classList.remove('hidden'); p.classList.add('at-floating');
   App._atOpen={ p:p, trigger:el, floating:true };
   atPositionPanel(p, el);
   document.addEventListener('mousedown', atOutsideClose, true);
