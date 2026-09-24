@@ -997,7 +997,10 @@ body{ background:var(--bg); }
 .si-time-ic{ font-size:.9rem; }
 .si-add{ margin-left:auto; border:none; background:#3a3552; color:#fff; border-radius:9px; padding:6px 16px; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; transition:transform .12s,background .14s; }
 .si-add:hover{ background:#26213a; transform:translateY(-1px); }
-.sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 7px; border-radius:20px; }
+.sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 7px; border-radius:20px; cursor:pointer; }
+.sn-remind:hover{ background:rgba(31,75,216,.24); }
+.sn-remind-done{ background:rgba(120,120,140,.16); color:#6b6b7a; }
+.sn-remind-done:hover{ background:rgba(120,120,140,.28); }
 .sn-edit-row{ margin-top:6px; }
 .sn-edit-time{ border:1px solid rgba(58,53,82,.22); background:rgba(255,255,255,.6); color:#3a3552; border-radius:999px; padding:4px 10px; font:inherit; font-size:.72rem; font-weight:700; cursor:pointer; }
 .sn-edit-time.on{ border-color:#1f4bd8; color:#1f4bd8; background:rgba(31,75,216,.08); }
@@ -3332,24 +3335,37 @@ var Push = {
       .catch(function(e){ toast('Couldn’t reach the sender — the site address may not match ALLOWED_ORIGIN. ('+(e.message||'network')+')','error',8000); });
   },
   test:function(){
+    var L=['E-Diary — notification check','']; var say=function(x){ L.push(x); };
+    var done=function(){ try{ alert(L.join('\n')); }catch(e){} };
     if(!App.identity){ toast('Not signed in.','warn'); return; }
-    if(!window.firebase || !firebase.messaging){ toast('Messaging library not ready — reload and try again.','warn'); return; }
-    if(!PUSH_CONFIG.senderUrl){ toast('Push sender isn’t configured.','warn'); return; }
-    if(typeof Notification!=='undefined' && Notification.permission!=='granted'){ toast('Allow notifications first (browser/OS permission).','warn',7000); return; }
-    toast('Registering this device…','info');
+    say('Signed in as: '+App.identity.employeeName);
+    if(typeof Notification==='undefined'){ say('❌ This browser has no notifications API.'); return done(); }
+    say('Permission: '+Notification.permission);
+    if(Notification.permission!=='granted'){ say(''); say('➡ Notifications are not allowed on this device. Click "Enable notifications", then Allow in the browser prompt.'); return done(); }
+    if(!window.firebase || !firebase.messaging){ say('❌ Messaging library not loaded — hard-refresh and retry.'); return done(); }
+    if(!PUSH_CONFIG.vapidKey || !PUSH_CONFIG.senderUrl){ say('❌ Push not configured in the app.'); return done(); }
+    if(!('serviceWorker' in navigator)){ say('❌ No service worker support (needed for push).'); return done(); }
+    toast('Checking notifications…','info');
     try{
       if(!Push._msg) Push._msg=firebase.messaging();
       navigator.serviceWorker.ready.then(function(reg){
+        say('Service worker: ready');
         return Push._msg.getToken({ vapidKey:PUSH_CONFIG.vapidKey, serviceWorkerRegistration:reg });
       }).then(function(token){
-        if(!token){ toast('No token returned — notifications may be blocked at the OS/browser level. Check Windows/Chrome notification settings.','error',9000); return; }
-        Push._token=token; Push._save(token);
-        toast('Registered ✓ — sending a test…','success');
-        setTimeout(function(){ Push._fire([token]); }, 700);
-      }).catch(function(err){
-        toast('Registration error: '+((err&&(err.code||err.message))||err),'error',10000);
-      });
-    }catch(e){ toast('Registration threw: '+((e&&e.message)||e),'error',9000); }
+        if(!token){ say('❌ No token returned — the browser/OS is blocking push. On iPhone you must add the app to the Home Screen first (iOS 16.4+).'); return done(); }
+        Push._token=token; say('Device token: …'+String(token).slice(-10));
+        var uid=String(App.identity.employeeId);
+        return firebase.firestore().collection('users').doc(uid)
+          .set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() },{merge:true})
+          .then(function(){ return firebase.firestore().collection('users').doc(uid).get(); })
+          .then(function(d){ var n=(((d.exists?d.data():{})||{}).fcmTokens||[]).length; say('Saved to your account ✓ ('+n+' device'+(n!==1?'s':'')+' registered)'); say(''); say('Sending a test push now — lock the screen / minimise to see it.'); done();
+            fetch(PUSH_CONFIG.senderUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokens:[token],title:'E-Diary test 🔔',body:'Push is working on this device.',tag:'test-'+Date.now()})})
+              .then(function(r){ return r.json().catch(function(){return null;}); })
+              .then(function(j){ if(j&&j.ok){ toast('✓ Test sent to '+(j.sent||0)+' device(s).','success',8000); } else { toast('Sender reached but did not send — check the Worker.','warn',8000); } })
+              .catch(function(e){ toast('Couldn’t reach the sender: '+((e&&e.message)||'network'),'error',8000); });
+          });
+      }).catch(function(err){ say('❌ Registration error: '+((err&&(err.code||err.message))||err)); done(); });
+    }catch(e){ say('❌ Threw: '+((e&&e.message)||e)); done(); }
   },
   /* Fire a push to a teammate's devices (called right after assigning them a task).
      `data` (optional) rides along in the FCM message → the service worker reads it to
@@ -3528,6 +3544,7 @@ function fireLocalReminder(r){
   try{ if(navigator.serviceWorker && navigator.serviceWorker.ready){ navigator.serviceWorker.ready.then(function(reg){ if(reg&&reg.showNotification) reg.showNotification(title,{ body:body, icon:'icon-192.png?v=3', badge:'icon-192.png?v=3', tag:'localrem-'+(r.taskUid||Date.now()), requireInteraction:true }); }).catch(function(){}); } }catch(e){}
   try{ toast('🔔 '+title+(body?' — '+body:''),'info',9000); }catch(e){}
   try{ App._bannerDismissed=false; loadReminders&&loadReminders(); }catch(e){}
+  try{ if(App.view==='slate' && !App._slateView) paintSlate(true); }catch(e){}   // flip the note's chip to "reminded"
 }
 /* Snooze = a personal wake-up the assignee sets for themselves. Same cron engine,
    but it fires only to the snoozer (no loop) and reads as "back on your list". */
@@ -4184,7 +4201,10 @@ function slateNoteHTML(n, ro){
   var dim=(!ro && q && String(n.text).toLowerCase().indexOf(q)<0)?' dim':'';
   var badge=n.taskRef ? '<span class="sn-tasked" data-action="slate-open-task" data-id="'+esc(n.id)+'" title="Tasked — find it">✓ task</span>' : '';
   var remB='';
-  if(!ro && n.remindAt){ var _rd=new Date(n.remindAt); if(!isNaN(_rd.getTime()) && _rd.getTime()>Date.now()){ remB='<span class="sn-remind" title="Reminder set">⏰ '+esc(_rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}))+'</span>'; } }
+  if(!ro && n.remindAt){ var _rd=new Date(n.remindAt); if(!isNaN(_rd.getTime())){
+    if(_rd.getTime()>Date.now()){ remB='<span class="sn-remind" data-action="slate-remind" data-id="'+esc(n.id)+'" title="Change reminder">⏰ '+esc(_rd.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}))+'</span>'; }
+    else { remB='<span class="sn-remind sn-remind-done" data-action="slate-remind" data-id="'+esc(n.id)+'" title="Reminder sent — tap to remind again">⏰ reminded</span>'; }
+  } }
   var actions = ro ? '' : '<button class="sn-btn sn-edit" data-action="slate-edit" data-id="'+esc(n.id)+'" title="Edit note">✎</button><button class="sn-btn sn-task" data-action="slate-task" data-id="'+esc(n.id)+'" title="Turn into a task">➜</button><button class="sn-btn sn-done" data-action="slate-done" data-id="'+esc(n.id)+'" title="Archive (done)">✓</button>';
   var seld=(!ro && App._slateSelIds && App._slateSelIds[n.id])?' sel':'';
   var check=ro ? '' : '<div class="sn-check">✓</div>';
@@ -4253,7 +4273,7 @@ function attachOneNoteDnD(el){
   var board=document.getElementById('slate-board'); if(!board) return;
   el.addEventListener('pointerdown', function(e){
     slateTouch();
-    if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked')) return;
+    if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked') || e.target.closest('.sn-remind')) return;
     var id=el.getAttribute('data-note');
     // In select mode a tap toggles selection instead of dragging.
     if(App._slateSel){ e.preventDefault(); slateSelNote(id); return; }
@@ -4326,6 +4346,20 @@ function slateEdit(id){
     EdTime.open(tbtn, isoToHHMM(newRemind), function(hhmm){ newRemind = hhmm ? timeToNextISO(hhmm) : ''; tlabel(); try{ ta.focus(); }catch(e){} });
   });
   ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); ta.blur(); } else if(e.key==='Escape'){ ta.value=n.text; newRemind=n.remindAt||''; ta.blur(); } });
+}
+function slateRemind(el){
+  var id=el.getAttribute('data-id'); var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return;
+  slateTouch();
+  EdTime.open(el, isoToHHMM(n.remindAt), function(hhmm){
+    n.remindAt = hhmm ? timeToNextISO(hhmm) : '';
+    n.updated = nowISO(); Slate.saveLocal();
+    var noteId = n.sid || n.id;
+    if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid, remindAt:n.remindAt}).catch(function(){});
+    try{ noteRemSync({ id:noteId, remindAt:n.remindAt, text:n.text }); }catch(e){}
+    if(App.view==='slate' && !App._slateView) paintSlate(true);
+    if(n.remindAt){ try{ var d=new Date(n.remindAt); toast('⏰ Reminder set for '+d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+(d.toDateString()!==new Date().toDateString()?' (tomorrow)':''),'success'); }catch(e){} }
+    else { toast('Reminder cleared','info'); }
+  });
 }
 function slateTask(id){ slateToTask(id); }
 function slateToTask(id){
@@ -6384,7 +6418,17 @@ function adminAct(uid,status,btn){
 }
 
 /* Desktop notifications */
-function requestNotifPermission(){ try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(e){} }
+function requestNotifPermission(){
+  try{
+    if(!('Notification' in window)) return;
+    // Already granted → register the push token now (in case Push.init ran before this).
+    if(Notification.permission==='granted'){ try{ Push._register(); }catch(e){} return; }
+    // First time → ask, and CRUCIALLY register the token the moment they allow it.
+    if(Notification.permission==='default'){
+      Notification.requestPermission().then(function(p){ if(p==='granted'){ setTimeout(function(){ try{ Push._register(); }catch(e){} }, 300); } }).catch(function(){});
+    }
+  }catch(e){}
+}
 function fireDesktopNotif(n){
   try{
     // The OS/lock-screen popup is now handled by push (FCM), which also works when
@@ -6781,6 +6825,7 @@ document.addEventListener('click', function(e){
     case 'slate-new': slateNew(); break;
     case 'slate-input-save': commitSlateInput(); break;
     case 'slate-time-open': slateTimeOpen(); break;
+    case 'slate-remind': slateRemind(el); break;
     case 'slate-done': slateDone(el.getAttribute('data-id')); break;
     case 'slate-task': slateToTask(el.getAttribute('data-id')); break;
     case 'slate-edit': slateEdit(el.getAttribute('data-id')); break;
