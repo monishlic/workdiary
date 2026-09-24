@@ -1752,7 +1752,7 @@ body.modal-open .install-bar{ display:none !important; }
   <div class="modal at-modal">
     <div class="modal-h at-head">
       <button class="at-back" data-action="close-modal" data-modal="assign-modal" title="Back" aria-label="Back">&#8592;</button>
-      <h3 id="assign-title">Assign New Task <span style="font-size:10px;font-weight:700;opacity:.35;letter-spacing:.03em;vertical-align:middle">v46</span></h3>
+      <h3 id="assign-title">Assign New Task <span style="font-size:10px;font-weight:700;opacity:.35;letter-spacing:.03em;vertical-align:middle">v47</span></h3>
       <label class="at-more"><input type="checkbox" id="assign-more"><span>Assign More Task</span></label>
     </div>
     <div class="modal-b at-body">
@@ -6074,63 +6074,24 @@ function openAtPanel(pid){
 }
 /* Close any open pill panel and detach its floating listeners. */
 function atCloseAll(){
-  // Close inline panels AND any popover we portaled out to <body> (hence the global query).
-  document.querySelectorAll('.at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
-  // Return any portaled popovers to the drawer body so reopen / reset stays consistent.
-  var abody=document.querySelector('#assign-modal .at-body');
-  if(abody) document.querySelectorAll('body > .at-panel').forEach(function(x){ abody.appendChild(x); });
+  document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
   document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
   App._atOpen=null;
-  document.removeEventListener('mousedown', atOutsideClose, true);
-  document.removeEventListener('keydown', atEsc, true);
-  window.removeEventListener('resize', atReposition, true);
 }
-function atEsc(e){ if(e.key==='Escape'){ atCloseAll(); updateAssignPills(); } }
-function atReposition(){ var o=App._atOpen; if(o && o.floating) atPositionPanel(o.p, o.trigger); }
-/* Close the floating popover when the click is outside it — but let clicks on another
-   pill/trigger through, so tapping a different pill just switches panels. */
-function atOutsideClose(e){
-  var o=App._atOpen; if(!o || !o.floating) return;
-  if(o.p.contains(e.target)) return;
-  if(e.target.closest && e.target.closest('#assign-modal .at-pill, #assign-modal .at-foot-toggle, #assign-modal .at-ico, #assign-modal .at-collapse')) return;
-  atCloseAll(); updateAssignPills();
-}
-/* Place a floating panel just under its pill, flipping above / clamping to the viewport. */
-function atPositionPanel(p, trigger){
-  try{
-    var r=trigger.getBoundingClientRect();
-    var pw=p.offsetWidth||340, ph=p.offsetHeight||220;
-    var left=r.left; if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8; if(left<8) left=8;
-    var top=r.bottom+6;
-    if(top+ph>window.innerHeight-8){ var above=r.top-ph-6; top = above>=8 ? above : Math.max(8, window.innerHeight-ph-8); }
-    p.style.left=left+'px'; p.style.top=top+'px';
-  }catch(e){}
-}
+/* Clean inline accordion: tap a pill and its picker opens right there, one at a time,
+   directly under the pill row. No floating windows or portals (those glitched across
+   browsers) — the panel simply expands in place, and opening another closes the first. */
 function atToggle(el){
   var id=el.getAttribute('data-panel'); var p=document.getElementById(id); if(!p) return;
   var willOpen=p.classList.contains('hidden');
-  atCloseAll();                                  // one open at a time
-  if(!willOpen){ updateAssignPills(); return; }  // it was open → we just closed it
-  var inline = el.classList.contains('at-collapse');   // the "+ Add Checklist" row stays inline
+  atCloseAll();                                  // only ever one panel open
+  if(!willOpen){ updateAssignPills(); return; }  // it was already open → we just closed it
   p.classList.remove('hidden'); el.classList.add('on');
-  if(inline){
-    updateAssignPills();
-    setTimeout(function(){ try{ p.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){ } var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }, 30);
-    return;
-  }
-  // Float the picker over the drawer so the drawer never grows / scrolls.
-  // Portal it to <body>: the drawer's blurred overlay creates a containing block that made
-  // position:fixed anchor to the wrong box (the popover flew to the screen corner). At <body>
-  // level, fixed is viewport-relative, so it sits exactly under its pill.
-  document.body.appendChild(p);
-  p.classList.remove('hidden'); p.classList.add('at-floating');
-  App._atOpen={ p:p, trigger:el, floating:true };
-  atPositionPanel(p, el);
-  document.addEventListener('mousedown', atOutsideClose, true);
-  document.addEventListener('keydown', atEsc, true);
-  window.addEventListener('resize', atReposition, true);
   updateAssignPills();
-  setTimeout(function(){ atPositionPanel(p, el); var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }, 20);
+  setTimeout(function(){
+    try{ p.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){ }
+    var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } }
+  }, 30);
 }
 function fmtPillDue(){
   var d=(document.getElementById('assign-due-d')||{}).value, t=(document.getElementById('assign-due-t')||{}).value;
