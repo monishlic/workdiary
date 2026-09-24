@@ -2457,7 +2457,7 @@ var FB = (function(){
       }
     });
   }
-  function fbNote(n){ return { id:String(n.id), sid:String(n.id), ownerId:String(n.ownerId), ownerName:String(n.ownerName||''), text:String(n.text||''), color:String(n.color||''), x:Number(n.x)||0, y:Number(n.y)||0, created:String(n.created||''), updated:String(n.updated||''), done:(n.done===true), taskRef:String(n.taskRef||'') }; }
+  function fbNote(n){ return { id:String(n.id), sid:String(n.id), ownerId:String(n.ownerId), ownerName:String(n.ownerName||''), text:String(n.text||''), color:String(n.color||''), x:Number(n.x)||0, y:Number(n.y)||0, created:String(n.created||''), updated:String(n.updated||''), done:(n.done===true), taskRef:String(n.taskRef||''), remindAt:String(n.remindAt||'') }; }
   function slugify(name){ return String(name||'user').toLowerCase().replace(/[^a-z0-9]+/g,'').substring(0,12)||'user'; }
   function keyFree(key, exceptId){
     return col('users').where('accessKey','==',String(key)).get().then(function(qs){
@@ -3535,16 +3535,23 @@ function noteRemSync(note){
 }
 /* ---- Client-side reminder scanner ----
    While the app is open, this fires due reminders itself (note / snooze / task),
-   independent of the Cloudflare cron — so notifications arrive reliably whenever the
-   app is online, and it also catches anything the cron missed. It CLAIMS each reminder
-   by deleting the dueReminders doc first, so the cron never double-fires it. */
+   independent of the Cloudflare cron. It fires on EVERY device/browser that has the
+   app open, not just the first one to see it. Closed / offline / backgrounded delivery
+   is handled by the Cloudflare cron push.
+
+   It no longer "claims" a reminder by deleting the doc up front. Deleting first meant
+   whichever surface scanned first (e.g. Comet) grabbed it and every other open surface
+   (e.g. Chrome) then found nothing, so the reminder showed on only one browser. Instead
+   each device keeps its OWN persisted "already fired" guard, shows the notification, and
+   only cleans the doc up after a grace window so other open surfaces get their turn. */
 function startReminderScan(){ stopReminderScan(); App._remTimer=setInterval(remTick, 90000); setTimeout(remTick, 5000); }
 function stopReminderScan(){ if(App._remTimer){ clearInterval(App._remTimer); App._remTimer=null; } }
-/* Closed/offline delivery is handled by the Cloudflare cron (every minute). This client
-   scan only fires the CURRENT user's due reminders while their app is open, and schedules
-   precise on-time timers for ones coming up soon. It no longer pings the server every tick
-   (that was redundant with the cron and wasted the Firestore daily quota). */
 function remTick(){ scanDueReminders(); }
+/* Per-device record of reminders already shown here, keyed by docId@atMillis (so re-arming
+   a note with a NEW time fires again). Persisted so a reload can't replay one; pruned to 24h. */
+function remFiredMap(){ try{ return JSON.parse(localStorage.getItem('edRemFired')||'{}')||{}; }catch(e){ return {}; } }
+function remAlreadyFired(key){ try{ return !!remFiredMap()[key]; }catch(e){ return false; } }
+function remMarkFired(key){ try{ var m=remFiredMap(); m[key]=Date.now(); var cut=Date.now()-86400000; Object.keys(m).forEach(function(k){ if(m[k]<cut) delete m[k]; }); localStorage.setItem('edRemFired', JSON.stringify(m)); }catch(e){} }
 function scanDueReminders(){
   if(!App.identity || !window.firebase || !firebase.firestore || !Sync.online()) return;
   var uid=String(App.identity.employeeId), now=Date.now();
@@ -3552,11 +3559,18 @@ function scanDueReminders(){
   try{
     firebase.firestore().collection('dueReminders').where('ownerId','==',uid).get().then(function(qs){
       qs.forEach(function(doc){
-        var r=doc.data(); if(!r) return; var at=Number(r.atMillis); if(isNaN(at)) return; var id=doc.id;
-        var claimFire=function(){ if(App._remScheduled[id]){ clearTimeout(App._remScheduled[id]); delete App._remScheduled[id]; } doc.ref.delete().then(function(){ fireLocalReminder(r); }).catch(function(){}); };
-        if(at<=now){ claimFire(); }                                   // already due → fire now
-        else if(at <= now+70000 && !App._remScheduled[id]){           // due soon → fire ON TIME, not at the next poll
-          App._remScheduled[id]=setTimeout(claimFire, Math.max(0, at-now));
+        var r=doc.data(); if(!r) return; var at=Number(r.atMillis); if(isNaN(at)) return;
+        var key=doc.id+'@'+at;                        // occurrence key (survives re-arming)
+        if(remAlreadyFired(key)) return;              // this device already showed it — leave the doc for others/cron
+        var fire=function(){
+          if(App._remScheduled[key]){ clearTimeout(App._remScheduled[key]); delete App._remScheduled[key]; }
+          if(remAlreadyFired(key)) return;
+          remMarkFired(key); fireLocalReminder(r);
+          setTimeout(function(){ try{ doc.ref.delete().catch(function(){}); }catch(e){} }, 120000);
+        };
+        if(at<=now){ fire(); }                                          // already due -> fire now
+        else if(at <= now+70000 && !App._remScheduled[key]){            // due soon -> fire on time, not at next poll
+          App._remScheduled[key]=setTimeout(fire, Math.max(0, at-now));
         }
       });
     }).catch(function(){});
@@ -3567,10 +3581,24 @@ function fireLocalReminder(r){
   if(r.kind==='note'){ title='🗒️ Slate note reminder'; body=r.message||'A note wanted your attention.'; }
   else if(r.kind==='snooze'){ title='😴 Back on your list'; body=r.message||(r.title||r.clientName||'Task'); }
   else { title='⏰ Reminder: '+(r.title||r.clientName||'Task'); body=(r.message||'')+((r.clientName&&r.title)?' · '+r.clientName:''); }
-  try{ if(navigator.serviceWorker && navigator.serviceWorker.ready){ navigator.serviceWorker.ready.then(function(reg){ if(reg&&reg.showNotification) reg.showNotification(title,{ body:body, icon:'icon-192.png?v=3', badge:'icon-192.png?v=3', tag:'localrem-'+(r.taskUid||Date.now()), requireInteraction:true }); }).catch(function(){}); } }catch(e){}
+  var tag='localrem-'+(r.taskUid||'x')+'-'+(r.atMillis||Date.now());
+  var opts={ body:body, icon:'icon-192.png?v=3', badge:'icon-192.png?v=3', tag:tag, renotify:true, requireInteraction:true };
+  // Show via the service worker when possible (works on mobile too), falling back to a plain
+  // Notification on desktop if no SW controls the page. getRegistration() is used instead of
+  // .ready so it can't hang forever when there is no active worker.
+  try{
+    if(('Notification' in window) && Notification.permission==='granted'){
+      if(navigator.serviceWorker && navigator.serviceWorker.getRegistration){
+        navigator.serviceWorker.getRegistration().then(function(reg){
+          if(reg && reg.showNotification){ reg.showNotification(title, opts); }
+          else { try{ new Notification(title, opts); }catch(e){} }
+        }).catch(function(){ try{ new Notification(title, opts); }catch(e){} });
+      } else { try{ new Notification(title, opts); }catch(e){} }
+    }
+  }catch(e){}
   try{ toast('🔔 '+title+(body?' — '+body:''),'info',9000); }catch(e){}
   try{ App._bannerDismissed=false; loadReminders&&loadReminders(); }catch(e){}
-  try{ if(App.view==='slate' && !App._slateView) paintSlate(true); }catch(e){}   // flip the note's chip to "reminded"
+  try{ if(App.view==='slate' && !App._slateView) paintSlate(true); }catch(e){}
 }
 /* Snooze = a personal wake-up the assignee sets for themselves. Same cron engine,
    but it fires only to the snoozer (no loop) and reads as "back on your list". */
