@@ -337,7 +337,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 @keyframes atPanelIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
 /* Floating pickers — a panel opened from a pill pops OVER the drawer instead of
    growing it, so the drawer stays a fixed, compact height and never scrolls. */
-.at-panel.at-floating{ position:fixed; z-index:340; width:340px; max-width:calc(100vw - 16px); max-height:min(66vh,440px); overflow:auto; margin:0 !important; background:var(--bg-card); box-shadow:0 20px 50px -14px rgba(15,23,42,.45),0 6px 16px -8px rgba(15,23,42,.3); animation:atFloatIn .15s ease; }
+.at-panel.at-floating{ position:fixed !important; z-index:3000; width:330px; max-width:calc(100vw - 20px); max-height:calc(100vh - 24px); overflow:auto; margin:0 !important; background:var(--bg-card); border:1px solid var(--border); box-shadow:0 24px 60px -16px rgba(15,23,42,.5); animation:atFloatIn .15s ease; }
+/* The floating window is the ONE scroll container — no nested scrollbars (that was the
+   "list shifted below" glitch). Search + Add stay pinned as the list scrolls. */
+.at-floating .chips-list{ max-height:none; overflow:visible; }
+.at-floating .chips-search{ position:sticky; top:0; background:var(--bg-card); z-index:2; }
+.at-floating .chips-foot{ position:sticky; bottom:0; background:var(--bg-card); }
 @keyframes atFloatIn{ from{ opacity:0; transform:translateY(-6px) scale(.98); } to{ opacity:1; transform:none; } }
 .at-backdrop{ position:fixed; inset:0; z-index:330; background:transparent; }
 .at-pills{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 2px; }
@@ -1752,7 +1757,7 @@ body.modal-open .install-bar{ display:none !important; }
   <div class="modal at-modal">
     <div class="modal-h at-head">
       <button class="at-back" data-action="close-modal" data-modal="assign-modal" title="Back" aria-label="Back">&#8592;</button>
-      <h3 id="assign-title">Assign New Task <span style="font-size:10px;font-weight:700;opacity:.35;letter-spacing:.03em;vertical-align:middle">v47</span></h3>
+      <h3 id="assign-title">Assign New Task <span style="font-size:10px;font-weight:700;opacity:.35;letter-spacing:.03em;vertical-align:middle">v48</span></h3>
       <label class="at-more"><input type="checkbox" id="assign-more"><span>Assign More Task</span></label>
     </div>
     <div class="modal-b at-body">
@@ -6074,24 +6079,58 @@ function openAtPanel(pid){
 }
 /* Close any open pill panel and detach its floating listeners. */
 function atCloseAll(){
-  document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
+  // Global query: catches panels still inside the drawer AND any we floated out to <body>.
+  document.querySelectorAll('.at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
+  var abody=document.querySelector('#assign-modal .at-body');
+  if(abody) document.querySelectorAll('body > .at-panel').forEach(function(x){ abody.appendChild(x); });
   document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
   App._atOpen=null;
+  document.removeEventListener('mousedown', atOutsideClose, true);
+  document.removeEventListener('keydown', atEsc, true);
+  window.removeEventListener('resize', atReposition, true);
 }
-/* Clean inline accordion: tap a pill and its picker opens right there, one at a time,
-   directly under the pill row. No floating windows or portals (those glitched across
-   browsers) — the panel simply expands in place, and opening another closes the first. */
+function atEsc(e){ if(e.key==='Escape'){ atCloseAll(); updateAssignPills(); } }
+function atReposition(){ if(App._atOpen && App._atOpen.floating) atPositionPanel(App._atOpen.p, App._atOpen.trigger); }
+/* Close the floating window on an outside click — but let taps on another pill through,
+   so tapping a different pill just switches which picker is open. */
+function atOutsideClose(e){
+  var o=App._atOpen; if(!o||!o.floating) return;
+  if(o.p.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('#assign-modal .at-pill, #assign-modal .at-foot-toggle, #assign-modal .at-ico, #assign-modal .at-collapse')) return;
+  atCloseAll(); updateAssignPills();
+}
+/* Place the floating window just under its pill; flip above / clamp to the viewport. */
+function atPositionPanel(p, trigger){
+  try{
+    var r=trigger.getBoundingClientRect();
+    var pw=p.offsetWidth||330, ph=p.offsetHeight||260;
+    var left=r.left; if(left+pw>window.innerWidth-10) left=window.innerWidth-pw-10; if(left<10) left=10;
+    var top=r.bottom+8; if(top+ph>window.innerHeight-10){ var up=r.top-ph-8; top=(up>=10)?up:Math.max(10, window.innerHeight-ph-10); }
+    p.style.left=Math.round(left)+'px'; p.style.top=Math.round(top)+'px';
+  }catch(e){}
+}
+/* Tap a pill → its picker opens as a small floating window over the drawer (so the drawer
+   itself never grows or scrolls). One at a time. The checklist row stays inline. It floats
+   from <body> so position:fixed anchors to the viewport (the modal's open animation puts a
+   transform on the modal, which would otherwise misplace a fixed child). */
 function atToggle(el){
   var id=el.getAttribute('data-panel'); var p=document.getElementById(id); if(!p) return;
   var willOpen=p.classList.contains('hidden');
-  atCloseAll();                                  // only ever one panel open
-  if(!willOpen){ updateAssignPills(); return; }  // it was already open → we just closed it
-  p.classList.remove('hidden'); el.classList.add('on');
+  atCloseAll();
+  if(!willOpen){ updateAssignPills(); return; }
+  if(el.classList.contains('at-collapse')){
+    p.classList.remove('hidden'); el.classList.add('on'); updateAssignPills();
+    setTimeout(function(){ try{ p.scrollIntoView({block:'nearest'}); }catch(_){ } }, 30); return;
+  }
+  document.body.appendChild(p);
+  p.classList.remove('hidden'); p.classList.add('at-floating'); el.classList.add('on');
+  App._atOpen={ p:p, trigger:el, floating:true };
+  requestAnimationFrame(function(){ atPositionPanel(p, el); requestAnimationFrame(function(){ atPositionPanel(p, el);
+    var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }); });
+  document.addEventListener('mousedown', atOutsideClose, true);
+  document.addEventListener('keydown', atEsc, true);
+  window.addEventListener('resize', atReposition, true);
   updateAssignPills();
-  setTimeout(function(){
-    try{ p.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){ }
-    var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } }
-  }, 30);
 }
 function fmtPillDue(){
   var d=(document.getElementById('assign-due-d')||{}).value, t=(document.getElementById('assign-due-t')||{}).value;
