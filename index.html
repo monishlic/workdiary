@@ -307,15 +307,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .at-field{ width:100%; border:1px solid var(--border); background:var(--bg-card); border-radius:14px; padding:12px 15px; font-family:inherit; color:var(--text); outline:none; display:block; margin:9px 0; transition:border-color .15s, box-shadow .15s; }
 .at-field:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft,rgba(31,75,216,.10)); }
 .at-field::placeholder{ color:var(--text-muted); font-weight:500; }
-/* Title + description read as clean, borderless text (like the reference) so the
-   drawer feels light instead of a stack of heavy boxes. */
-.at-title{ border:none; border-radius:0; border-bottom:1px solid var(--border); background:transparent; padding:6px 2px; margin:2px 0 2px; font-size:1.18rem; font-weight:800; letter-spacing:-.01em; }
-.at-title:focus{ box-shadow:none; border-bottom-color:var(--accent); }
+.at-title{ font-size:1.15rem; font-weight:800; letter-spacing:-.01em; margin-top:2px; }
 .at-client{ font-size:.95rem; font-weight:600; }
-.at-desc{ border:none; border-radius:0; background:transparent; padding:6px 2px; margin:2px 0 4px; font-size:.95rem; resize:vertical; min-height:46px; }
-.at-desc:focus{ box-shadow:none; }
-.at-deptcat{ margin:8px 0 4px; }
-.at-deptcat .f-label{ margin-top:0; }
+.at-desc{ font-size:.95rem; resize:vertical; min-height:56px; }
 /* Reference-style people picker: a searchable, scrollable list you multi-select, then Add. */
 .chips.chips-listbox{ border:none; background:none; padding:0; min-height:0; display:block; }
 .chips-search{ width:100%; border:1px solid var(--border); border-radius:10px; padding:9px 12px; font:inherit; font-size:.9rem; outline:none; background:var(--bg-card); color:var(--text); }
@@ -1757,23 +1751,16 @@ body.modal-open .install-bar{ display:none !important; }
   <div class="modal at-modal">
     <div class="modal-h at-head">
       <button class="at-back" data-action="close-modal" data-modal="assign-modal" title="Back" aria-label="Back">&#8592;</button>
-      <h3 id="assign-title">Assign New Task <span style="font-size:10px;font-weight:700;opacity:.35;letter-spacing:.03em;vertical-align:middle">v48</span></h3>
+      <h3 id="assign-title">Assign New Task</h3>
       <label class="at-more"><input type="checkbox" id="assign-more"><span>Assign More Task</span></label>
     </div>
     <div class="modal-b at-body">
       <div id="assign-tpl-picker"></div>
 
-      <!-- Title + Description. Client stays as a hidden field: still set by voice / templates /
-           tapping a client, but no longer a visible row (keeps the drawer short, per the reference). -->
-      <input type="text" id="assign-title-input" class="at-field at-title" maxlength="140" placeholder="Add Title" autocomplete="off">
-      <input type="hidden" id="assign-client">
-      <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add Description"></textarea>
-
-      <!-- Department + Category — two selectors side by side, always visible (not behind a pill) -->
-      <div class="row2 at-deptcat">
-        <div><label class="f-label">Department <span class="req">*</span></label><select id="assign-dept" class="f-input"></select></div>
-        <div class="combo"><label class="f-label">Category <span class="req">*</span></label><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
-      </div>
+      <!-- Title, Client, Description — separate clean fields -->
+      <input type="text" id="assign-title-input" class="at-field at-title" maxlength="140" placeholder="Task title" autocomplete="off">
+      <input type="text" id="assign-client" class="at-field at-client" maxlength="120" placeholder="Client name (optional)" autocomplete="off">
+      <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add a description…"></textarea>
 
       <!-- Collapsible checklist -->
       <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add Checklist <span class="at-chev">▾</span></button>
@@ -1784,10 +1771,11 @@ body.modal-open .install-bar{ display:none !important; }
 
       <!-- Everything else: assign to, loop, due, priority, category -->
       <div class="at-pills">
-        <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Users</span></button>
+        <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Assign to</span></button>
+        <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
         <button type="button" class="at-pill" id="pill-due" data-action="at-toggle" data-panel="assign-panel-due"><span class="at-pi">📅</span><span id="sum-due">Due Date</span></button>
         <button type="button" class="at-pill prio-med" id="pill-prio" data-action="at-toggle" data-panel="assign-panel-prio"><span class="at-pi">🚩</span><span id="sum-prio">Priority</span></button>
-        <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
+        <button type="button" class="at-pill" id="pill-cat" data-action="at-toggle" data-panel="assign-panel-cat"><span class="at-pi">🏢</span><span id="sum-cat">Category</span></button>
       </div>
 
       <!-- Pill panels (one open at a time) -->
@@ -1821,6 +1809,13 @@ body.modal-open .install-bar{ display:none !important; }
           <button type="button" class="pill-opt prio-low" data-action="pick-pill" data-target="assign-priority" data-val="low">🟢 Low</button>
         </div>
       </div>
+      <div id="assign-panel-cat" class="at-panel hidden">
+        <div class="row2">
+          <div><label class="f-label">Department <span class="req">*</span></label><select id="assign-dept" class="f-input"></select></div>
+          <div class="combo"><label class="f-label">Category <span class="req">*</span></label><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
+        </div>
+      </div>
+
       <!-- Footer-triggered panels -->
       <div id="assign-panel-repeat" class="at-panel hidden">
         <label class="f-label">Repeat <span class="opt">(a fresh copy appears when this one is completed)</span></label>
@@ -6043,9 +6038,9 @@ function openAssign(dept,cat){
     var meId=App.identity.employeeId;
     var assignees=[{userId:meId, name:App.identity.employeeName+' (me)', role:''}];
     App.members.forEach(function(m){ if(String(m.userId)!==String(meId)) assignees.push({userId:m.userId, name:m.name, role:m.role||''}); });
-    Chips.init('assign-to-chips', assignees, {selected:[meId], placeholder:'Add staff…', list:true});
+    Chips.init('assign-to-chips', assignees, {selected:[meId], placeholder:'Add staff…'});
     var others=(App.members||[]).filter(function(m){ return String(m.userId)!==String(meId); }).map(function(m){ return {userId:m.userId, name:m.name, role:(m.role&&m.role!=='Staff'?m.role:'')}; });
-    Chips.init('assign-loop-chips', others, {selected:[], placeholder:'Add people to loop…', list:true});
+    Chips.init('assign-loop-chips', others, {selected:[], placeholder:'Add people to loop…'});
     fillDeptSelect('assign-dept', dept||App.dept||'');
     document.getElementById('assign-cat').value=cat||App.cat||'';
     var _tin=document.getElementById('assign-title-input'); if(_tin) _tin.value='';
@@ -6077,60 +6072,18 @@ function openAtPanel(pid){
   var p=document.getElementById(pid); if(!p || !p.classList.contains('hidden')) return;
   var el=document.querySelector('#assign-modal [data-panel="'+pid+'"]'); if(el) atToggle(el);
 }
-/* Close any open pill panel and detach its floating listeners. */
+/* Original inline accordion: one pill panel open at a time, expanding in place. */
 function atCloseAll(){
-  // Global query: catches panels still inside the drawer AND any we floated out to <body>.
-  document.querySelectorAll('.at-panel').forEach(function(x){ x.classList.add('hidden'); x.classList.remove('at-floating'); x.style.left=''; x.style.top=''; });
-  var abody=document.querySelector('#assign-modal .at-body');
-  if(abody) document.querySelectorAll('body > .at-panel').forEach(function(x){ abody.appendChild(x); });
+  document.querySelectorAll('#assign-modal .at-panel').forEach(function(x){ x.classList.add('hidden'); });
   document.querySelectorAll('#assign-modal .at-pill.on, #assign-modal .at-foot-toggle.on, #assign-modal .at-ico.on, #assign-modal .at-collapse.on').forEach(function(x){ x.classList.remove('on'); });
-  App._atOpen=null;
-  document.removeEventListener('mousedown', atOutsideClose, true);
-  document.removeEventListener('keydown', atEsc, true);
-  window.removeEventListener('resize', atReposition, true);
 }
-function atEsc(e){ if(e.key==='Escape'){ atCloseAll(); updateAssignPills(); } }
-function atReposition(){ if(App._atOpen && App._atOpen.floating) atPositionPanel(App._atOpen.p, App._atOpen.trigger); }
-/* Close the floating window on an outside click — but let taps on another pill through,
-   so tapping a different pill just switches which picker is open. */
-function atOutsideClose(e){
-  var o=App._atOpen; if(!o||!o.floating) return;
-  if(o.p.contains(e.target)) return;
-  if(e.target.closest && e.target.closest('#assign-modal .at-pill, #assign-modal .at-foot-toggle, #assign-modal .at-ico, #assign-modal .at-collapse')) return;
-  atCloseAll(); updateAssignPills();
-}
-/* Place the floating window just under its pill; flip above / clamp to the viewport. */
-function atPositionPanel(p, trigger){
-  try{
-    var r=trigger.getBoundingClientRect();
-    var pw=p.offsetWidth||330, ph=p.offsetHeight||260;
-    var left=r.left; if(left+pw>window.innerWidth-10) left=window.innerWidth-pw-10; if(left<10) left=10;
-    var top=r.bottom+8; if(top+ph>window.innerHeight-10){ var up=r.top-ph-8; top=(up>=10)?up:Math.max(10, window.innerHeight-ph-10); }
-    p.style.left=Math.round(left)+'px'; p.style.top=Math.round(top)+'px';
-  }catch(e){}
-}
-/* Tap a pill → its picker opens as a small floating window over the drawer (so the drawer
-   itself never grows or scrolls). One at a time. The checklist row stays inline. It floats
-   from <body> so position:fixed anchors to the viewport (the modal's open animation puts a
-   transform on the modal, which would otherwise misplace a fixed child). */
 function atToggle(el){
   var id=el.getAttribute('data-panel'); var p=document.getElementById(id); if(!p) return;
   var willOpen=p.classList.contains('hidden');
   atCloseAll();
-  if(!willOpen){ updateAssignPills(); return; }
-  if(el.classList.contains('at-collapse')){
-    p.classList.remove('hidden'); el.classList.add('on'); updateAssignPills();
-    setTimeout(function(){ try{ p.scrollIntoView({block:'nearest'}); }catch(_){ } }, 30); return;
-  }
-  document.body.appendChild(p);
-  p.classList.remove('hidden'); p.classList.add('at-floating'); el.classList.add('on');
-  App._atOpen={ p:p, trigger:el, floating:true };
-  requestAnimationFrame(function(){ atPositionPanel(p, el); requestAnimationFrame(function(){ atPositionPanel(p, el);
-    var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }); });
-  document.addEventListener('mousedown', atOutsideClose, true);
-  document.addEventListener('keydown', atEsc, true);
-  window.addEventListener('resize', atReposition, true);
+  if(willOpen){ p.classList.remove('hidden'); el.classList.add('on'); }
   updateAssignPills();
+  if(willOpen){ setTimeout(function(){ try{ p.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(_){ } var f=p.querySelector('input,select,textarea'); if(f && f.type!=='hidden'){ try{ f.focus({preventScroll:true}); }catch(_){ } } }, 30); }
 }
 function fmtPillDue(){
   var d=(document.getElementById('assign-due-d')||{}).value, t=(document.getElementById('assign-due-t')||{}).value;
@@ -6154,7 +6107,8 @@ function updateAssignPills(){
   var pv=gv('assign-priority')||'medium'; var sp=g('sum-prio'); if(sp) sp.textContent=({high:'High',medium:'Medium',low:'Low'}[pv]||'Priority');
   var pp=g('pill-prio'); if(pp){ pp.classList.remove('prio-high','prio-med','prio-low'); pp.classList.add(pv==='high'?'prio-high':(pv==='low'?'prio-low':'prio-med')); }
   // Category
-  // Department + Category are now inline selectors (not a pill), so nothing to summarise here.
+  var cat=gv('assign-cat'); var sc=g('sum-cat'); if(sc) sc.textContent=cat?cat:'Category';
+  if(g('pill-cat')) g('pill-cat').classList.toggle('has-val', !!cat);
   // Loop
   var lp=haveChips?Chips.get('assign-loop-chips'):[]; var sl=g('sum-loop'); if(sl) sl.textContent=lp.length?(lp.length+' in loop'):'In Loop';
   if(g('pill-loop')) g('pill-loop').classList.toggle('has-val', lp.length>0);
@@ -6184,8 +6138,7 @@ function submitAssign(){
   var tplName=(document.getElementById('assign-tplname')||{}).value||'';
   if(!title){ toast('Task title is required.','error'); var _ti=document.getElementById('assign-title-input'); if(_ti) _ti.focus(); return; }
   if(!toList.length){ toast('Pick who this is for — tap the Assign to pill.','error'); openAtPanel('assign-panel-users'); return; }
-  if(!dept){ toast('Choose a department.','error'); var _dd=document.getElementById('assign-dept'); if(_dd) _dd.focus(); return; }
-  if(!cat){ toast('Enter a category.','error'); var _ac=document.getElementById('assign-cat'); if(_ac) _ac.focus(); return; }
+  if(!dept||!cat){ toast('Choose a department and category — tap the Category pill.','error'); openAtPanel('assign-panel-cat'); return; }
   var hasSelf = toList.map(String).indexOf(meId)>=0;
   var others = toList.filter(function(id){ return String(id)!==meId; });
   if(others.length && !Sync.online()){ toast('You are offline — you can only add tasks to yourself right now.','error'); return; }
