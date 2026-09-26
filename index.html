@@ -1641,7 +1641,7 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
    (absolute drag positions from desktop would push notes off a small screen). ---- */
 @media(max-width:820px){
   .slate-board{ min-height:auto !important; display:flex !important; flex-wrap:wrap; align-content:flex-start; gap:12px; padding:12px !important; cursor:default; background-image:none !important; border-style:solid; }
-  .slate-note{ position:static !important; transform:none !important; margin:0 !important; width:calc(50% - 6px) !important; min-height:110px; padding-bottom:34px; touch-action:auto !important; cursor:default; animation:none !important; }
+  .slate-note{ position:relative !important; left:auto !important; top:auto !important; transform:none !important; margin:0 !important; width:calc(50% - 6px) !important; min-height:110px; padding-bottom:34px; touch-action:auto !important; cursor:default; animation:none !important; }
   .slate-empty{ position:static !important; width:100%; }
   /* action buttons are always visible on touch (no hover) and sit as a bottom bar */
   .slate-note .sn-actions{ opacity:1 !important; position:absolute; top:auto; bottom:6px; right:8px; left:8px; justify-content:flex-end; gap:8px; }
@@ -3019,7 +3019,11 @@ var FBLive = {
       var beat=function(){ if(!document.hidden){ try{ apiCall('heartbeat',{}); }catch(e){} } };
       window.addEventListener('focus', beat);
       document.addEventListener('visibilitychange', beat);
-      setInterval(beat, 45000);   // heartbeat often so online/last-seen reflects fast
+      // Presence is only ever read at day-granularity ("active in last 3 days"), so a fast beat
+      // is wasteful: every beat writes a user doc, and the live `users` listener on EVERY client
+      // then re-reads it — a read-amplification loop that alone can blow the daily quota. 5 min
+      // (plus the focus/visibility beats above) keeps "last seen" fresh enough at a fraction of the cost.
+      setInterval(beat, 300000);
     }
 
     // My own tasks
@@ -3116,10 +3120,8 @@ var FBLive = {
         else if(App.view==='weekly') renderWeekly();
         else if(App.view==='search'){ var _si=document.getElementById('search'); if(_si) renderSearch(_si.value); }
       }, function(){});
-      db.collection('audit').onSnapshot(function(){
-        App._auditCache=null;
-        if(App.view==='audit') renderActivityLog();
-      }, function(){});
+      // (No live listener on `audit` — it re-read the ENTIRE, ever-growing audit log on every
+      //  admin app-load. The Activity Log loads on demand instead via getAudit (last 300 only).)
     }
 
     // My slate notes
