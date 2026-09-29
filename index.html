@@ -1817,6 +1817,8 @@ textarea.nl-in{min-height:64px;resize:vertical}
 @media(max-width:760px){.nl-kpis{grid-template-columns:1fr 1fr}.nl-cards2{grid-template-columns:1fr}}
 .nl-tickrow{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--accent-soft,rgba(79,70,229,.1));color:var(--accent,#4f46e5);font-weight:700;font-size:.84rem;cursor:pointer;margin-bottom:8px;text-transform:none;letter-spacing:0}
 .nl-tickrow input{width:auto}
+.nl-b.delbtn{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.4);color:#dc2626}
+.nl-b.delbtn:hover{background:rgba(220,38,38,.16)}
 
 </style>
 </head>
@@ -2753,6 +2755,10 @@ var FB = (function(){
             if(!isOverseer()) return {ok:false, error:'admins only'};
             return col('leads').get().then(function(qs){ var a=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; a.push(l); }); return {ok:true, leads:a}; });
           }
+          case 'leadDelete': {
+            if(!isAdmin()) return {ok:false, error:'Only an admin can delete a lead.'};
+            return col('leads').doc(String(b.leadId)).delete().then(function(){ try{ logAudit('Lead deleted', String(b.leadId), '', ''); }catch(e){} return {ok:true}; });
+          }
         default: return {ok:false, error:'Unknown action: '+action};
       }
     });
@@ -2774,8 +2780,8 @@ var DEFAULT_DEPARTMENTS = [
   {department:'General Insurance', categories:['Endorsement','Servicing','Proposals','Renewals','Policy Documents','Client Follow-up','Other']},
   {department:'Life Insurance', categories:['New Proposal','Policy Servicing','Renewals','Medical','Documents','Client Follow-up','Other']},
   {department:'Claims', categories:['Claim File','Claim Intimation','Claim Documents','Claim Follow-up','Claim Settlement','Pending Documents','Other']},
-  {department:'Mutual Fund', categories:['New Investment','SIP','Redemption','Switch','KYC','Investment Servicing','Client Follow-up','Other']},
-  {department:'Investments', categories:['New Investment','Portfolio Review','Risk Profiling','Maturity','Client Follow-up','Other']},
+  {department:'Mutual Fund', categories:['New Investment','SIP','Lumpsum','STP','SWP','Switch','Redemption','ELSS / Tax Saving','NFO','Goal Planning','Portfolio Review','KYC','Folio / Nominee Update','Investment Servicing','Client Follow-up','Other']},
+  {department:'Investments', categories:['New Investment','SIP','Lumpsum','Wealth Planning','Retirement Planning','Tax Planning','Portfolio Review','Rebalancing','Risk Profiling','PMS','Bonds','FD / Deposits','Maturity','Client Follow-up','Other']},
   {department:'Policy Servicing', categories:['Nominee Update','Address Change','Contact Update','Bank Update','Fund Transfer','Other']},
   {department:'Data Management', categories:['Data Entry','Data Update','Data Cleaning','KYC Update','Document Upload','Other']},
   {department:'Accounting', categories:['Premium Payment','Payment Follow-up','Commission','Reconciliation','Brokerage','Other']},
@@ -2784,10 +2790,10 @@ var DEFAULT_DEPARTMENTS = [
 
 /* Big master category library for type-ahead suggestions */
 var CATEGORY_MASTER = [
-  'Endorsement','Servicing','Policy Servicing','Proposals','Proposal Follow-up','Renewals','Renewal Follow-up',
+  'Endorsement','Servicing','Policy Servicing','Proposals','Renewals','Renewal Follow-up',
   'Policy Documents','Documents','Document Upload','Client Follow-up','Follow-up','Callback','Meeting','Appointment',
   'Claim File','Claim Intimation','Claim Documents','Claim Follow-up','Claim Settlement','Pending Documents',
-  'New Investment','SIP','SIP Registration','Redemption','Switch','KYC','KYC Update','Investment Servicing',
+  'New Investment','SIP','SIP Registration','Lumpsum','STP','SWP','ELSS / Tax Saving','NFO','Goal Planning','Wealth Planning','Retirement Planning','Tax Planning','Rebalancing','PMS','Bonds','FD / Deposits','Folio / Nominee Update','Redemption','Switch','KYC','KYC Update','Investment Servicing',
   'Portfolio Review','Risk Profiling','New Proposal','Medical','Maturity','Surrender','Loan Against Policy',
   'Data Entry','Data Update','Data Management','Data Cleaning','Data Verification',
   'Accounting','Premium Payment','Payment Follow-up','Commission','Reconciliation','Brokerage',
@@ -3574,7 +3580,7 @@ function nlRenderBoard(){
 function nlActions(l,eff,admin){
   var id=esc(l.id);
   function b(act,label,cls){ return '<button class="btn nl-b '+(cls||'')+'" data-action="'+act+'" data-lead="'+id+'">'+label+'</button>'; }
-  if(admin){ return b('nl-urgent','🔴 Mark Urgent','warnbtn')+b('nl-comment','💬 Comment','primary')+b('nl-chain','Track lead','ghost'); }
+  if(admin){ var del=(App.identity && App.identity.role==='Admin') ? b('nl-delete','🗑 Delete','delbtn') : ''; return b('nl-urgent','🔴 Mark Urgent','warnbtn')+b('nl-comment','💬 Comment','primary')+b('nl-chain','Track lead','ghost')+del; }
   var out='';
   if(eff==='new') out+=b('nl-remark','＋ Add remark (acknowledge)','primary');
   else if(eff==='acknowledged') out+=b('nl-remark','＋ Remark','primary')+b('nl-inprocess','▶ Move to In Process','go');
@@ -3726,6 +3732,12 @@ function nlFmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return ''; try{
 function nlBacklink(){ return '<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← Back to my leads</button></div>'; }
 function nlBack(){ var sub=(App._leadView&&App._leadView.sub); App._leadView.sub=(sub==='staff'?'teams':'board'); renderLeads(); }
 function nlReload(){ var sub=(App._leadView&&App._leadView.sub); if(sub==='biz') nlGoBiz(); else if(sub==='abm') nlGoABM(); else if(sub==='staff') nlGoStaff(App._leadView.staffId); }
+function nlDelete(id){
+  if(!(App.identity && App.identity.role==='Admin')){ toast('Only an admin can delete a lead.','warn'); return; }
+  nlConfirm('Delete this lead permanently? This cannot be undone.', function(){
+    apiCall('leadDelete',{leadId:id}).then(function(){ toast('🗑 Lead deleted','success'); nlReload(); }).catch(function(e){ toast('Delete failed. '+((e&&e.message)||''),'err'); });
+  });
+}
 
 /* ---- Assigned by me (read-only tracking) ---- */
 function nlGoABM(){ App._leadView=App._leadView||{}; App._leadView.sub='abm'; App._leadView.abm=null; nlRenderABM(); apiCall('leadsByMe').then(function(r){ App._leadView.abm=(r&&r.leads)||[]; if(App._leadView.sub==='abm') nlRenderABM(); }).catch(function(){ App._leadView.abm=[]; if(App._leadView.sub==='abm') nlRenderABM(); }); }
@@ -5201,14 +5213,7 @@ function initAssistant(){
     document.body.appendChild(mi);
     updateChatBadge();
   }
-  if(!document.getElementById('newtask-fab')){
-    var nf=document.createElement('button'); nf.id='newtask-fab'; nf.className='newtask-fab'; nf.setAttribute('data-action','newtask'); nf.title='New / assign task'; nf.innerHTML='+';
-    document.body.appendChild(nf);
-  }
-  if(!document.getElementById('nl-fab')){
-    var nlb=document.createElement('button'); nlb.id='nl-fab'; nlb.className='nl-fab'; nlb.setAttribute('data-action','newlead'); nlb.title='Assign a new lead'; nlb.innerHTML='NL<small>lead</small>';
-    document.body.appendChild(nlb);
-  }
+    /* + FAB and NL ball removed — the assistant ball now covers Task, Note, Speak and Lead */
   if(!document.getElementById('voice-ov')){
     var v=document.createElement('div'); v.id='voice-ov'; v.className='overlay hidden';
     v.innerHTML='<div class="voice-box">'+
@@ -7665,6 +7670,7 @@ document.addEventListener('click', function(e){
     case 'nl-staff': nlGoStaff(el.getAttribute('data-id')); break;
     case 'nl-back': nlBack(); break;
     case 'nl-reload': nlReload(); break;
+    case 'nl-delete': nlDelete(el.getAttribute('data-lead')); break;
     case 'cl-add': ClEditor.add(el.getAttribute('data-target')); break;
     case 'confirm-ok': var _cf=App._confirmFn; closeModal('confirm-modal'); if(_cf) setTimeout(_cf,10); break;
     case 'remark-ok': { var _ta=document.getElementById('remark-text'); var _txt=(_ta.value||'').trim(); if(!_txt){ document.getElementById('remark-err').classList.add('show'); try{_ta.focus();}catch(_e){} break; } var _rf=App._remarkFn; App._remarkFn=null; closeModal('remark-modal'); if(_rf) setTimeout(function(){ _rf(_txt); },10); break; }
