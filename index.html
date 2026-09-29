@@ -1666,6 +1666,158 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
 @keyframes fadeUp{ from{ opacity:0; transform:translateY(12px);} to{ opacity:1; transform:none; } }
 @media(min-width:821px){ .install-bar{ display:none; } }
 body.modal-open .install-bar{ display:none !important; }
+/* ===================== NEW LEADS styles (additive, namespaced .nl-, theme-aware) ===================== */
+.nl-adminbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.nl-admbtn{border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text,#14151a);border-radius:11px;padding:9px 13px;font-size:.82rem;font-weight:700;cursor:pointer}
+.nl-admbtn:hover{border-color:var(--accent,#4f46e5)}
+.nl-dash{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+.nl-tile{display:flex;flex-direction:column;gap:4px;align-items:flex-start;position:relative;border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text,#14151a);border-radius:14px;padding:12px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.nl-tile:hover{transform:translateY(-2px);box-shadow:var(--shadow,0 8px 24px -14px rgba(20,22,40,.25))}
+.nl-tile.on{border-color:var(--accent,#4f46e5);box-shadow:0 0 0 3px var(--accent-soft,rgba(79,70,229,.14))}
+.nl-tile .nl-n{font-size:1.5rem;font-weight:800;line-height:1}
+.nl-tile .nl-l{font-size:.7rem;color:var(--text-muted,#6b7280);font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.nl-tile .nl-dot{position:absolute;top:11px;right:11px;width:9px;height:9px;border-radius:50%}
+.nl-dot.d-all{background:#8892a6}.nl-dot.d-new{background:#2563eb}.nl-dot.d-acknowledged{background:#c99700}.nl-dot.d-inprocess{background:#0f9d58}.nl-dot.d-ignored{background:#dc2626}.nl-dot.d-executed{background:#6b7280}
+.nl-tabbar{display:flex;gap:4px;background:var(--bg-soft,rgba(120,120,140,.08));border:1px solid var(--border,#e7e9f1);border-radius:14px;padding:5px;flex-wrap:wrap;margin-bottom:16px}
+.nl-tabx{flex:1;min-width:92px;text-align:center;border:none;background:transparent;color:var(--text-muted,#6b7280);border-radius:10px;padding:8px;font-size:.82rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.nl-tabx.on{background:var(--bg-card,#fff);color:var(--text,#14151a);box-shadow:var(--shadow,0 6px 16px -12px rgba(20,22,40,.4))}
+.nl-tabx b{display:inline-block;min-width:18px;font-size:.72rem;background:var(--bg-soft,rgba(120,120,140,.16));border-radius:6px;padding:0 5px;margin-left:4px}
+.nl-actions-row{margin-bottom:12px}
+.nl-empty{border:1px dashed var(--border,#e7e9f1);border-radius:14px;padding:26px;text-align:center;color:var(--text-muted,#6b7280);font-size:.9rem}
+/* card */
+.nl-lead{position:relative;background:var(--bg-card,#fff);border:1px solid var(--border,#e7e9f1);border-left:4px solid var(--nlc,#ccc);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow,0 6px 20px -14px rgba(20,22,40,.3));margin-bottom:12px;overflow:hidden}
+.nl-lead::before{content:"";position:absolute;inset:0;pointer-events:none;background:var(--nlc,#ccc);opacity:.05}
+.nl-lead>*{position:relative}
+.nl-lead.s-new{--nlc:#2563eb}.nl-lead.s-acknowledged{--nlc:#c99700}.nl-lead.s-inprocess{--nlc:#0f9d58}.nl-lead.s-ignored{--nlc:#dc2626}.nl-lead.s-executed{--nlc:#6b7280}
+.nl-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.nl-top>div:first-child{flex:1 1 200px;min-width:0}
+.nl-cl{font-weight:800;font-size:1.02rem;color:var(--text,#14151a)}
+.nl-mob{color:var(--text-muted,#6b7280);font-size:.82rem;font-weight:600}
+.nl-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.nl-pill{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border,#e0e6ef);background:var(--bg-soft,rgba(120,120,140,.08));color:var(--text,#41506a);white-space:nowrap}
+.nl-pr.urgent{background:rgba(220,38,38,.12);color:#dc2626;border-color:rgba(220,38,38,.3)}
+.nl-pr.medium{background:rgba(201,120,0,.14);color:#b06f00;border-color:rgba(201,120,0,.3)}
+.nl-pr.low{background:rgba(15,157,88,.14);color:#0b7a4b;border-color:rgba(15,157,88,.3)}
+.nl-st{border-radius:999px;font-size:.72rem;font-weight:800;padding:4px 11px;white-space:nowrap;color:#fff}
+.nl-st.new{background:#2563eb}.nl-st.acknowledged{background:#c99700}.nl-st.inprocess{background:#0f9d58}.nl-st.ignored{background:#dc2626}.nl-st.executed{background:#6b7280}
+.nl-nudge{display:flex;align-items:center;gap:7px;margin-top:11px;font-size:.82rem;font-weight:600;border-radius:10px;padding:8px 11px;line-height:1.3}
+.nl-nudge b{font-weight:800}
+.nl-nudge.warn{background:rgba(201,120,0,.12);color:#96650a;border:1px solid rgba(201,120,0,.28)}
+.nl-nudge.due{background:rgba(15,157,88,.12);color:#0b7a4b;border:1px solid rgba(15,157,88,.28)}
+.nl-nudge.gone{background:rgba(220,38,38,.1);color:#b42318;border:1px solid rgba(220,38,38,.26)}
+.nl-who{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.nl-avs{display:flex}
+.nl-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-size:.66rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card,#fff);margin-left:-7px}
+.nl-av:first-child{margin-left:0}
+.nl-with{font-size:.8rem;color:var(--text-muted,#6b7280);font-weight:600}
+.nl-stampline{font-size:.77rem;color:var(--text-muted,#6b7280);margin-left:auto}
+.nl-acts{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;padding-top:13px;border-top:1px solid var(--border,rgba(20,22,40,.08))}
+.nl-b{border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text,#14151a);border-radius:10px;padding:8px 12px;font-size:.82rem;font-weight:700;cursor:pointer}
+.nl-b:hover{border-color:var(--accent,#4f46e5)}
+.nl-b.primary{background:var(--accent,#4f46e5);border-color:var(--accent,#4f46e5);color:#fff}
+.nl-b.go{background:#0f9d58;border-color:#0f9d58;color:#fff}
+.nl-b.done{background:#14151a;border-color:#14151a;color:#fff}
+.nl-b.ghost{color:var(--text-muted,#6b7280)}
+.nl-b.warnbtn{background:rgba(220,38,38,.1);border-color:rgba(220,38,38,.35);color:#dc2626}
+/* closed stamp — its own flex column so it can never overlap */
+.nl-stamp-wrap{display:flex;gap:16px;align-items:center}
+.nl-stamp-main{flex:1 1 auto;min-width:0}
+.nl-stamp-seal{flex:none;display:flex;align-items:center;justify-content:center}
+.nl-stampsvg{width:150px;height:auto;color:#c0271f;opacity:.85;transform:rotate(-7deg);flex:none}
+.nl-stamptext{font:900 34px/1 "Arial Narrow","Helvetica Neue",Impact,"Segoe UI",system-ui,sans-serif;letter-spacing:1px;fill:currentColor;stroke:none}
+.nl-stamptop{font:800 9px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:3.5px;fill:currentColor;stroke:none}
+/* NL floating ball */
+.nl-fab{position:fixed;right:20px;bottom:150px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:900;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 12px 30px -8px rgba(79,70,229,.7);z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.nl-fab:hover{transform:scale(1.07)}
+.nl-fab small{font-size:.48rem;font-weight:700;opacity:.85;margin-top:1px}
+/* assign / input modal bits */
+.nl-lb{display:block;font-size:.72rem;font-weight:800;color:var(--text-muted,#6b7280);text-transform:uppercase;letter-spacing:.03em;margin:12px 0 6px}
+.nl-in{width:100%;border:1px solid var(--border,#e7e9f1);border-radius:10px;padding:10px 12px;font:inherit;font-size:.9rem;background:var(--bg-input,var(--bg-card,#fff));color:var(--text,#14151a);outline:none}
+.nl-in:focus{border-color:var(--accent,#4f46e5)}
+textarea.nl-in{min-height:64px;resize:vertical}
+.nl-row{display:flex;gap:12px;flex-wrap:wrap}.nl-row>div{flex:1 1 150px;min-width:0}
+.nl-seg{display:flex;gap:8px;flex-wrap:wrap}
+.nl-segb{flex:1 1 90px;border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text-muted,#6b7280);border-radius:10px;padding:9px;font-weight:700;font-size:.84rem;cursor:pointer}
+.nl-segb.on{border-color:var(--accent,#4f46e5);color:var(--accent,#4f46e5);background:var(--accent-soft,rgba(79,70,229,.1))}
+.nl-segb.on.u{border-color:#dc2626;color:#dc2626;background:rgba(220,38,38,.1)}
+.nl-segb.on.m{border-color:#c99700;color:#b06f00;background:rgba(201,120,0,.12)}
+.nl-segb.on.l{border-color:#0f9d58;color:#0b7a4b;background:rgba(15,157,88,.12)}
+.nl-alllink{border:none;background:transparent;color:var(--accent,#4f46e5);font-weight:700;font-size:.72rem;cursor:pointer;text-transform:none;margin-left:6px}
+.nl-people{display:flex;flex-wrap:wrap;gap:7px}
+.nl-ptag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text,#14151a);border-radius:999px;padding:5px 10px 5px 6px;font-size:.82rem;font-weight:600;cursor:pointer}
+.nl-ptag.sel{background:var(--accent,#4f46e5);border-color:var(--accent,#4f46e5);color:#fff}
+.nl-ptag .nl-mk{width:16px;height:16px;border-radius:50%;border:1.5px solid #c9cede;display:flex;align-items:center;justify-content:center;font-size:.68rem}
+.nl-ptag.sel .nl-mk{background:#fff;color:var(--accent,#4f46e5);border-color:#fff}
+.nl-hint{font-size:.75rem;color:var(--text-muted,#6b7280);margin-top:8px}
+.modal.modal-sm{max-width:440px}
+/* tracking chain */
+.nl-ch-cl{font-weight:800;font-size:1.05rem;color:var(--text,#14151a)}
+.nl-ch-sub{color:var(--text-muted,#6b7280);font-size:.82rem;margin:2px 0 16px}
+.nl-track{position:relative;padding-left:26px}
+.nl-track::before{content:"";position:absolute;left:8px;top:5px;bottom:8px;width:2px;background:var(--border,#e2e6ef)}
+.nl-tk{position:relative;padding:0 0 18px}
+.nl-tk::before{content:"";position:absolute;left:-22px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--bg-card,#fff);border:3px solid var(--accent,#4f46e5)}
+.nl-tk.exec::before{border-color:#0f9d58}.nl-tk.ign::before{border-color:#dc2626}.nl-tk.rev::before{border-color:#c99700}
+.nl-tk .nl-kt{font-weight:800;font-size:.9rem;color:var(--text,#14151a)}
+.nl-tk .nl-kd{font-size:.76rem;color:var(--text-muted,#6b7280);margin-top:1px}
+.nl-loc{display:inline-block;font-size:.72rem;font-weight:700;color:var(--text,#41506a);background:var(--bg-soft,rgba(120,120,140,.1));border:1px solid var(--border,#e0e6ef);border-radius:6px;padding:1px 7px;margin-top:6px}
+.nl-q{font-size:.83rem;background:var(--bg-soft,rgba(120,120,140,.08));border:1px solid var(--border,#e7e9f1);border-radius:9px;padding:7px 10px;margin-top:6px;color:var(--text,#333)}
+@media(max-width:760px){.nl-dash{grid-template-columns:repeat(3,1fr)}.nl-tabbar{flex-wrap:nowrap;overflow-x:auto}.nl-tabx{flex:0 0 auto}.nl-stamp-wrap{flex-wrap:wrap;justify-content:center}.nl-stamp-main{flex-basis:100%}.nl-stampsvg{width:132px}.nl-stampline{margin-left:0}.nl-fab{bottom:140px;right:16px}}
+
+/* ===================== NEW LEADS increment 2 styles ===================== */
+.nl-admbtn.nl-primary{background:var(--accent,#4f46e5);border-color:var(--accent,#4f46e5);color:#fff}
+.nl-back{border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--accent,#4f46e5);border-radius:10px;padding:7px 12px;font-size:.82rem;font-weight:700;cursor:pointer}
+.nl-abm{background:var(--bg-card,#fff);border:1px solid var(--border,#e7e9f1);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow,0 6px 20px -14px rgba(20,22,40,.3));margin-bottom:10px;cursor:pointer}
+.nl-abm-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nl-abm-cl{font-weight:800;color:var(--text,#14151a)}
+.nl-abm-meta{font-size:.78rem;color:var(--text-muted,#6b7280);margin-left:auto}
+.nl-abm-sub{font-size:.78rem;color:var(--text-muted,#6b7280);margin-top:6px}
+.nl-teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.nl-tcard{display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text,#14151a);border-radius:14px;padding:16px 10px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.nl-tcard:hover{transform:translateY(-2px);box-shadow:var(--shadow,0 10px 24px -16px rgba(20,22,40,.4))}
+.nl-tcard .nl-av{width:40px;height:40px;font-size:.85rem;margin:0}
+.nl-tnm{font-weight:800;font-size:.9rem;text-align:center}
+.nl-trole{font-size:.72rem;color:var(--text-muted,#6b7280)}
+.nl-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.nl-kpi{background:var(--bg-card,#fff);border:1px solid var(--border,#e7e9f1);border-radius:14px;padding:14px;box-shadow:var(--shadow,0 6px 20px -14px rgba(20,22,40,.3))}
+.nl-kv{font-size:1.5rem;font-weight:800;color:var(--text,#14151a)}
+.nl-kt{font-size:.74rem;color:var(--text-muted,#6b7280);font-weight:600;margin-top:3px}
+.nl-cards2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.nl-acard{background:var(--bg-card,#fff);border:1px solid var(--border,#e7e9f1);border-radius:16px;padding:16px;box-shadow:var(--shadow,0 6px 20px -14px rgba(20,22,40,.3));margin-bottom:14px}
+.nl-acard h3{margin:0 0 14px;font-size:.95rem;color:var(--text,#14151a)}
+.nl-donut{width:150px;height:150px;border-radius:50%;margin:0 auto;position:relative}
+.nl-donut::after{content:"";position:absolute;inset:26px;background:var(--bg-card,#fff);border-radius:50%}
+.nl-donut-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.nl-donut-c b{font-size:1.4rem;font-weight:800;color:var(--text,#14151a)}
+.nl-donut-c span{font-size:.7rem;color:var(--text-muted,#6b7280)}
+.nl-legend{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:14px;justify-content:center}
+.nl-lg{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--text-muted,#6b7280);font-weight:600}
+.nl-lg i{width:10px;height:10px;border-radius:3px}
+.nl-barrow{margin-bottom:11px}
+.nl-barlab{display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;color:var(--text,#14151a)}
+.nl-bartrack{height:8px;border-radius:6px;background:var(--bg-soft,rgba(120,120,140,.14));margin-top:5px}
+.nl-bartrack i{display:block;height:100%;border-radius:6px;background:var(--accent,#4f46e5)}
+.nl-bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:8px}
+.nl-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.nl-bar i{width:100%;max-width:30px;border-radius:7px 7px 0 0;background:linear-gradient(var(--accent,#4f46e5),#7c3aed);min-height:2px}
+.nl-bar span{font-size:.7rem;color:var(--text-muted,#6b7280);font-weight:600}
+.nl-bar em{font-size:.7rem;color:var(--text-muted,#6b7280);font-style:normal;font-weight:700}
+.nl-lbrow{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border,#eef1f6);font-size:.86rem;color:var(--text,#14151a)}
+.nl-lbrow:last-child{border-bottom:none}
+.nl-rank{width:22px;height:22px;border-radius:50%;background:var(--accent-soft,rgba(79,70,229,.12));color:var(--accent,#4f46e5);font-weight:800;font-size:.72rem;display:flex;align-items:center;justify-content:center}
+.nl-lbrow .nl-av{width:22px;height:22px;font-size:.6rem;margin:0}
+.nl-lbval{margin-left:auto;font-weight:800}
+.nl-heatwrap{overflow-x:auto}
+.nl-heatgrid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;min-width:740px}
+.nl-hc{width:11px;height:11px;border-radius:3px}
+.nl-hc.l0{background:var(--bg-soft,#eef1f6)}.nl-hc.l1{background:#c7d7f5}.nl-hc.l2{background:#7ea6ea}.nl-hc.l3{background:#3f6fd0}.nl-hc.l4{background:#1e40af}
+.nl-heatleg{display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;font-size:.72rem;color:var(--text-muted,#6b7280)}
+.nl-heatleg i{width:11px;height:11px;border-radius:3px}
+.nl-heatleg i.l0{background:var(--bg-soft,#eef1f6)}.nl-heatleg i.l1{background:#c7d7f5}.nl-heatleg i.l2{background:#7ea6ea}.nl-heatleg i.l3{background:#3f6fd0}.nl-heatleg i.l4{background:#1e40af}
+@media(max-width:760px){.nl-kpis{grid-template-columns:1fr 1fr}.nl-cards2{grid-template-columns:1fr}}
+.nl-tickrow{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--accent-soft,rgba(79,70,229,.1));color:var(--accent,#4f46e5);font-weight:700;font-size:.84rem;cursor:pointer;margin-bottom:8px;text-transform:none;letter-spacing:0}
+.nl-tickrow input{width:auto}
+
 </style>
 </head>
 <body>
@@ -1957,6 +2109,55 @@ body.modal-open .install-bar{ display:none !important; }
 </div>
 
 <!-- DETAIL MODAL -->
+<!-- ===================== NEW LEADS modals + stamp texture (additive) ===================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="nlGrunge" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="2" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter>
+</defs></svg>
+<div id="nl-assign-modal" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-h"><h3>Assign a lead</h3><button class="modal-x" data-action="close-modal" data-modal="nl-assign-modal">&times;</button></div>
+    <div class="modal-b">
+      <label class="nl-lb">Client name</label><input id="nl-a-client" class="nl-in" placeholder="e.g. Ramesh Gupta">
+      <label class="nl-lb">Mobile (optional)</label><input id="nl-a-mobile" class="nl-in" placeholder="Phone number">
+      <label class="nl-lb">Description</label><textarea id="nl-a-desc" class="nl-in" placeholder="What does the client want?"></textarea>
+      <div class="nl-row"><div><label class="nl-lb">Department</label><select id="nl-a-dept" class="nl-in" onchange="nlDeptChanged()"></select></div><div><label class="nl-lb">Category</label><select id="nl-a-cat" class="nl-in"></select></div></div>
+      <label class="nl-lb">Priority</label>
+      <div class="nl-seg"><button type="button" id="nl-pr-urgent" class="nl-segb u" data-action="nl-pr" data-pr="urgent">🔴 Urgent</button><button type="button" id="nl-pr-medium" class="nl-segb m" data-action="nl-pr" data-pr="medium">🟠 Medium</button><button type="button" id="nl-pr-low" class="nl-segb l" data-action="nl-pr" data-pr="low">🟢 Low</button></div>
+      <label class="nl-lb">Assign to <button type="button" class="nl-alllink" data-action="nl-pick-all">select all</button></label>
+      <label class="nl-tickrow"><input type="checkbox" id="nl-dept-all-cb" data-action="nl-dept-all"> Select whole <b id="nl-dept-all-lbl">department</b></label>
+      <div id="nl-a-people" class="nl-people"></div>
+      <div class="nl-hint">Assigned to several → one shared lead they all work; whoever acts moves it for everyone.</div>
+    </div>
+    <div class="modal-f"><button class="btn primary" data-action="nl-assign-submit">Assign lead &rarr;</button></div>
+  </div>
+</div>
+<div id="nl-input-modal" class="overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-h"><h3 id="nl-i-title">Add a remark</h3><button class="modal-x" data-action="close-modal" data-modal="nl-input-modal">&times;</button></div>
+    <div class="modal-b">
+      <textarea id="nl-i-text" class="nl-in" placeholder="Your remark&hellip;"></textarea>
+      <div id="nl-i-dur" style="display:none">
+        <div class="nl-seg"><button type="button" id="nl-dur-5" class="nl-segb" data-action="nl-dur" data-d="5">5 days</button><button type="button" id="nl-dur-15" class="nl-segb" data-action="nl-dur" data-d="15">15 days</button><button type="button" id="nl-dur-30" class="nl-segb" data-action="nl-dur" data-d="30">30 days</button></div>
+        <label class="nl-lb">Or custom days</label><input id="nl-dur-custom" class="nl-in" type="number" min="1" placeholder="e.g. 10">
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn primary" data-action="nl-input-save">Save</button></div>
+  </div>
+</div>
+<div id="nl-confirm-modal" class="overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-h"><h3>Please confirm</h3><button class="modal-x" data-action="close-modal" data-modal="nl-confirm-modal">&times;</button></div>
+    <div class="modal-b"><p id="nl-c-msg"></p></div>
+    <div class="modal-f"><button class="btn ghost" data-action="close-modal" data-modal="nl-confirm-modal">Cancel</button><button class="btn primary" data-action="nl-confirm-yes">Yes, continue</button></div>
+  </div>
+</div>
+<div id="nl-chain-modal" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-h"><h3>Track lead</h3><button class="modal-x" data-action="close-modal" data-modal="nl-chain-modal">&times;</button></div>
+    <div class="modal-b"><div class="nl-ch-cl" id="nl-ch-title"></div><div class="nl-ch-sub" id="nl-ch-sub"></div><div id="nl-ch-body"></div></div>
+  </div>
+</div>
+
 <div id="detail-modal" class="overlay hidden">
   <div class="modal modal-lg">
     <div class="modal-h"><h3 id="det-title">Task</h3><button class="modal-x" data-action="close-modal" data-modal="detail-modal">&times;</button></div>
@@ -2477,6 +2678,81 @@ var FB = (function(){
           return col('notes').doc(String(b.id)).delete().then(function(){ return {ok:true}; });
         }
 
+          case 'assignLead': {
+            var ul=me(); var nowl=nowISO(); var lid=genUid();
+            var asg=Array.isArray(b.assignees)?b.assignees:[];
+            var aids=asg.map(function(a){return String(a.userId);});
+            if(!b.clientName) throw new Error('Client name is required.');
+            if(!aids.length) throw new Error('Pick at least one person.');
+            var lead={ id:lid, createdById:ul.userId, createdByName:ul.name, createdByDept:String(b.fromDept||''),
+              assignees:asg.map(function(a){return {userId:String(a.userId),name:String(a.name||'')};}), assigneeIds:aids,
+              clientName:String(b.clientName), mobile:String(b.mobile||''), description:String(b.description||''),
+              department:String(b.department||''), category:String(b.category||''), priority:String(b.priority||'medium'),
+              adminUrgent:false, stage:'new', lapsedFrom:null, everInProcess:false, renewBounded:false,
+              durationDays:null, inProcessStartAt:null, dueAt:null, dueReminderAt:null, dueReminderSent:false, ignoredAt:'',
+              assignedAt:nowl, lastActionAt:nowl, nextDeadlineAt:new Date(Date.now()+2*86400000).toISOString(),
+              history:[{ t:nowl, type:'assigned', byId:ul.userId, byName:ul.name, text:'to '+aids.length }],
+              createdAt:nowl, updatedAt:nowl };
+            return col('leads').doc(lid).set(lead).then(function(){
+              var jobs=[]; lead.assignees.forEach(function(a){ if(String(a.userId)!==String(ul.userId)) jobs.push(addNotif(a.userId, ul.name, ul.name+' sent you a lead: '+lead.clientName+' ('+lead.department+')', lid, 'lead', 'leads')); });
+              return Promise.all(jobs);
+            }).then(function(){ try{ logAudit('Lead assigned', lid, lead.clientName, 'to '+aids.length+' · '+lead.department); }catch(e){} return {ok:true, lead:lead}; });
+          }
+          case 'leadAction': {
+            var u2=me(); var now2=nowISO(); var IN48=function(){ return new Date(Date.now()+2*86400000).toISOString(); };
+            return col('leads').doc(String(b.leadId)).get().then(function(s){
+              if(!s.exists) throw new Error('Lead not found.');
+              var l=s.data(); var stage=l.stage||'new'; var act=b.act; var upd={ updatedAt:now2 }; var notifyOthers=null, notifyAll=null; var etype='remark';
+              if(act==='remark'){
+                if(stage==='new'){ upd.stage='acknowledged'; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); notifyOthers=u2.name+' acknowledged the lead: '+l.clientName; etype='acknowledged'; }
+                else if(stage==='acknowledged'){ upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); etype='remark'; }
+                else if(stage==='inprocess'){ upd.lastActionAt=now2; if(l.renewBounded) upd.nextDeadlineAt=IN48(); etype='remark'; }
+                else if(stage==='ignored'){
+                  if(l.lapsedFrom==='inprocess'){ upd.stage='inprocess'; upd.renewBounded=true; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); notifyOthers=u2.name+' revived the lead (In Process): '+l.clientName; }
+                  else { upd.stage='acknowledged'; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); notifyOthers=u2.name+' revived the lead: '+l.clientName; }
+                  etype='revived';
+                } else { return {ok:false}; }
+                upd.history=(l.history||[]).concat([{t:now2,type:etype,byId:u2.userId,byName:u2.name,text:String(b.text||'')}]);
+              } else if(act==='inprocess'){
+                if(stage!=='acknowledged') return {ok:false};
+                var dd=parseInt(b.durationDays,10)||7; var due=new Date(Date.now()+dd*86400000);
+                upd.stage='inprocess'; upd.everInProcess=true; upd.renewBounded=false; upd.durationDays=dd; upd.inProcessStartAt=now2; upd.dueAt=due.toISOString(); upd.dueReminderAt=new Date(due.getTime()-86400000).toISOString(); upd.dueReminderSent=false; upd.lastActionAt=now2; upd.nextDeadlineAt=new Date(due.getTime()+86400000).toISOString();
+                upd.history=(l.history||[]).concat([{t:now2,type:'inprocess',byId:u2.userId,byName:u2.name,text:dd+'-day duration'}]);
+                notifyOthers=u2.name+' moved the lead to In Process: '+l.clientName;
+              } else if(act==='done'){
+                if(stage!=='inprocess') return {ok:false};
+                upd.stage='executed'; upd.nextDeadlineAt=''; upd.history=(l.history||[]).concat([{t:now2,type:'done',byId:u2.userId,byName:u2.name}]);
+                notifyOthers=u2.name+' closed the lead: '+l.clientName;
+              } else if(act==='autoIgnore'){
+                if(stage==='executed'||stage==='ignored') return {ok:true};
+                upd.stage='ignored'; upd.lapsedFrom=(stage==='inprocess'?'inprocess':(stage==='acknowledged'?'acknowledged':'new')); upd.ignoredAt=now2;
+                upd.history=(l.history||[]).concat([{t:now2,type:'ignored',byId:'system',byName:'Auto',text:'no action in time'}]);
+                notifyAll='Lead moved to Ignored: '+l.clientName;
+              } else if(act==='adminUrgent'){
+                upd.adminUrgent=true; upd.priority='urgent'; upd.history=(l.history||[]).concat([{t:now2,type:'admin-urgent',byId:u2.userId,byName:u2.name}]);
+                notifyAll=u2.name+' (admin) flagged this urgent: '+l.clientName;
+              } else if(act==='comment'){
+                upd.history=(l.history||[]).concat([{t:now2,type:'admin-comment',byId:u2.userId,byName:u2.name,text:String(b.text||'')}]);
+                notifyAll=u2.name+' (admin) commented on: '+l.clientName;
+              } else { return {ok:false,error:'unknown lead action'}; }
+              return col('leads').doc(String(b.leadId)).set(upd,{merge:true}).then(function(){
+                var jobs=[]; var recips=(l.assigneeIds||[]);
+                if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)) jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); }); }
+                if(notifyAll){ recips.forEach(function(rid){ jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); }); }
+                return Promise.all(jobs);
+              }).then(function(){ return {ok:true}; });
+            });
+          }
+          case 'leadsByMe': {
+            return col('leads').where('createdById','==',me().userId).get().then(function(qs){ var a=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; a.push(l); }); return {ok:true, leads:a}; });
+          }
+          case 'leadsFor': {
+            return col('leads').where('assigneeIds','array-contains',String(b.userId)).get().then(function(qs){ var a=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; a.push(l); }); return {ok:true, leads:a}; });
+          }
+          case 'allLeads': {
+            if(!isOverseer()) return {ok:false, error:'admins only'};
+            return col('leads').get().then(function(qs){ var a=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; a.push(l); }); return {ok:true, leads:a}; });
+          }
         default: return {ok:false, error:'Unknown action: '+action};
       }
     });
@@ -2524,6 +2800,7 @@ var CATEGORY_MASTER = [
 var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
+  _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{},
   departments:[], categoryMaster:[], prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
   reminders:[], staffCache:null, members:[], _staffView:null, _notifSeen:{}, dashFilter:'all', templates:[], slateNotes:[], _slateView:null,
@@ -3124,6 +3401,13 @@ var FBLive = {
       //  admin app-load. The Activity Log loads on demand instead via getAudit (last 300 only).)
     }
 
+      // My leads (shared cross-department hand-offs)
+      try{ db.collection('leads').where('assigneeIds','array-contains',uid).onSnapshot(function(qs){
+        var arr=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; arr.push(l); });
+        App._leads=arr;
+        if(App.view==='leads') refreshView();
+      }, function(){}); }catch(e){}
+
     // My slate notes
     db.collection('notes').where('ownerId','==',uid).onSnapshot(function(qs){
       if(slateIsBusy()) return;
@@ -3204,9 +3488,333 @@ function visibleDepartments(){
   if(!allowed || !allowed.length) return [];
   return App.departments.filter(function(d){ return allowed.indexOf(d.department)!==-1; });
 }
+/* ===================== NEW LEADS — cross-department lead hand-offs =====================
+   Self-contained, additive. Uses existing globals: App, apiCall, esc, toast, openModal,
+   closeModal, isBoss, nowISO-free (uses Date). Firestore collection: 'leads'. */
+var NL_DAY=86400000, NL_48H=2*NL_DAY;
+function nlParse(iso){ var t=iso?new Date(iso).getTime():0; return isNaN(t)?0:t; }
+function nlMeId(){ return String((App.identity&&App.identity.employeeId)||''); }
+function nlMeName(){ return (App.identity&&App.identity.employeeName)||''; }
+function nlInitials(name){ var p=String(name||'').trim().split(/\s+/); return (((p[0]||'')[0]||'')+((p[1]||'')[0]||''))||'?'; }
+
+/* ---- effective stage from timestamps (board is correct even before the worker materialises it) ---- */
+function nlEffective(l){
+  if(!l) return 'new'; var s=l.stage||'new', now=Date.now();
+  if(s==='executed') return 'executed';
+  if(s==='ignored') return 'ignored';
+  if(s==='new') return (now > nlParse(l.assignedAt)+NL_48H) ? 'ignored' : 'new';
+  if(s==='acknowledged') return (now > nlParse(l.lastActionAt)+NL_48H) ? 'ignored' : 'acknowledged';
+  if(s==='inprocess'){
+    if(l.renewBounded) return (now > nlParse(l.lastActionAt)+NL_48H) ? 'ignored' : 'inprocess';
+    return (now > nlParse(l.dueAt)+NL_DAY) ? 'ignored' : 'inprocess';
+  }
+  return s;
+}
+function nlLeft(ms, daysOnly){ var d=ms-Date.now(); if(d<0)d=0; var days=Math.floor(d/NL_DAY), h=Math.floor((d%NL_DAY)/3600000); if(daysOnly) return days+(days===1?' day':' days'); return days+'d '+(h<10?'0':'')+h+'h'; }
+function nlSince(ms){ var d=Date.now()-ms; if(d<0)d=0; var days=Math.floor(d/NL_DAY); if(days<=0){ var h=Math.floor(d/3600000); return (h||1)+((h===1)?' hour ago':' hours ago'); } return days+(days===1?' day ago':' days ago'); }
+function nlIgnoredAt(l){ if(l.ignoredAt) return nlParse(l.ignoredAt); var s=l.stage||'new'; if(s==='inprocess'&&!l.renewBounded) return nlParse(l.dueAt)+NL_DAY; return nlParse(l.lastActionAt||l.assignedAt)+NL_48H; }
+function nlNudge(l){
+  var eff=nlEffective(l);
+  if(eff==='new'||eff==='acknowledged'){ var dl=nlParse(l.lastActionAt||l.assignedAt)+NL_48H; return {cls:'warn', html:'⏳ Take action or it moves to Ignored in <b>'+nlLeft(dl)+'</b>'}; }
+  if(eff==='inprocess'){ if(l.renewBounded){ var dl2=nlParse(l.lastActionAt)+NL_48H; return {cls:'warn', html:'⏳ Add a remark or it lapses in <b>'+nlLeft(dl2)+'</b>'}; } return {cls:'due', html:'⏱️ Close it within <b>'+nlLeft(nlParse(l.dueAt),true)+'</b> or it lapses to Ignored'}; }
+  if(eff==='ignored') return {cls:'gone', html:'⚠️ Lapsed <b>'+nlSince(nlIgnoredAt(l))+'</b> — add a remark to revive it'};
+  return {cls:'', html:''};
+}
+function nlLastEvent(l){
+  var h=(l.history||[]); var last=h.length?h[h.length-1]:null; if(!last) return 'Assigned by '+esc(l.createdByName||'');
+  var map={assigned:'Assigned by ',acknowledged:'Acknowledged by ',remark:'Remark by ',inprocess:'In Process by ',done:'Closed by ',ignored:'Auto-moved to Ignored',revived:'Revived by ','admin-urgent':'Flagged urgent by ','admin-comment':'Comment by '};
+  var base=map[last.type]||'Updated by ';
+  if(last.type==='ignored') return base;
+  return base+esc(last.byName||'')+' · '+nlSince(nlParse(last.t));
+}
+
+/* ---- client-side materialisation of the auto-lapse (so a later remark revives correctly;
+        the worker will take this over for offline/push once deployed) ---- */
+function nlSweepIgnored(){
+  App._nlIgnoring=App._nlIgnoring||{};
+  (App._leads||[]).forEach(function(l){
+    if(!l||!l.id) return;
+    if(nlEffective(l)==='ignored' && (l.stage!=='ignored') && !App._nlIgnoring[l.id]){
+      App._nlIgnoring[l.id]=1;
+      apiCall('leadAction',{leadId:l.id, act:'autoIgnore'}).catch(function(){ delete App._nlIgnoring[l.id]; });
+    }
+  });
+}
+
+/* ---- render the New Leads section (own board) ---- */
+function nlTile(stage,label,n,active){ return '<button class="nl-tile'+(active===stage?' on':'')+'" data-action="nl-tab" data-tab="'+stage+'"><span class="nl-dot d-'+stage+'"></span><span class="nl-n">'+n+'</span><span class="nl-l">'+label+'</span></button>'; }
+function nlTab(stage,label,n,active){ return '<button class="nl-tabx'+(active===stage?' on':'')+'" data-action="nl-tab" data-tab="'+stage+'">'+label+' <b>'+n+'</b></button>'; }
+function nlOpenSection(){ App._leadView=App._leadView||{tab:'all'}; App._leadView.sub='board'; renderLeads(); }
+function renderLeads(){
+  App.view='leads'; App._leadView=App._leadView||{tab:'all',sub:'board'};
+  var sub=App._leadView.sub||'board';
+  if(sub==='abm') return nlRenderABM();
+  if(sub==='biz') return nlRenderBiz();
+  if(sub==='teams') return nlRenderTeams();
+  if(sub==='staff') return nlRenderStaff();
+  nlRenderBoard();
+}
+function nlRenderBoard(){
+  App.view='leads'; App._leadView=App._leadView||{tab:'all',sub:'board'};
+  nlSweepIgnored();
+  var all=(App._leads||[]).slice();
+  var cnt={all:all.length,new:0,acknowledged:0,inprocess:0,ignored:0,executed:0};
+  all.forEach(function(l){ var e=nlEffective(l); cnt[e]=(cnt[e]||0)+1; });
+  var tab=App._leadView.tab||'all';
+  var h='<div class="cat-head"><div class="cat-title">New Leads</div><div class="cat-sub">Hand a lead to another department and track it end to end.</div></div>';
+  h+='<div class="nl-adminbtns"><button class="nl-admbtn nl-primary" data-action="newlead">＋ Assign a lead</button><button class="nl-admbtn" data-action="nl-abm">📤 Assigned by me</button>'+(isBoss()?'<button class="nl-admbtn" data-action="nl-biz">📊 Business Dashboard</button><button class="nl-admbtn" data-action="nl-teams">👥 Teams</button>':'')+'</div>';
+  h+='<div class="nl-dash">'+nlTile('all','All',cnt.all,tab)+nlTile('new','New',cnt.new,tab)+nlTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTile('inprocess','In Process',cnt.inprocess,tab)+nlTile('ignored','Ignored',cnt.ignored,tab)+nlTile('executed','Closed',cnt.executed,tab)+'</div>';
+  h+='<div class="nl-tabbar">'+nlTab('all','All',cnt.all,tab)+nlTab('new','New',cnt.new,tab)+nlTab('ignored','Ignored',cnt.ignored,tab)+nlTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTab('inprocess','In Process',cnt.inprocess,tab)+nlTab('executed','Closed',cnt.executed,tab)+'</div>';
+  var list=all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
+  list.sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); });
+  if(!list.length) h+='<div class="nl-empty">No leads here yet. Use <b>＋ Assign a lead</b> or the NL button.</div>';
+  else list.forEach(function(l){ h+=nlCard(l,false); });
+  document.getElementById('content').innerHTML=h;
+}
+function nlActions(l,eff,admin){
+  var id=esc(l.id);
+  function b(act,label,cls){ return '<button class="btn nl-b '+(cls||'')+'" data-action="'+act+'" data-lead="'+id+'">'+label+'</button>'; }
+  if(admin){ return b('nl-urgent','🔴 Mark Urgent','warnbtn')+b('nl-comment','💬 Comment','primary')+b('nl-chain','Track lead','ghost'); }
+  var out='';
+  if(eff==='new') out+=b('nl-remark','＋ Add remark (acknowledge)','primary');
+  else if(eff==='acknowledged') out+=b('nl-remark','＋ Remark','primary')+b('nl-inprocess','▶ Move to In Process','go');
+  else if(eff==='inprocess') out+=b('nl-remark','＋ Remark','primary')+b('nl-done','✓ Done','done');
+  else if(eff==='ignored') out+=b('nl-remark','＋ Remark to revive','primary');
+  out+=b('nl-chain','Track lead','ghost');
+  return out;
+}
+function nlStampSVG(){
+  return '<div class="nl-stamp-seal"><svg class="nl-stampsvg" viewBox="0 0 200 96" aria-label="Lead closed stamp"><g filter="url(#nlGrunge)" fill="none" stroke="currentColor"><rect x="6" y="6" width="188" height="84" rx="8" stroke-width="6"/><rect x="14" y="14" width="172" height="68" rx="5" stroke-width="1.8" stroke-dasharray="2.5 3"/><text x="100" y="35" text-anchor="middle" class="nl-stamptop">LEAD</text><text x="100" y="75" text-anchor="middle" class="nl-stamptext">CLOSED</text></g></svg></div>';
+}
+function nlCard(l,admin){
+  var eff=nlEffective(l);
+  var pr=(l.priority||'medium');
+  var prLabel=({urgent:'🔴 Urgent',medium:'🟠 Medium',low:'🟢 Low'})[pr]||'🟠 Medium';
+  var stLabel=({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored',executed:'Closed'})[eff];
+  var assignees=(l.assignees||[]);
+  var avs=assignees.slice(0,3).map(function(a){ return '<span class="nl-av">'+esc(nlInitials(a.name).toUpperCase())+'</span>'; }).join('');
+  if(assignees.length>3) avs+='<span class="nl-av">+'+(assignees.length-3)+'</span>';
+  var withTxt=assignees.map(function(a){return a.name;}).slice(0,2).join(', ')+(assignees.length>2?' +'+(assignees.length-2):'');
+  var nudge=nlNudge(l);
+  var top='<div class="nl-top"><div class="nl-cl">'+esc(l.clientName||'—')+(l.mobile?' <span class="nl-mob">· '+esc(l.mobile)+'</span>':'')+'</div>'+
+    '<div class="nl-pills"><span class="nl-pill nl-p-dept">'+esc(l.department||'')+'</span><span class="nl-pill nl-p-cat">'+esc(l.category||'')+'</span><span class="nl-pill nl-pr '+pr+'">'+prLabel+'</span><span class="nl-st '+eff+'">'+stLabel+'</span>'+(l.adminUrgent?'<span class="nl-pill nl-pr urgent">★ Admin</span>':'')+'</div></div>';
+  var nudgeH=(nudge.html && eff!=='executed')?'<div class="nl-nudge '+nudge.cls+'">'+nudge.html+'</div>':'';
+  var who='<div class="nl-who">'+(avs?'<div class="nl-avs">'+avs+'</div>':'')+'<span class="nl-with">with '+esc(withTxt||'—')+'</span><span class="nl-stampline">'+nlLastEvent(l)+'</span></div>';
+  var acts='<div class="nl-acts">'+nlActions(l,eff,admin)+'</div>';
+  var inner=top+nudgeH+who+acts;
+  var body = (eff==='executed') ? ('<div class="nl-stamp-wrap"><div class="nl-stamp-main">'+inner+'</div>'+nlStampSVG()+'</div>') : inner;
+  return '<div class="nl-lead s-'+eff+'" data-lead="'+esc(l.id)+'">'+body+'</div>';
+}
+
+/* ---- assign-lead modal ---- */
+function nlOpenAssign(){
+  App._nlPick=App._nlPick||{ids:{},pr:'medium'};
+  App._nlPick={ids:{},pr:'medium'};
+  var deps=(App.departments||[]);
+  var depOpts=deps.map(function(d){ return '<option>'+esc(d.department)+'</option>'; }).join('');
+  var d0=deps[0]||{categories:[]};
+  var catOpts=(d0.categories||[]).map(function(c){ return '<option>'+esc(typeof c==='string'?c:(c.category||c.name||''))+'</option>'; }).join('');
+  document.getElementById('nl-a-dept').innerHTML=depOpts||'<option>General</option>';
+  document.getElementById('nl-a-cat').innerHTML=catOpts||'<option>Lead</option>';
+  document.getElementById('nl-a-client').value='';
+  document.getElementById('nl-a-mobile').value='';
+  document.getElementById('nl-a-desc').value='';
+  var lbl0=document.getElementById('nl-dept-all-lbl'); if(lbl0) lbl0.textContent=(deps[0]&&deps[0].department)||'department';
+  var cb0=document.getElementById('nl-dept-all-cb'); if(cb0) cb0.checked=false;
+  nlPaintPr(); nlPaintPeople();
+  openModal('nl-assign-modal');
+}
+function nlPaintPr(){ var pr=(App._nlPick&&App._nlPick.pr)||'medium'; ['urgent','medium','low'].forEach(function(k){ var el=document.getElementById('nl-pr-'+k); if(el) el.classList.toggle('on',k===pr); }); }
+function nlPaintPeople(){
+  var box=document.getElementById('nl-a-people'); if(!box) return;
+  var meId=nlMeId(); var sel=(App._nlPick&&App._nlPick.ids)||{};
+  var mem=(App.members||[]).slice();
+  var html=mem.map(function(m){ var on=!!sel[String(m.userId)]; return '<button type="button" class="nl-ptag'+(on?' sel':'')+'" data-action="nl-pick" data-id="'+esc(m.userId)+'"><span class="nl-mk">'+(on?'✓':'')+'</span>'+esc(m.name)+(String(m.userId)===meId?' (me)':'')+'</button>'; }).join('');
+  box.innerHTML=html||'<span class="nl-hint">No team members loaded.</span>';
+}
+function nlTogglePick(id){ App._nlPick=App._nlPick||{ids:{},pr:'medium'}; var s=App._nlPick.ids; if(s[String(id)]) delete s[String(id)]; else s[String(id)]=1; nlPaintPeople(); }
+function nlPickAll(){ App._nlPick=App._nlPick||{ids:{},pr:'medium'}; var s={}; (App.members||[]).forEach(function(m){ s[String(m.userId)]=1; }); App._nlPick.ids=s; nlPaintPeople(); }
+function nlSetPr(p){ App._nlPick=App._nlPick||{ids:{},pr:'medium'}; App._nlPick.pr=p; nlPaintPr(); }
+function nlDeptChanged(){
+  var dep=document.getElementById('nl-a-dept').value;
+  var d=(App.departments||[]).find(function(x){return x.department===dep;})||{categories:[]};
+  document.getElementById('nl-a-cat').innerHTML=(d.categories||[]).map(function(c){ return '<option>'+esc(typeof c==='string'?c:(c.category||c.name||''))+'</option>'; }).join('')||'<option>Lead</option>';
+  var lbl=document.getElementById('nl-dept-all-lbl'); if(lbl) lbl.textContent=dep;
+  var cb=document.getElementById('nl-dept-all-cb'); if(cb) cb.checked=false;
+}
+function nlDeptMembers(dept){
+  if(!dept) return [];
+  var meta=App._userMeta||{};
+  return (App.members||[]).filter(function(m){ var a=(meta[String(m.userId)]||{}).allowedDepartments; return Array.isArray(a) && a.indexOf(dept)!==-1; }).map(function(m){ return String(m.userId); });
+}
+function nlPickDept(){
+  App._nlPick=App._nlPick||{ids:{},pr:'medium'};
+  var dept=document.getElementById('nl-a-dept').value;
+  var ids=nlDeptMembers(dept);
+  var cb=document.getElementById('nl-dept-all-cb'); var on=cb?cb.checked:true;
+  if(on){
+    if(!ids.length){ toast('No staff are assigned to '+dept+' yet — pick people manually.','info'); if(cb) cb.checked=false; return; }
+    ids.forEach(function(id){ App._nlPick.ids[id]=1; });
+  } else { ids.forEach(function(id){ delete App._nlPick.ids[id]; }); }
+  nlPaintPeople();
+}
+function nlSubmitAssign(){
+  if(App._nlBusy) return;
+  var client=(document.getElementById('nl-a-client').value||'').trim();
+  if(!client){ toast('Add a client name first.','warn'); return; }
+  var sel=(App._nlPick&&App._nlPick.ids)||{};
+  var ids=Object.keys(sel);
+  if(!ids.length){ toast('Pick at least one person to assign to.','warn'); return; }
+  var assignees=ids.map(function(id){ var m=(App.members||[]).find(function(x){return String(x.userId)===String(id);})||{userId:id,name:'—'}; return {userId:String(id),name:m.name}; });
+  var payload={ clientName:client, mobile:(document.getElementById('nl-a-mobile').value||'').trim(), description:(document.getElementById('nl-a-desc').value||'').trim(),
+    department:document.getElementById('nl-a-dept').value, category:document.getElementById('nl-a-cat').value, priority:(App._nlPick.pr||'medium'),
+    fromDept:'', assignees:assignees };
+  App._nlBusy=true;
+  apiCall('assignLead',payload).then(function(){ App._nlBusy=false; toast('✓ Lead assigned to '+assignees.length+' '+(assignees.length>1?'people':'person'),'success'); closeModal('nl-assign-modal'); }).catch(function(e){ App._nlBusy=false; toast('Could not assign. '+((e&&e.message)||''),'err'); });
+}
+
+/* ---- lead actions from cards ---- */
+function nlLeadById(id){ return (App._leads||[]).concat(App._leadsAdmin||[]).find(function(l){return String(l.id)===String(id);}); }
+function nlDo(id, act, extra){
+  var p=Object.assign({leadId:id, act:act}, extra||{});
+  return apiCall('leadAction',p).then(function(){ if(App.view==='leads') refreshView(); }).catch(function(e){ toast('Action failed. '+((e&&e.message)||''),'err'); });
+}
+function nlRemark(id){
+  var l=nlLeadById(id); var eff=l?nlEffective(l):'';
+  nlInput((eff==='ignored'?'Add a remark to revive this lead':'Add a remark'),'Your remark…',function(txt){ if(!(txt||'').trim()){ return; } nlDo(id,'remark',{text:txt.trim()}).then(function(){ toast('✓ Remark added','success'); }); });
+}
+function nlInProcess(id){
+  nlDuration(function(days){ nlDo(id,'inprocess',{durationDays:days}).then(function(){ toast('✓ Moved to In Process ('+days+'-day plan)','success'); }); });
+}
+function nlDone(id){ nlConfirm('Mark this lead as Closed? It cannot be reopened.', function(){ nlDo(id,'done').then(function(){ toast('✓ Lead closed','success'); }); }); }
+function nlUrgent(id){ nlDo(id,'adminUrgent').then(function(){ toast('🔴 Flagged urgent — assignees notified','success'); }); }
+function nlComment(id){ nlInput('Comment to the assignees','Your note…',function(txt){ if(!(txt||'').trim()) return; nlDo(id,'comment',{text:txt.trim()}).then(function(){ toast('✓ Comment sent','success'); }); }); }
+
+/* ---- small input / confirm / duration modals ---- */
+function nlInput(title, ph, cb){ App._nlInputCb=cb; document.getElementById('nl-i-title').textContent=title; var ta=document.getElementById('nl-i-text'); ta.value=''; ta.placeholder=ph||''; document.getElementById('nl-i-dur').style.display='none'; document.getElementById('nl-i-text').style.display=''; App._nlInputMode='text'; openModal('nl-input-modal'); setTimeout(function(){ try{ ta.focus(); }catch(e){} },30); }
+function nlDuration(cb){ App._nlDurCb=cb; document.getElementById('nl-i-title').textContent='How long will this take?'; document.getElementById('nl-i-text').style.display='none'; document.getElementById('nl-i-dur').style.display='block'; App._nlInputMode='dur'; App._nlDur=15; nlPaintDur(); openModal('nl-input-modal'); }
+function nlPaintDur(){ [5,15,30].forEach(function(d){ var el=document.getElementById('nl-dur-'+d); if(el) el.classList.toggle('on',App._nlDur===d); }); var c=document.getElementById('nl-dur-custom'); if(c && [5,15,30].indexOf(App._nlDur)<0) c.value=App._nlDur; }
+function nlSetDur(d){ App._nlDur=d; nlPaintDur(); }
+function nlInputSave(){
+  if(App._nlInputMode==='dur'){ var c=document.getElementById('nl-dur-custom'); var d=App._nlDur; if(c && c.value){ var v=parseInt(c.value,10); if(v>0) d=v; } closeModal('nl-input-modal'); if(App._nlDurCb) App._nlDurCb(d); return; }
+  var txt=document.getElementById('nl-i-text').value; closeModal('nl-input-modal'); if(App._nlInputCb) App._nlInputCb(txt);
+}
+function nlConfirm(msg, cb){ App._nlConfirmCb=cb; document.getElementById('nl-c-msg').textContent=msg; openModal('nl-confirm-modal'); }
+function nlConfirmYes(){ closeModal('nl-confirm-modal'); if(App._nlConfirmCb) App._nlConfirmCb(); }
+
+/* ---- tracking chain (detail) modal ---- */
+function nlOpenChain(id){
+  var l=nlLeadById(id); if(!l){ toast('Lead not found','warn'); return; }
+  document.getElementById('nl-ch-title').textContent=l.clientName||'Lead';
+  document.getElementById('nl-ch-sub').textContent=(l.department||'')+' · '+(l.category||'')+' · shared by '+((l.assignees||[]).map(function(a){return a.name;}).slice(0,3).join(', ')||'—');
+  var hist=(l.history||[]).slice();
+  var icons={assigned:'',acknowledged:'',remark:'',inprocess:'',done:'exec',ignored:'ign',revived:'rev','admin-urgent':'','admin-comment':''};
+  var lab={assigned:'Lead assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived','admin-urgent':'Flagged urgent (admin)','admin-comment':'Admin comment'};
+  var rows=hist.map(function(ev){
+    var cls=icons[ev.type]||'';
+    var when=nlFmt(ev.t);
+    var loc=ev.byName?('<span class="nl-loc">by '+esc(ev.byName)+(ev.text&&ev.type==='inprocess'?' · '+esc(ev.text):'')+'</span>'):'';
+    var q=(ev.text && ev.type!=='inprocess')?'<div class="nl-q">“'+esc(ev.text)+'”</div>':'';
+    return '<div class="nl-tk '+cls+'"><div class="nl-kt">'+(lab[ev.type]||'Update')+'</div><div class="nl-kd">'+when+'</div>'+loc+q+'</div>';
+  }).join('');
+  document.getElementById('nl-ch-body').innerHTML='<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
+  openModal('nl-chain-modal');
+}
+function nlFmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return ''; try{ return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return iso; } }
+
+/* ===================== NEW LEADS — increment 2: Assigned-by-me, Teams, Business dashboard ===================== */
+function nlBacklink(){ return '<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← Back to my leads</button></div>'; }
+function nlBack(){ var sub=(App._leadView&&App._leadView.sub); App._leadView.sub=(sub==='staff'?'teams':'board'); renderLeads(); }
+function nlReload(){ var sub=(App._leadView&&App._leadView.sub); if(sub==='biz') nlGoBiz(); else if(sub==='abm') nlGoABM(); else if(sub==='staff') nlGoStaff(App._leadView.staffId); }
+
+/* ---- Assigned by me (read-only tracking) ---- */
+function nlGoABM(){ App._leadView=App._leadView||{}; App._leadView.sub='abm'; App._leadView.abm=null; nlRenderABM(); apiCall('leadsByMe').then(function(r){ App._leadView.abm=(r&&r.leads)||[]; if(App._leadView.sub==='abm') nlRenderABM(); }).catch(function(){ App._leadView.abm=[]; if(App._leadView.sub==='abm') nlRenderABM(); }); }
+function nlABMRow(l){
+  var eff=nlEffective(l);
+  var stLabel=({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored',executed:'Closed'})[eff];
+  var withTxt=(l.assignees||[]).map(function(a){return a.name;}).slice(0,3).join(', ');
+  return '<div class="nl-abm" data-action="nl-chain" data-lead="'+esc(l.id)+'"><div class="nl-abm-top"><span class="nl-abm-cl">'+esc(l.clientName||'—')+'</span><span class="nl-pill nl-p-dept">'+esc(l.department||'')+'</span><span class="nl-st '+eff+'">'+stLabel+'</span><span class="nl-abm-meta">to '+esc(withTxt||'—')+'</span></div><div class="nl-abm-sub">'+nlLastEvent(l)+'</div></div>';
+}
+function nlRenderABM(){
+  var h='<div class="cat-head"><div class="cat-title">Leads I assigned</div><div class="cat-sub">Read-only — watch how your referrals are moving.</div></div>'+nlBacklink();
+  var arr=App._leadView.abm;
+  if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; }
+  else if(!arr.length){ h+='<div class="nl-empty">You haven’t assigned any leads yet.</div>'; }
+  else { arr.slice().sort(function(a,b){return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt);}).forEach(function(l){ h+=nlABMRow(l); }); }
+  document.getElementById('content').innerHTML=h;
+}
+
+/* ---- Teams (admin) — people grid -> a staffer's board ---- */
+function nlGoTeams(){ App._leadView=App._leadView||{}; App._leadView.sub='teams'; renderLeads(); }
+function nlRenderTeams(){
+  var h='<div class="cat-head"><div class="cat-title">Teams · Leads</div><div class="cat-sub">Pick a person to open their leads — you can view, mark urgent and comment.</div></div>'+nlBacklink();
+  var mem=(App.members||[]);
+  h+='<div class="nl-teamgrid">'+mem.map(function(m){ return '<button class="nl-tcard" data-action="nl-staff" data-id="'+esc(m.userId)+'"><span class="nl-av">'+esc(nlInitials(m.name).toUpperCase())+'</span><span class="nl-tnm">'+esc(m.name)+'</span><span class="nl-trole">'+esc(m.role||'Staff')+'</span></button>'; }).join('')+'</div>';
+  if(!mem.length) h+='<div class="nl-empty">No team members loaded.</div>';
+  document.getElementById('content').innerHTML=h;
+}
+function nlGoStaff(id){ App._leadView=App._leadView||{}; App._leadView.sub='staff'; App._leadView.staffId=id; App._leadView.staffLeads=null; var m=(App.members||[]).find(function(x){return String(x.userId)===String(id);}); App._leadView.staffName=(m&&m.name)||'Staff'; renderLeads(); apiCall('leadsFor',{userId:id}).then(function(r){ App._leadView.staffLeads=(r&&r.leads)||[]; if(App._leadView.sub==='staff') renderLeads(); }).catch(function(){ App._leadView.staffLeads=[]; if(App._leadView.sub==='staff') renderLeads(); }); }
+function nlRenderStaff(){
+  var name=App._leadView.staffName||'Staff';
+  var h='<div class="cat-head"><div class="cat-title">'+esc(name)+' · Leads</div><div class="cat-sub">Admin view — mark urgent &amp; comment only.</div></div>';
+  h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← All staff</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button></div>';
+  var arr=App._leadView.staffLeads;
+  if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; }
+  else if(!arr.length){ h+='<div class="nl-empty">No leads for '+esc(name)+' yet.</div>'; }
+  else { arr.slice().sort(function(a,b){return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt);}).forEach(function(l){ h+=nlCard(l,true); }); }
+  document.getElementById('content').innerHTML=h;
+}
+
+/* ---- Business dashboard (admin) ---- */
+function nlKpi(v,t){ return '<div class="nl-kpi"><div class="nl-kv">'+v+'</div><div class="nl-kt">'+t+'</div></div>'; }
+function nlHeat(arr){
+  var year=new Date().getFullYear(); var counts={};
+  arr.forEach(function(l){ var d=new Date(l.assignedAt); if(!isNaN(d.getTime()) && d.getFullYear()===year){ var k=Math.floor((d-new Date(year,0,1))/86400000); counts[k]=(counts[k]||0)+1; } });
+  var max=Math.max.apply(null,[1].concat(Object.keys(counts).map(function(k){return counts[k];})));
+  var cells='';
+  for(var i=0;i<371;i++){ var n=counts[i]||0; var lvl=n===0?0:(n>=max?4:(n>=max*0.66?3:(n>=max*0.33?2:1))); cells+='<div class="nl-hc l'+lvl+'"></div>'; }
+  return '<div class="nl-heatwrap"><div class="nl-heatgrid">'+cells+'</div><div class="nl-heatleg">Less <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> More</div></div>';
+}
+function nlGoBiz(){ App._leadView=App._leadView||{}; App._leadView.sub='biz'; App._leadView.biz=null; nlRenderBiz(); apiCall('allLeads').then(function(r){ App._leadView.biz=(r&&r.leads)||[]; if(App._leadView.sub==='biz') nlRenderBiz(); }).catch(function(){ App._leadView.biz=[]; if(App._leadView.sub==='biz') nlRenderBiz(); }); }
+function nlRenderBiz(){
+  var h='<div class="cat-head"><div class="cat-title">Business analytics</div><div class="cat-sub">Whole-office lead performance.</div></div>';
+  h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← Back to leads</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button></div>';
+  var arr=App._leadView.biz;
+  if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; document.getElementById('content').innerHTML=h; return; }
+  var total=arr.length;
+  var cnt={'new':0,acknowledged:0,inprocess:0,ignored:0,executed:0};
+  arr.forEach(function(l){ var e=nlEffective(l); cnt[e]=(cnt[e]||0)+1; });
+  var conv=total?Math.round(cnt.executed/total*100):0, ignr=total?Math.round(cnt.ignored/total*100):0;
+  var times=[]; arr.forEach(function(l){ if(l.stage==='executed'){ var done=null; (l.history||[]).forEach(function(ev){ if(ev.type==='done') done=nlParse(ev.t); }); if(done && l.assignedAt) times.push((done-nlParse(l.assignedAt))/86400000); } });
+  var avg=times.length?(times.reduce(function(a,b){return a+b;},0)/times.length):0;
+  h+='<div class="nl-kpis">'+nlKpi(total,'Leads received')+nlKpi(conv+'%','Conversion (closed)')+nlKpi((avg?avg.toFixed(1):'0')+'d','Avg time to close')+nlKpi(ignr+'%','Ignored rate')+'</div>';
+  var segs=[['new',cnt['new'],'#2563eb'],['acknowledged',cnt.acknowledged,'#c99700'],['inprocess',cnt.inprocess,'#0f9d58'],['ignored',cnt.ignored,'#dc2626'],['executed',cnt.executed,'#6b7280']];
+  var acc=0, stops=[]; segs.forEach(function(sg){ var p=total?(sg[1]/total*100):0; stops.push(sg[2]+' '+acc.toFixed(3)+'% '+(acc+p).toFixed(3)+'%'); acc+=p; });
+  var lbl={'new':'New',acknowledged:'Ack',inprocess:'In Proc',ignored:'Ignored',executed:'Closed'};
+  h+='<div class="nl-cards2">';
+  h+='<div class="nl-acard"><h3>Leads by stage</h3><div class="nl-donut" style="background:conic-gradient('+(total?stops.join(','):'#e5e7eb 0 100%')+')"><div class="nl-donut-c"><b>'+total+'</b><span>total</span></div></div><div class="nl-legend">'+segs.map(function(sg){return '<span class="nl-lg"><i style="background:'+sg[2]+'"></i>'+lbl[sg[0]]+' '+sg[1]+'</span>';}).join('')+'</div></div>';
+  var byd={}; arr.forEach(function(l){ var d=l.department||'—'; byd[d]=(byd[d]||0)+1; });
+  var dks=Object.keys(byd).sort(function(a,b){return byd[b]-byd[a];}).slice(0,6);
+  var maxd=Math.max.apply(null,[1].concat(dks.map(function(k){return byd[k];})));
+  h+='<div class="nl-acard"><h3>By department</h3>'+(dks.length?dks.map(function(k){ return '<div class="nl-barrow"><div class="nl-barlab"><span>'+esc(k)+'</span><span>'+byd[k]+'</span></div><div class="nl-bartrack"><i style="width:'+Math.round(byd[k]/maxd*100)+'%"></i></div></div>'; }).join(''):'<div class="nl-hint">No data yet.</div>')+'</div>';
+  h+='</div>';
+  var now=new Date(), months=[];
+  for(var i=5;i>=0;i--){ var dd=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({k:dd.getFullYear()+'-'+dd.getMonth(), lab:dd.toLocaleString([],{month:'short'}), n:0}); }
+  arr.forEach(function(l){ var d=new Date(l.assignedAt); if(!isNaN(d.getTime())){ var k=d.getFullYear()+'-'+d.getMonth(); var mm=months.find(function(x){return x.k===k;}); if(mm) mm.n++; } });
+  var maxm=Math.max.apply(null,[1].concat(months.map(function(m){return m.n;})));
+  h+='<div class="nl-acard"><h3>Leads received — last 6 months</h3><div class="nl-bars">'+months.map(function(m){ return '<div class="nl-bar"><em>'+m.n+'</em><i style="height:'+Math.round(m.n/maxm*100)+'%"></i><span>'+m.lab+'</span></div>'; }).join('')+'</div></div>';
+  var closers={}; arr.forEach(function(l){ (l.history||[]).forEach(function(ev){ if(ev.type==='done' && ev.byName){ closers[ev.byName]=(closers[ev.byName]||0)+1; } }); });
+  var ck=Object.keys(closers).sort(function(a,b){return closers[b]-closers[a];}).slice(0,5);
+  h+='<div class="nl-acard"><h3>Top closers</h3>'+(ck.length?ck.map(function(k,i){return '<div class="nl-lbrow"><span class="nl-rank">'+(i+1)+'</span><span class="nl-av">'+esc(nlInitials(k).toUpperCase())+'</span><span>'+esc(k)+'</span><span class="nl-lbval">'+closers[k]+'</span></div>';}).join(''):'<div class="nl-hint">No closed leads yet.</div>')+'</div>';
+  h+='<div class="nl-acard"><h3>Lead activity — '+new Date().getFullYear()+'</h3>'+nlHeat(arr)+'</div>';
+  document.getElementById('content').innerHTML=h;
+}
+
+
 function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
+  h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> New Leads</button>';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   h+='<button class="nav-link'+(App.view==='mytasks'?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> My Tasks</button>';
   h+='<button class="nav-link'+(App.view==='assigned'?' active':'')+'" data-action="nav" data-view="assigned"><span class="nav-ico">'+ico('assigned')+'</span> Assigned by Me</button>';
@@ -3713,6 +4321,7 @@ function navigate(view,dept,cat){
     if(view==='dashboard') renderDashboard();
     else if(view==='mytasks') renderMyTasks();
     else if(view==='slate') renderSlate();
+      else if(view==='leads') nlOpenSection();
     else if(view==='board') renderBoard();
     else if(view==='clients') renderClients();
     else if(view==='category') renderCategory();
@@ -4574,6 +5183,7 @@ function initAssistant(){
     '<button class="asst-item" data-action="asst-speak"><span class="ai">🎤</span><span>Speak</span></button>'+
     '<button class="asst-item" data-action="asst-task"><span class="ai">➕</span><span>Task</span></button>'+
     '<button class="asst-item" data-action="asst-note"><span class="ai">🗒️</span><span>Note</span></button>'+
+    '<button class="asst-item" data-action="newlead"><span class="ai">🎯</span><span>Lead</span></button>'+
     '</div>'+
     '<button class="asst-ball" data-action="asst-toggle" aria-label="Assistant">✨</button>';
   document.body.appendChild(a);
@@ -4594,6 +5204,10 @@ function initAssistant(){
   if(!document.getElementById('newtask-fab')){
     var nf=document.createElement('button'); nf.id='newtask-fab'; nf.className='newtask-fab'; nf.setAttribute('data-action','newtask'); nf.title='New / assign task'; nf.innerHTML='+';
     document.body.appendChild(nf);
+  }
+  if(!document.getElementById('nl-fab')){
+    var nlb=document.createElement('button'); nlb.id='nl-fab'; nlb.className='nl-fab'; nlb.setAttribute('data-action','newlead'); nlb.title='Assign a new lead'; nlb.innerHTML='NL<small>lead</small>';
+    document.body.appendChild(nlb);
   }
   if(!document.getElementById('voice-ov')){
     var v=document.createElement('div'); v.id='voice-ov'; v.className='overlay hidden';
@@ -5550,6 +6164,7 @@ function paintWeekly(staff){
 
 function refreshView(){
   if(App.view==='dashboard') renderDashboard();
+  else if(App.view==='leads') renderLeads();
   else if(App.view==='mytasks') renderMyTasks();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
@@ -7028,6 +7643,28 @@ document.addEventListener('click', function(e){
     case 'raise-reminder': submitReminder(el.getAttribute('data-id')); break;
     case 'open-assign': openAssign(el.getAttribute('data-dept'), el.getAttribute('data-cat')); break;
     case 'newtask': openAssign('', ''); break;
+    case 'newlead': nlOpenAssign(); break;
+    case 'nl-tab': App._leadView=App._leadView||{}; App._leadView.tab=el.getAttribute('data-tab'); renderLeads(); break;
+    case 'nl-remark': nlRemark(el.getAttribute('data-lead')); break;
+    case 'nl-inprocess': nlInProcess(el.getAttribute('data-lead')); break;
+    case 'nl-done': nlDone(el.getAttribute('data-lead')); break;
+    case 'nl-chain': nlOpenChain(el.getAttribute('data-lead')); break;
+    case 'nl-urgent': nlUrgent(el.getAttribute('data-lead')); break;
+    case 'nl-comment': nlComment(el.getAttribute('data-lead')); break;
+    case 'nl-pick': nlTogglePick(el.getAttribute('data-id')); break;
+    case 'nl-pick-all': nlPickAll(); break;
+    case 'nl-dept-all': nlPickDept(); break;
+    case 'nl-pr': nlSetPr(el.getAttribute('data-pr')); break;
+    case 'nl-assign-submit': nlSubmitAssign(); break;
+    case 'nl-input-save': nlInputSave(); break;
+    case 'nl-dur': nlSetDur(parseInt(el.getAttribute('data-d'),10)); break;
+    case 'nl-confirm-yes': nlConfirmYes(); break;
+    case 'nl-abm': nlGoABM(); break;
+    case 'nl-biz': nlGoBiz(); break;
+    case 'nl-teams': nlGoTeams(); break;
+    case 'nl-staff': nlGoStaff(el.getAttribute('data-id')); break;
+    case 'nl-back': nlBack(); break;
+    case 'nl-reload': nlReload(); break;
     case 'cl-add': ClEditor.add(el.getAttribute('data-target')); break;
     case 'confirm-ok': var _cf=App._confirmFn; closeModal('confirm-modal'); if(_cf) setTimeout(_cf,10); break;
     case 'remark-ok': { var _ta=document.getElementById('remark-text'); var _txt=(_ta.value||'').trim(); if(!_txt){ document.getElementById('remark-err').classList.add('show'); try{_ta.focus();}catch(_e){} break; } var _rf=App._remarkFn; App._remarkFn=null; closeModal('remark-modal'); if(_rf) setTimeout(function(){ _rf(_txt); },10); break; }
