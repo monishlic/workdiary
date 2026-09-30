@@ -229,6 +229,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .card:hover{box-shadow:var(--shadow-md);border-color:var(--accent)}
 .card-body{flex:1;min-width:0}
 .card-client{font-size:.96rem;font-weight:700;margin-bottom:3px}
+.hl-sub{font-size:.92em;font-weight:600;color:var(--text-sec)}
 .card-meta{font-size:.75rem;color:var(--text-sec)}
 .card-preview{font-size:.82rem;color:var(--text-sec);margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
 .card-right{display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex-shrink:0}
@@ -3569,7 +3570,7 @@ function nlRenderBoard(){
   var tab=App._leadView.tab||'all';
   var h='<div class="cat-head"><div class="cat-title">New Leads</div><div class="cat-sub">Hand a lead to another department and track it end to end.</div></div>';
   h+='<div class="nl-adminbtns"><button class="nl-admbtn nl-primary" data-action="newlead">＋ Assign a lead</button><button class="nl-admbtn" data-action="nl-abm">📤 Assigned by me</button>'+(isBoss()?'<button class="nl-admbtn" data-action="nl-biz">📊 Business Dashboard</button><button class="nl-admbtn" data-action="nl-teams">👥 Teams</button>':'')+'</div>';
-  h+='<div class="nl-dash">'+nlTile('all','All',cnt.all,tab)+nlTile('new','New',cnt.new,tab)+nlTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTile('inprocess','In Process',cnt.inprocess,tab)+nlTile('ignored','Ignored',cnt.ignored,tab)+nlTile('executed','Closed',cnt.executed,tab)+'</div>';
+  h+='<div class="nl-dash">'+nlTile('all','All',cnt.all,tab)+nlTile('new','New',cnt.new,tab)+nlTile('ignored','Ignored',cnt.ignored,tab)+nlTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTile('inprocess','In Process',cnt.inprocess,tab)+nlTile('executed','Closed',cnt.executed,tab)+'</div>';
   h+='<div class="nl-tabbar">'+nlTab('all','All',cnt.all,tab)+nlTab('new','New',cnt.new,tab)+nlTab('ignored','Ignored',cnt.ignored,tab)+nlTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTab('inprocess','In Process',cnt.inprocess,tab)+nlTab('executed','Closed',cnt.executed,tab)+'</div>';
   var list=all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
   list.sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); });
@@ -4491,7 +4492,7 @@ function focusCard(t){
   var di=dueInfo(t);
   var h='<div class="focus-card'+(di&&di.cls==='overdue'?' od':'')+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
   h+='<div class="fc-top">'+(t.priority?prioTag(t.priority):'')+(di?'<span class="due '+di.cls+'">'+di.label+'</span>':'<span class="fc-nodue">No due date</span>')+'</div>';
-  h+='<div class="fc-client">'+esc(t.clientName)+'</div>';
+  h+='<div class="fc-client">'+taskHeadline(t)+'</div>';
   h+='<div class="fc-meta">'+esc(t.department)+' › '+esc(t.category)+'</div>';
   if(t.details) h+='<div class="fc-det">'+esc(t.details.slice(0,140))+(t.details.length>140?'…':'')+'</div>';
   if(t.dueDate) h+='<div class="fc-due">🕒 Due '+esc(fmtDue(t.dueDate))+'</div>';
@@ -4623,6 +4624,15 @@ function checklistBlock(t){ var cl=t.checklist||[]; if(!cl.length) return ''; va
 function refreshChecklist(t){ var w=document.getElementById('cl-wrap'); if(!w) return; var tmp=document.createElement('div'); tmp.innerHTML=checklistBlock(t); if(tmp.firstChild) w.replaceWith(tmp.firstChild); }
 function linksBlock(t){ var ls=t.links||[]; if(!ls.length) return ''; var h='<div class="det-sec"><div class="det-sec-h">📎 Attachments</div>'; ls.forEach(function(l){ h+='<a class="det-link" href="'+esc(l.url)+'" target="_blank" rel="noopener noreferrer">🔗 '+esc(l.label||l.url)+'</a>'; }); return h+'</div>'; }
 function prioRank(p){ return p==='high'?0:(p==='low'?2:1); }
+/* One consistent card headline wherever a task is listed: the task TITLE first
+   (it is the required field and says WHAT the task is), then the client name as a
+   muted suffix when there is one - so a card is legible at a glance without opening.
+   Falls back to the client name for older title-less tasks, then a neutral label. */
+function taskHeadline(t){
+  var ti=((t&&t.title)||'').trim(), cl=((t&&t.clientName)||'').trim();
+  if(ti && cl) return esc(ti)+'<span class="hl-sub"> · '+esc(cl)+'</span>';
+  return esc(ti||cl||'Untitled task');
+}
 function taskCard(t,isDone,showCat){
   var heat=isDone?0:taskHeat(t);
   var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
@@ -4632,10 +4642,10 @@ function taskCard(t,isDone,showCat){
   var h='<div class="card tcard st-'+st+(isDone?' done':'')+(heat>=0.08?' hot':'')+'" style="--heat:'+heat.toFixed(2)+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
   h+='<div class="tcard-l">';
   // Header — title (or client on older tasks) + status
-  h+='<div class="tcard-top"><span class="tcard-client">'+esc(t.title||t.clientName)+'</span><span class="tcard-status st-'+st+'">'+stLbl+'</span></div>';
+  h+='<div class="tcard-top"><span class="tcard-client">'+taskHeadline(t)+'</span><span class="tcard-status st-'+st+'">'+stLbl+'</span></div>';
   // Detail pills — one neat chip per attribute
   h+='<div class="tcard-pills">';
-  if(t.title && t.clientName) h+='<span class="tpill tp-client"><i>🧑</i>'+esc(t.clientName)+'</span>';
+  /* client name now appears in the card headline */
   h+='<span class="tpill"><i>🏷</i>'+esc(t.department)+' › '+esc(t.category)+'</span>';
   if(isDone){ if(t.completedTimestamp) h+='<span class="tpill tp-doneon"><i>✓</i>'+esc(fmtDate(t.completedTimestamp))+'</span>'; }
   else h+='<span class="tpill tp-due"><i>📅</i>'+(t.dueDate?esc(fmtDue(t.dueDate))+(di?' · '+esc(di.label):''):'No due date')+'</span>';
@@ -6499,7 +6509,7 @@ function submitReassign(){
 /* Read-only card for admin viewing another person's work */
 function taskCardStatic(t,isDone){
   var h='<div class="card'+(isDone?' done':'')+'" style="cursor:default">';
-  h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+'</div>';
+  h+='<div class="card-body"><div class="card-client">'+taskHeadline(t)+'</div>';
   var meta='Added '+fmtDate(t.createdTimestamp)+' · '+esc(t.department)+' › '+esc(t.category);
   if(isDone&&t.completedTimestamp) meta+=' → Completed '+fmtDate(t.completedTimestamp);
   h+='<div class="card-meta">'+meta+'</div>';
@@ -7038,7 +7048,7 @@ function adminSaveVisibility(id,btn){
 function sharedCard(t){
   var isDone=t.status==='Completed';
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-shared" data-uid="'+esc(t.uid)+'">';
-  h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+'</div>';
+  h+='<div class="card-body"><div class="card-client">'+taskHeadline(t)+'</div>';
   h+='<div class="card-meta">To '+esc(t.ownerName)+' · '+esc(t.department)+' › '+esc(t.category)+(isDone&&t.completedTimestamp?' · Completed '+fmtDate(t.completedTimestamp):'')+(t.reassignedFromName?' · ↪ from '+esc(t.reassignedFromName):'')+'</div>';
   if(t.details) h+='<div class="card-preview">'+esc(t.details)+'</div>';
   h+='</div><div class="card-right"><span class="'+(isDone?'done-badge':'days days-warn')+'">'+(isDone?ico('check')+' Done':'⏳ '+esc(t.status))+'</span></div></div>';
@@ -7212,7 +7222,7 @@ function addCommentUI(uid){
 function taskCardAdmin(t){
   var isDone=t.status==='Completed';
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-admin-task" data-uid="'+esc(t.uid)+'">';
-  h+='<div class="card-body"><div class="card-client">'+esc(t.clientName)+'</div>';
+  h+='<div class="card-body"><div class="card-client">'+taskHeadline(t)+'</div>';
   var meta='Added '+fmtDate(t.createdTimestamp)+' · '+esc(t.department)+' › '+esc(t.category);
   if(isDone&&t.completedTimestamp) meta+=' → Completed '+fmtDate(t.completedTimestamp);
   if(t.reassignedFromName) meta+=' · ↪ from '+esc(t.reassignedFromName);
