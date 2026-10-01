@@ -516,6 +516,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .rem-toggle{background:none;border:none;color:var(--text-muted);font:inherit;font-size:.76rem;font-weight:600;cursor:pointer;padding:2px 0}
 .rem-toggle:hover{color:var(--accent)}
 .rem-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.rem-actbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .rem-count{font-size:.82rem;font-weight:700;color:var(--text-sec)}
 .rem-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:10px}
 .rem-from{font-size:.82rem;font-weight:700}
@@ -3646,6 +3647,76 @@ function renderLeads(){
   if(sub==='staff') return nlRenderStaff();
   nlRenderBoard();
 }
+/* ===================== NEW LEADS — export (Excel sheet-per-stage + HTML report) ===================== */
+var NL_EX_STAGES=[['New','#2563eb','#eef4ff'],['Acknowledged','#c99700','#fff8e6'],['In Process','#0f9d58','#e9f8ef'],['Ignored','#dc2626','#fdeceb'],['Closed — Positive','#1a8f4c','#e9f8ef'],['Closed — Negative','#c0271f','#fdeceb']];
+function nlExStage(l){ var e=nlEffective(l); if(e==='executed') return (nlOutcome(l)==='neg')?'Closed — Negative':'Closed — Positive'; return ({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored'})[e]||e; }
+function nlExSorted(leads, stage){ return (leads||[]).filter(function(l){ return nlExStage(l)===stage; }).sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); }); }
+function nlExChain(l){
+  var lab={assigned:'Assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived',reopened:'Reopened → In Process','admin-urgent':'Flagged urgent (admin)','admin-comment':'Admin comment'};
+  return (l.history||[]).map(function(ev){
+    var base=(ev.type==='done')?('Closed — '+((ev.outcome==='negative')?'Negative':'Positive')):(lab[ev.type]||'Update');
+    var who=ev.byName?(' by '+ev.byName):''; var when=ev.t?(' · '+nlFmt(ev.t)):'';
+    var q=ev.text?(': “'+ev.text+'”'):'';
+    return base+who+when+q;
+  });
+}
+function nlExRem(l){ return (l.reminders||[]).map(function(x){ var past=Date.parse(x.at)<=Date.now(); return (past?'reminded':'pending')+' · '+nlFmt(x.at)+(x.remark?': “'+x.remark+'”':'')+(x.byName?' (by '+x.byName+')':''); }); }
+function nlDownload(fn, content, mime){ try{ var b=new Blob([content],{type:mime}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=fn; document.body.appendChild(a); a.click(); setTimeout(function(){ try{ URL.revokeObjectURL(u); a.remove(); }catch(e){} },1500); }catch(e){ toast('Export failed. '+((e&&e.message)||''),'err'); } }
+function nlBuildExcel(leads, who){
+  var NL=String.fromCharCode(10);
+  var xe=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').split(NL).join('&#10;'); };
+  var cols=['Client','Mobile','Department','Category','Priority','Assignees','Assigned by','Assigned on','Due / Duration','Reminders','History (remark chain)'];
+  var widths=[150,95,110,130,70,150,110,120,130,230,430];
+  var styles='<Style ss:ID="c"><Alignment ss:Vertical="Top" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#DDDDDD"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#DDDDDD"/></Borders></Style>';
+  NL_EX_STAGES.forEach(function(s,i){ styles+='<Style ss:ID="h'+i+'"><Font ss:Bold="1" ss:Color="#FFFFFF" ss:Size="11"/><Interior ss:Color="'+s[1]+'" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style>'; });
+  var sheets='';
+  NL_EX_STAGES.forEach(function(s,i){
+    var rows=nlExSorted(leads, s[0]);
+    var cells='<Row ss:Height="26">'+cols.map(function(c){ return '<Cell ss:StyleID="h'+i+'"><Data ss:Type="String">'+xe(c)+'</Data></Cell>'; }).join('')+'</Row>';
+    rows.forEach(function(l){
+      var dd=l.dueAt?('Due '+nlFmt(l.dueAt)):(l.durationDays?(l.durationDays+'-day plan'):'');
+      var vals=[l.clientName||'',l.mobile||'',l.department||'',l.category||'',(l.priority||'medium'),(l.assignees||[]).map(function(a){return a.name;}).join(', '),l.createdByName||'',(l.assignedAt?nlFmt(l.assignedAt):''),dd,nlExRem(l).join(NL),nlExChain(l).join(NL)];
+      cells+='<Row>'+vals.map(function(v){ return '<Cell ss:StyleID="c"><Data ss:Type="String">'+xe(v)+'</Data></Cell>'; }).join('')+'</Row>';
+    });
+    if(!rows.length) cells+='<Row><Cell ss:StyleID="c"><Data ss:Type="String">No leads in this stage.</Data></Cell></Row>';
+    var colsX=widths.map(function(w){ return '<Column ss:Width="'+w+'"/>'; }).join('');
+    var nm=s[0].split('—').join('-').slice(0,31);
+    sheets+='<Worksheet ss:Name="'+xe(nm)+'"><Table>'+colsX+cells+'</Table></Worksheet>';
+  });
+  return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:x="urn:schemas-microsoft-com:office:excel"><Styles>'+styles+'</Styles>'+sheets+'</Workbook>';
+}
+function nlBuildHTML(leads, who){
+  var he=function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var now=new Date();
+  var css='<style>*{box-sizing:border-box}body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f4f5f8;color:#1e2430;margin:0;padding:26px}h1{margin:0 0 2px;font-size:1.5rem}.sub{color:#5a6472;margin-bottom:18px;font-size:.9rem}.stage{margin:22px 0 10px;font-weight:800;font-size:1rem;padding:7px 14px;border-radius:8px;color:#fff;display:inline-block}.lead{background:#fff;border:1px solid #e7e9ef;border-left:5px solid #ccc;border-radius:12px;padding:14px 16px;margin:0 0 12px}.lead h3{margin:0 0 7px;font-size:1.05rem}.pills{margin:0 0 6px}.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:#eef0f6;color:#3a4256;margin:0 5px 5px 0}.meta{color:#5a6472;font-size:.85rem;margin:3px 0}.rem{font-size:.82rem;color:#b26a00;margin:8px 0 0}.chain{margin-top:10px;border-top:1px dashed #e2e4ea;padding-top:9px}.chain b{font-size:.78rem;color:#5a6472;text-transform:uppercase;letter-spacing:.03em}.ev{font-size:.85rem;margin:5px 0;padding-left:12px;border-left:2px solid #d7dae2}@media print{body{background:#fff;padding:0}.lead{break-inside:avoid}}</style>';
+  var body='<h1>🎯 New Leads — Export</h1><div class="sub">'+he(who||'')+' · '+he(now.toLocaleString())+' · '+(leads||[]).length+' lead'+((leads||[]).length===1?'':'s')+'</div>';
+  NL_EX_STAGES.forEach(function(s){
+    var rows=nlExSorted(leads, s[0]); if(!rows.length) return;
+    body+='<div class="stage" style="background:'+s[1]+'">'+he(s[0])+' ('+rows.length+')</div>';
+    rows.forEach(function(l){
+      body+='<div class="lead" style="border-left-color:'+s[1]+';background:'+s[2]+'">';
+      body+='<h3>'+he(l.clientName||'—')+(l.mobile?' <span style="font-weight:500;color:#5a6472">· '+he(l.mobile)+'</span>':'')+'</h3>';
+      body+='<div class="pills"><span class="pill">'+he(l.department||'')+'</span><span class="pill">'+he(l.category||'')+'</span><span class="pill">'+he(l.priority||'medium')+'</span><span class="pill" style="background:'+s[1]+';color:#fff">'+he(s[0])+'</span></div>';
+      body+='<div class="meta">With '+he((l.assignees||[]).map(function(a){return a.name;}).join(', ')||'—')+' · assigned by '+he(l.createdByName||'—')+(l.assignedAt?(' · '+he(nlFmt(l.assignedAt))):'')+'</div>';
+      var dd=l.dueAt?('Due '+nlFmt(l.dueAt)):(l.durationDays?(l.durationDays+'-day plan'):''); if(dd) body+='<div class="meta">'+he(dd)+'</div>';
+      var rem=nlExRem(l); if(rem.length) body+='<div class="rem">⏰ '+rem.map(he).join('<br>')+'</div>';
+      var ch=nlExChain(l); body+='<div class="chain"><b>Tracking</b>'+(ch.length?ch.map(function(x){return '<div class="ev">'+he(x)+'</div>';}).join(''):'<div class="ev">No steps yet.</div>')+'</div>';
+      body+='</div>';
+    });
+  });
+  return '<!doctype html><html><head><meta charset="utf-8"><title>New Leads Export</title>'+css+'</head><body>'+body+'</body></html>';
+}
+function nlExportDo(kind){
+  var sub=(App._leadView&&App._leadView.sub)||'board', leads, who;
+  if(sub==='staff'){ leads=App._leadView.staffLeads||[]; who=(App._leadView.staffName||'Staff')+'’s leads'; }
+  else if(sub==='biz'){ leads=App._leadView.biz||[]; who='All office leads'; }
+  else { leads=App._leads||[]; who=((App.identity&&App.identity.employeeName)||'My')+'’s leads'; }
+  if(!leads.length){ toast('No leads to export yet.','warn'); return; }
+  var stamp=new Date().toISOString().slice(0,10);
+  if(kind==='xls') nlDownload('New Leads - '+who+' - '+stamp+'.xls', nlBuildExcel(leads, who), 'application/vnd.ms-excel');
+  else nlDownload('New Leads - '+who+' - '+stamp+'.html', nlBuildHTML(leads, who), 'text/html;charset=utf-8');
+  toast('⬇ Export ready — check your downloads','success');
+}
 function nlRenderBoard(){
   App.view='leads'; App._leadView=App._leadView||{tab:'all',sub:'board'};
   nlSweepIgnored();
@@ -3654,7 +3725,7 @@ function nlRenderBoard(){
   all.forEach(function(l){ var e=nlEffective(l); cnt[e]=(cnt[e]||0)+1; });
   var tab=App._leadView.tab||'all';
   var h='<div class="cat-head"><div class="cat-title">New Leads</div><div class="cat-sub">Hand a lead to another department and track it end to end.</div></div>';
-  h+='<div class="nl-adminbtns"><button class="nl-admbtn nl-primary" data-action="newlead">＋ Assign a lead</button><button class="nl-admbtn" data-action="nl-abm">📤 Assigned by me</button>'+(isBoss()?'<button class="nl-admbtn" data-action="nl-biz">📊 Business Dashboard</button><button class="nl-admbtn" data-action="nl-teams">👥 Teams</button>':'')+'</div>';
+  h+='<div class="nl-adminbtns"><button class="nl-admbtn nl-primary" data-action="newlead">＋ Assign a lead</button><button class="nl-admbtn" data-action="nl-abm">📤 Assigned by me</button>'+(isBoss()?'<button class="nl-admbtn" data-action="nl-biz">📊 Business Dashboard</button><button class="nl-admbtn" data-action="nl-teams">👥 Teams</button>':'')+'<button class="nl-admbtn" data-action="nl-export-html">⬇ HTML</button><button class="nl-admbtn" data-action="nl-export-xls">⬇ Excel</button></div>';
   h+='<div class="nl-dash">'+nlTile('all','All',cnt.all,tab)+nlTile('new','New',cnt.new,tab)+nlTile('ignored','Ignored',cnt.ignored,tab)+nlTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTile('inprocess','In Process',cnt.inprocess,tab)+nlTile('executed','Closed',cnt.executed,tab)+'</div>';
   h+='<div class="nl-tabbar">'+nlTab('all','All',cnt.all,tab)+nlTab('new','New',cnt.new,tab)+nlTab('ignored','Ignored',cnt.ignored,tab)+nlTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTab('inprocess','In Process',cnt.inprocess,tab)+nlTab('executed','Closed',cnt.executed,tab)+'</div>';
   var list=all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
@@ -3904,7 +3975,7 @@ function nlStaffClosed(list){
 function nlRenderStaff(){
   var name=App._leadView.staffName||'Staff';
   var h='<div class="cat-head"><div class="cat-title">'+esc(name)+' · Leads</div><div class="cat-sub">Admin view of '+esc(name)+'’s New Leads board — same tabs they see.</div></div>';
-  h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← All staff</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button></div>';
+  h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← All staff</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button> <button class="nl-back" data-action="nl-export-html">⬇ HTML</button> <button class="nl-back" data-action="nl-export-xls">⬇ Excel</button></div>';
   var arr=App._leadView.staffLeads;
   if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; document.getElementById('content').innerHTML=h; return; }
   var all=arr.slice();
@@ -3934,7 +4005,7 @@ function nlHeat(arr){
 function nlGoBiz(){ App._leadView=App._leadView||{}; App._leadView.sub='biz'; App._leadView.biz=null; nlRenderBiz(); apiCall('allLeads').then(function(r){ App._leadView.biz=(r&&r.leads)||[]; if(App._leadView.sub==='biz') nlRenderBiz(); }).catch(function(){ App._leadView.biz=[]; if(App._leadView.sub==='biz') nlRenderBiz(); }); }
 function nlRenderBiz(){
   var h='<div class="cat-head"><div class="cat-title">Business analytics</div><div class="cat-sub">Whole-office lead performance.</div></div>';
-  h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← Back to leads</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button></div>';
+  h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← Back to leads</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button> <button class="nl-back" data-action="nl-export-html">⬇ HTML</button> <button class="nl-back" data-action="nl-export-xls">⬇ Excel</button></div>';
   var arr=App._leadView.biz;
   if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; document.getElementById('content').innerHTML=h; return; }
   var total=arr.length;
@@ -4131,7 +4202,7 @@ var Push = {
     if(!App.identity || !window.firebase || !firebase.firestore) return; var uid=String(App.identity.employeeId);
     try{ firebase.firestore().collection('users').doc(uid).set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() }, {merge:true}); }catch(e){}
   },
-  _foreground:function(payload){ var n=(payload&&payload.notification)||{}; toast('🔔 '+(n.title||'New notification')+(n.body?(' — '+n.body):''),'info'); if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
+  _foreground:function(payload){ var n=(payload&&payload.notification)||{}; toast('🔔 '+(n.title||'New notification')+(n.body?(' — '+n.body):''),'info'); try{ if(typeof playNotifSound==='function') playNotifSound(); }catch(e){} if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
   /* On logout: drop THIS device's token from the current user so the next
      person who logs in here doesn't keep getting the previous user's alerts. */
   unregister:function(){
@@ -6731,7 +6802,7 @@ function openReminders(){
   var body=document.getElementById('reminders-body');
   if(!App.reminders.length){ body.innerHTML='<div class="empty" style="padding:30px"><div class="empty-ico">🔔</div><div class="empty-t">No notifications</div><div class="empty-s">You\'re all caught up.</div></div>'; openModal('reminders-modal'); return; }
   var unread=App.reminders.filter(function(r){return !r.read;}).length;
-  var top='<div class="rem-actions"><span class="rem-count">'+(unread?unread+' unread':'All read')+'</span>'+(unread?'<button class="btn btn-ghost btn-sm" data-action="mark-all-read">✓ Mark all as read</button>':'')+'</div>';
+  var top='<div class="rem-actions"><span class="rem-count">'+(unread?unread+' unread':'All read')+'</span><span class="rem-actbtns"><button class="btn btn-ghost btn-sm" data-action="toggle-notif-sound">'+(edSoundOn()?'🔊 Sound on':'🔇 Sound off')+'</button>'+(unread?'<button class="btn btn-ghost btn-sm" data-action="mark-all-read">✓ Mark all as read</button>':'')+'</span></div>';
   var items=App.reminders.map(function(r){
     var clk = r.taskUid ? ' data-action="notif-open" data-uid="'+esc(r.taskUid)+'" style="cursor:pointer"' : '';
     var toggle = r.read
@@ -7405,12 +7476,36 @@ function requestNotifPermission(){
     }
   }catch(e){}
 }
+var _edAudioCtx=null, _edLastBeep=0;
+function edSoundOn(){ try{ return localStorage.getItem('edNotifSound')!=='off'; }catch(e){ return true; } }
+function playNotifSound(){
+  try{
+    if(!edSoundOn()) return;
+    if(document.visibilityState!=='visible') return;   // backgrounded -> OS/push sound handles it
+    var now=Date.now(); if(now-_edLastBeep<1200) return; _edLastBeep=now;
+    var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_edAudioCtx) _edAudioCtx=new AC();
+    if(_edAudioCtx.state==='suspended'){ try{ _edAudioCtx.resume(); }catch(e){} }
+    var ctx=_edAudioCtx, t0=ctx.currentTime;
+    [[880,0],[1174.66,0.12]].forEach(function(p){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.value=p[0]; o.connect(g); g.connect(ctx.destination);
+      var t=t0+p[1];
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.25,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.19);
+      o.start(t); o.stop(t+0.22);
+    });
+  }catch(e){}
+}
+function edToggleSound(){ try{ var was=edSoundOn(); localStorage.setItem('edNotifSound', was?'off':'on'); if(was===false){ _edLastBeep=0; playNotifSound(); } }catch(e){} try{ if(typeof toast==='function') toast(edSoundOn()?'\ud83d\udd0a Notification sound on':'\ud83d\udd07 Notification sound off','info'); }catch(e){} try{ openReminders(); }catch(e){} }
 function fireDesktopNotif(n){
   try{
     // The OS/lock-screen popup is now handled by push (FCM), which also works when
     // the tab is closed — so we only re-show the in-app banner here to avoid a
     // duplicate popup. (Push + this in-app banner = one visible alert per state.)
     App._bannerDismissed=false;   // a new one arrived — re-show the banner
+    try{ playNotifSound(); }catch(e){}
   }catch(e){}
 }
 function openFromNotif(uid){
@@ -7800,6 +7895,7 @@ document.addEventListener('click', function(e){
     case 'mark-reminder': markReminderRead(el.getAttribute('data-id')); break;
     case 'mark-unread': markReminderUnread(el.getAttribute('data-id')); break;
     case 'mark-all-read': markAllRemindersRead(); break;
+    case 'toggle-notif-sound': edToggleSound(); break;
     case 'open-staff': openStaff(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'open-reminder-form': var rf=document.getElementById('rem-form'); if(rf){ rf.style.display='block'; var rm=document.getElementById('rem-msg'); if(rm)rm.focus(); } break;
     case 'cancel-reminder': var rf2=document.getElementById('rem-form'); if(rf2)rf2.style.display='none'; break;
@@ -7837,6 +7933,8 @@ document.addEventListener('click', function(e){
     case 'nl-staff': nlGoStaff(el.getAttribute('data-id')); break;
     case 'nl-back': nlBack(); break;
     case 'nl-reload': nlReload(); break;
+    case 'nl-export-xls': nlExportDo('xls'); break;
+    case 'nl-export-html': nlExportDo('html'); break;
     case 'nl-delete': nlDelete(el.getAttribute('data-lead')); break;
     case 'cl-add': ClEditor.add(el.getAttribute('data-target')); break;
     case 'confirm-ok': var _cf=App._confirmFn; closeModal('confirm-modal'); if(_cf) setTimeout(_cf,10); break;
