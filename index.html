@@ -2732,7 +2732,7 @@ var FB = (function(){
               history:[{ t:nowl, type:'assigned', byId:ul.userId, byName:ul.name, text:'to '+aids.length }],
               createdAt:nowl, updatedAt:nowl };
             return col('leads').doc(lid).set(lead).then(function(){
-              var jobs=[]; lead.assignees.forEach(function(a){ if(String(a.userId)!==String(ul.userId)) jobs.push(addNotif(a.userId, ul.name, ul.name+' sent you a lead: '+lead.clientName+' ('+lead.department+')', lid, 'lead', 'leads')); });
+              var jobs=[]; lead.assignees.forEach(function(a){ if(String(a.userId)!==String(ul.userId)){ var _m=ul.name+' sent you a lead: '+lead.clientName+' ('+lead.department+')'; jobs.push(addNotif(a.userId, ul.name, _m, lid, 'lead', 'leads')); try{ Push.send(String(a.userId), 'New Lead', _m, 'lead-'+lid+'-'+Date.now()); }catch(e){} } });
               return Promise.all(jobs);
             }).then(function(){ try{ logAudit('Lead assigned', lid, lead.clientName, 'to '+aids.length+' · '+lead.department); }catch(e){} return {ok:true, lead:lead}; });
           }
@@ -2782,8 +2782,9 @@ var FB = (function(){
               } else { return {ok:false,error:'unknown lead action'}; }
               return col('leads').doc(String(b.leadId)).set(upd,{merge:true}).then(function(){
                 var jobs=[]; var recips=(l.assigneeIds||[]);
-                if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)) jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); }); }
-                if(notifyAll){ recips.forEach(function(rid){ jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); }); }
+                var _nlPush=function(rid,msg){ try{ Push.send(String(rid), 'New Leads', msg, 'lead-'+l.id+'-'+Date.now()); }catch(e){} };
+                if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)){ jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); _nlPush(rid, notifyOthers); } }); }
+                if(notifyAll){ recips.forEach(function(rid){ jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); _nlPush(rid, notifyAll); }); }
                 return Promise.all(jobs);
               }).then(function(){ return {ok:true}; });
             });
@@ -3560,7 +3561,7 @@ function nlEffective(l){
   return s;
 }
 function nlLeft(ms, daysOnly){ var d=ms-Date.now(); if(d<0)d=0; var days=Math.floor(d/NL_DAY), h=Math.floor((d%NL_DAY)/3600000); if(daysOnly) return days+(days===1?' day':' days'); return days+'d '+(h<10?'0':'')+h+'h'; }
-function nlSince(ms){ var d=Date.now()-ms; if(d<0)d=0; var days=Math.floor(d/NL_DAY); if(days<=0){ var h=Math.floor(d/3600000); return (h||1)+((h===1)?' hour ago':' hours ago'); } return days+(days===1?' day ago':' days ago'); }
+function nlSince(ms){ var d=Date.now()-ms; if(d<0)d=0; var mins=Math.floor(d/60000); if(mins<1) return 'just now'; if(mins<60) return mins+(mins===1?' minute ago':' minutes ago'); var h=Math.floor(d/3600000); if(h<24) return h+(h===1?' hour ago':' hours ago'); var days=Math.floor(d/NL_DAY); return days+(days===1?' day ago':' days ago'); }
 function nlIgnoredAt(l){ if(l.ignoredAt) return nlParse(l.ignoredAt); var s=l.stage||'new'; if(s==='inprocess'&&!l.renewBounded) return nlParse(l.dueAt)+NL_DAY; return nlParse(l.lastActionAt||l.assignedAt)+NL_48H; }
 function nlNudge(l){
   var eff=nlEffective(l);
@@ -3829,15 +3830,35 @@ function nlRenderTeams(){
   if(!mem.length) h+='<div class="nl-empty">No team members loaded.</div>';
   document.getElementById('content').innerHTML=h;
 }
-function nlGoStaff(id){ App._leadView=App._leadView||{}; App._leadView.sub='staff'; App._leadView.staffId=id; App._leadView.staffLeads=null; var m=(App.members||[]).find(function(x){return String(x.userId)===String(id);}); App._leadView.staffName=(m&&m.name)||'Staff'; renderLeads(); apiCall('leadsFor',{userId:id}).then(function(r){ App._leadView.staffLeads=(r&&r.leads)||[]; if(App._leadView.sub==='staff') renderLeads(); }).catch(function(){ App._leadView.staffLeads=[]; if(App._leadView.sub==='staff') renderLeads(); }); }
+function nlGoStaff(id){ App._leadView=App._leadView||{}; App._leadView.sub='staff'; App._leadView.stab='all'; App._leadView.scsub='pos'; App._leadView.staffId=id; App._leadView.staffLeads=null; var m=(App.members||[]).find(function(x){return String(x.userId)===String(id);}); App._leadView.staffName=(m&&m.name)||'Staff'; renderLeads(); apiCall('leadsFor',{userId:id}).then(function(r){ App._leadView.staffLeads=(r&&r.leads)||[]; if(App._leadView.sub==='staff') renderLeads(); }).catch(function(){ App._leadView.staffLeads=[]; if(App._leadView.sub==='staff') renderLeads(); }); }
+function nlStaffTile(stage,label,n,active){ return '<button class="nl-tile'+(active===stage?' on':'')+'" data-action="nl-stab" data-tab="'+stage+'"><span class="nl-dot d-'+stage+'"></span><span class="nl-n">'+n+'</span><span class="nl-l">'+label+'</span></button>'; }
+function nlStaffTab(stage,label,n,active){ return '<button class="nl-tabx'+(active===stage?' on':'')+'" data-action="nl-stab" data-tab="'+stage+'">'+label+' <b>'+n+'</b></button>'; }
+function nlStaffClosed(list){
+  var sub=(App._leadView&&App._leadView.scsub)||'pos';
+  var pos=[], neg=[];
+  list.forEach(function(l){ (nlOutcome(l)==='neg'?neg:pos).push(l); });
+  var bar='<div class="nl-ctabs"><button class="nl-ctab pos'+(sub==='pos'?' on':'')+'" data-action="nl-sclosetab" data-ct="pos">✅ Positive <b>'+pos.length+'</b></button><button class="nl-ctab neg'+(sub==='neg'?' on':'')+'" data-action="nl-sclosetab" data-ct="neg">❌ Negative <b>'+neg.length+'</b></button></div>';
+  var sel=(sub==='neg')?neg:pos;
+  var body=sel.length ? sel.map(function(l){return nlCard(l,true);}).join('') : '<div class="nl-empty">No '+(sub==='neg'?'negative':'positive')+' closes yet.</div>';
+  return bar+body;
+}
 function nlRenderStaff(){
   var name=App._leadView.staffName||'Staff';
-  var h='<div class="cat-head"><div class="cat-title">'+esc(name)+' · Leads</div><div class="cat-sub">Admin view — mark urgent &amp; comment only.</div></div>';
+  var h='<div class="cat-head"><div class="cat-title">'+esc(name)+' · Leads</div><div class="cat-sub">Admin view of '+esc(name)+'’s New Leads board — same tabs they see.</div></div>';
   h+='<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← All staff</button> <button class="nl-back" data-action="nl-reload">↻ Reload</button></div>';
   var arr=App._leadView.staffLeads;
-  if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; }
-  else if(!arr.length){ h+='<div class="nl-empty">No leads for '+esc(name)+' yet.</div>'; }
-  else { arr.slice().sort(function(a,b){return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt);}).forEach(function(l){ h+=nlCard(l,true); }); }
+  if(arr==null){ h+='<div class="nl-empty">Loading…</div>'; document.getElementById('content').innerHTML=h; return; }
+  var all=arr.slice();
+  var cnt={all:all.length,new:0,acknowledged:0,inprocess:0,ignored:0,executed:0};
+  all.forEach(function(l){ var e=nlEffective(l); cnt[e]=(cnt[e]||0)+1; });
+  var tab=(App._leadView&&App._leadView.stab)||'all';
+  h+='<div class="nl-dash">'+nlStaffTile('all','All',cnt.all,tab)+nlStaffTile('new','New',cnt.new,tab)+nlStaffTile('ignored','Ignored',cnt.ignored,tab)+nlStaffTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlStaffTile('inprocess','In Process',cnt.inprocess,tab)+nlStaffTile('executed','Closed',cnt.executed,tab)+'</div>';
+  h+='<div class="nl-tabbar">'+nlStaffTab('all','All',cnt.all,tab)+nlStaffTab('new','New',cnt.new,tab)+nlStaffTab('ignored','Ignored',cnt.ignored,tab)+nlStaffTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlStaffTab('inprocess','In Process',cnt.inprocess,tab)+nlStaffTab('executed','Closed',cnt.executed,tab)+'</div>';
+  var list=all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
+  list.sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); });
+  if(!list.length) h+='<div class="nl-empty">No leads here.</div>';
+  else if(tab==='executed'){ h+=nlStaffClosed(list); }
+  else list.forEach(function(l){ h+=nlCard(l,true); });
   document.getElementById('content').innerHTML=h;
 }
 
@@ -7725,6 +7746,8 @@ document.addEventListener('click', function(e){
     case 'newlead': nlOpenAssign(); break;
     case 'nl-tab': App._leadView=App._leadView||{}; App._leadView.tab=el.getAttribute('data-tab'); renderLeads(); break;
     case 'nl-closetab': App._leadView=App._leadView||{}; App._leadView.csub=el.getAttribute('data-ct'); renderLeads(); break;
+    case 'nl-stab': App._leadView=App._leadView||{}; App._leadView.stab=el.getAttribute('data-tab'); renderLeads(); break;
+    case 'nl-sclosetab': App._leadView=App._leadView||{}; App._leadView.scsub=el.getAttribute('data-ct'); renderLeads(); break;
     case 'nl-remark': nlRemark(el.getAttribute('data-lead')); break;
     case 'nl-inprocess': nlInProcess(el.getAttribute('data-lead')); break;
     case 'nl-reopen': nlReopen(el.getAttribute('data-lead')); break;
