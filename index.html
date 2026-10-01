@@ -1759,6 +1759,11 @@ body.modal-open .install-bar{ display:none !important; }
 .nl-remwhen{font-size:.82rem;font-weight:700}
 .nl-remq{font-size:.82rem;color:var(--text-sec);font-style:italic}
 .nl-remby{font-size:.74rem;color:var(--text-muted)}
+.perf-idle-h{font-weight:700;font-size:.9rem;color:var(--text-sec);margin:16px 2px 8px}
+.perf-idle{display:flex;flex-direction:column;gap:6px}
+.perf-idle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);opacity:.85}
+.pir-name{font-weight:700;font-size:.9rem}
+.pir-meta{font-size:.82rem;color:var(--text-sec)}
 /* NL floating ball */
 .nl-fab{position:fixed;right:20px;bottom:150px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:900;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 12px 30px -8px rgba(79,70,229,.7);z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .nl-fab:hover{transform:scale(1.07)}
@@ -6196,6 +6201,7 @@ function paintPerformance(staff){
     } else if(t.dueDate && new Date(t.dueDate).getTime()<now && t.status!=='Completed'){ totOverdue++; }
   });
   var rows=staff.slice().map(function(s){ s._score=Math.round(scoreOf(s)); s._otRate=s.completed?Math.round(s.onTime/s.completed*100):0; s._avg=cntById[s.userId]?(avgById[s.userId]/cntById[s.userId]):0; return s; }).sort(function(a,b){return b._score-a._score;});
+  var _idle=rows.filter(function(s){return s._score<=0;}); rows=rows.filter(function(s){return s._score>0;});
   var maxS=Math.max(1, rows.reduce(function(m,s){return Math.max(m,s._score);},0));
   var h='<div class="cat-head"><div class="cat-title">📈 Performance</div><div class="cat-sub">Team ranking, delivery quality & workload — live</div></div>';
   // 1 — LEADERBOARD
@@ -6208,6 +6214,8 @@ function paintPerformance(staff){
     h+='<div class="lb-card '+band+'"><div class="lb-medal">'+medal+'</div><div class="lb-main"><div class="lb-name">'+esc(s.name)+' <span class="lb-role">'+esc(s.role)+'</span>'+(recent?'<span class="lb-live">● active</span>':'')+'</div><div class="lb-bar"><span style="width:'+Math.round(s._score/maxS*100)+'%"></span></div><div class="lb-metrics"><span>✅ '+s.completed+' done</span><span>⏱ '+s._otRate+'% on-time</span><span>⚡ '+(s._avg?('avg '+fmtDur(s._avg)):'—')+'</span>'+(s.overdue?'<span class="lb-over">🚩 '+s.overdue+' overdue</span>':'')+'</div></div><div class="lb-score">'+s._score+'<small>pts</small></div></div>';
   });
   h+='</div>';
+  if(!rows.length) h+='<div class="perf-idle-h" style="margin-top:0">No completed tasks yet — the leaderboard ranks by work done.</div>';
+  if(_idle.length) h+='<div class="perf-idle-h">⚪ Not ranked — no completed tasks</div><div class="perf-idle">'+_idle.map(function(s){ var rc=s.lastActive&&(Date.now()-new Date(s.lastActive).getTime())<3*86400000; return '<div class="perf-idle-row"><span class="pir-name">'+esc(s.name)+' <span class="lb-role">'+esc(s.role)+'</span>'+(rc?'<span class="lb-live">● active</span>':'')+'</span><span class="pir-meta">'+(s.overdue?('🚩 '+s.overdue+' overdue'):'0 done')+'</span></div>'; }).join('')+'</div>';
   // 2 — DELIVERY & QUALITY
   h+='<div class="perf-sec-t">📊 Delivery & quality</div>';
   var otPct = totCompleted? Math.round(totOnTime/totCompleted*100):0;
@@ -6244,11 +6252,12 @@ function renderLeaderboard(){
   apiCall('teamStats',{}).then(function(res){ if(res&&res.ok){ App._lbCache=res.staff||[]; if(App.view==='leaderboard') paintLeaderboard(App._lbCache); } else showContentError_((res&&res.error)||'Could not load.'); }).catch(function(e){ if(!App._lbCache) showContentError_(e.message||'Could not load.'); });
 }
 function scoreOf(s){
-  // Rank is driven by real task work. A staffer with NO completed and NO assigned
-  // tasks scores 0 — no matter how recently they opened the tool or how many notes
-  // they have — so they can never sit above someone who is actually doing tasks.
-  var completed=s.completed||0, onTime=s.onTime||0, assigned=s.assigned||0;
-  var work = onTime*5 + Math.max(0, completed-onTime)*2 + assigned*1.5;
+  // Rank is driven by COMPLETED work only — on-time finishes beat late ones. Assigning
+  // tasks to OTHERS earns nothing (delegation is not your own delivery); notes and recency are
+  // only tiny tiebreakers. No completed tasks => 0 pts, so an idle staffer or a pure delegator
+  // can never sit above someone who is actually finishing work.
+  var completed=s.completed||0, onTime=s.onTime||0;
+  var work = onTime*5 + Math.max(0, completed-onTime)*2;
   if(work<=0) return 0;
   // Notes + recency only nudge the ordering AMONG people who have done work (tiebreakers).
   var rec=0; if(s.lastActive){ var days=(Date.now()-new Date(s.lastActive).getTime())/86400000; rec = days<=1?1.5:(days<=3?0.8:0); }
