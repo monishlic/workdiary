@@ -1743,6 +1743,12 @@ body.modal-open .install-bar{ display:none !important; }
 .nl-closebtn span{font-size:.82rem;color:var(--text-sec)}
 .nl-closebtn.pos:hover,.nl-closebtn.pos:focus{border-color:#1a8f4c;background:rgba(26,143,76,.08)}
 .nl-closebtn.neg:hover,.nl-closebtn.neg:focus{border-color:#c0271f;background:rgba(192,39,31,.08)}
+.nl-ctabs{display:flex;gap:8px;margin:2px 0 12px}
+.nl-ctab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-sec);font-weight:700;font-size:.9rem;cursor:pointer}
+.nl-ctab b{color:var(--text)}
+.nl-ctab.on.pos{border-color:#1a8f4c;color:#1a8f4c;background:rgba(26,143,76,.08)}
+.nl-ctab.on.neg{border-color:#c0271f;color:#c0271f;background:rgba(192,39,31,.08)}
+.nl-ch-reopenrow{margin:0 0 14px}
 /* NL floating ball */
 .nl-fab{position:fixed;right:20px;bottom:150px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:900;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 12px 30px -8px rgba(79,70,229,.7);z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .nl-fab:hover{transform:scale(1.07)}
@@ -2760,7 +2766,7 @@ var FB = (function(){
                 var dd2=parseInt(b.durationDays,10)||l.durationDays||15; var due2=new Date(Date.now()+dd2*86400000);
                 upd.stage='inprocess'; upd.everInProcess=true; upd.renewBounded=false; upd.durationDays=dd2; upd.inProcessStartAt=now2; upd.dueAt=due2.toISOString(); upd.dueReminderAt=new Date(due2.getTime()-86400000).toISOString(); upd.dueReminderSent=false; upd.lastActionAt=now2; upd.nextDeadlineAt=new Date(due2.getTime()+86400000).toISOString();
                 upd.closeOutcome=''; upd.ignoredAt=''; upd.lapsedFrom='';
-                upd.history=(l.history||[]).concat([{t:now2,type:'revived',byId:u2.userId,byName:u2.name,text:'Reopened → In Process'}]);
+                upd.history=(l.history||[]).concat([{t:now2,type:'reopened',byId:u2.userId,byName:u2.name}]);
                 notifyOthers=u2.name+' reopened the lead (In Process): '+l.clientName;
               } else if(act==='autoIgnore'){
                 if(stage==='executed'||stage==='ignored') return {ok:true};
@@ -3559,13 +3565,13 @@ function nlIgnoredAt(l){ if(l.ignoredAt) return nlParse(l.ignoredAt); var s=l.st
 function nlNudge(l){
   var eff=nlEffective(l);
   if(eff==='new'||eff==='acknowledged'){ var dl=nlParse(l.lastActionAt||l.assignedAt)+NL_48H; return {cls:'warn', html:'⏳ Take action or it moves to Ignored in <b>'+nlLeft(dl)+'</b>'}; }
-  if(eff==='inprocess'){ if(l.renewBounded){ var dl2=nlParse(l.lastActionAt)+NL_48H; return {cls:'warn', html:'⏳ Add a remark or it lapses in <b>'+nlLeft(dl2)+'</b>'}; } return {cls:'due', html:'⏱️ Close it within <b>'+nlLeft(nlParse(l.dueAt),true)+'</b> or it lapses to Ignored'}; }
+  if(eff==='inprocess'){ if(l.renewBounded){ var dl2=nlParse(l.lastActionAt)+NL_48H; return {cls:'warn', html:'⏳ Add a remark or it lapses in <b>'+nlLeft(dl2)+'</b>'}; } return {cls:'due', html:'⏱️ Close it within <b>'+nlLeft(nlParse(l.dueAt))+'</b> or it lapses to Ignored'}; }
   if(eff==='ignored') return {cls:'gone', html:'⚠️ Lapsed <b>'+nlSince(nlIgnoredAt(l))+'</b> — add a remark to revive it'};
   return {cls:'', html:''};
 }
 function nlLastEvent(l){
   var h=(l.history||[]); var last=h.length?h[h.length-1]:null; if(!last) return 'Assigned by '+esc(l.createdByName||'');
-  var map={assigned:'Assigned by ',acknowledged:'Acknowledged by ',remark:'Remark by ',inprocess:'In Process by ',done:'Closed by ',ignored:'Auto-moved to Ignored',revived:'Revived by ','admin-urgent':'Flagged urgent by ','admin-comment':'Comment by '};
+  var map={assigned:'Assigned by ',acknowledged:'Acknowledged by ',remark:'Remark by ',inprocess:'In Process by ',done:'Closed by ',ignored:'Auto-moved to Ignored',revived:'Revived by ',reopened:'Reopened by ','admin-urgent':'Flagged urgent by ','admin-comment':'Comment by '};
   var base=map[last.type]||'Updated by ';
   if(last.type==='done') base='Closed ('+((last.outcome==='negative')?'Negative':'Positive')+') by ';
   if(last.type==='ignored') return base;
@@ -3632,16 +3638,16 @@ function nlActions(l,eff,admin){
 function nlOutcome(l){ return (l && l.closeOutcome==='negative')?'neg':'pos'; }
 function nlStInfo(l,eff){
   if(eff!=='executed') return { cls:eff, label:({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored'})[eff]||eff };
-  var oc=nlOutcome(l); return { cls:'executed '+oc, label:(oc==='neg'?'Closed ✕':'Closed ✓') };
+  var oc=nlOutcome(l); return { cls:'executed '+oc, label:(oc==='neg'?'Closed · Negative':'Closed · Positive') };
 }
 function nlClosedSplit(list){
+  var sub=(App._leadView&&App._leadView.csub)||'pos';
   var pos=[], neg=[];
   list.forEach(function(l){ (nlOutcome(l)==='neg'?neg:pos).push(l); });
-  var out='<div class="nl-cgrouphd nl-pos">✅ Positive — closed ('+pos.length+')</div>';
-  out+= pos.length ? pos.map(function(l){return nlCard(l,false);}).join('') : '<div class="nl-empty">No positive closes yet.</div>';
-  out+='<div class="nl-cgrouphd nl-neg">❌ Negative — closed ('+neg.length+')</div>';
-  out+= neg.length ? neg.map(function(l){return nlCard(l,false);}).join('') : '<div class="nl-empty">No negative closes yet.</div>';
-  return out;
+  var bar='<div class="nl-ctabs"><button class="nl-ctab pos'+(sub==='pos'?' on':'')+'" data-action="nl-closetab" data-ct="pos">✅ Positive <b>'+pos.length+'</b></button><button class="nl-ctab neg'+(sub==='neg'?' on':'')+'" data-action="nl-closetab" data-ct="neg">❌ Negative <b>'+neg.length+'</b></button></div>';
+  var sel=(sub==='neg')?neg:pos;
+  var body=sel.length ? sel.map(function(l){return nlCard(l,false);}).join('') : '<div class="nl-empty">No '+(sub==='neg'?'negative':'positive')+' closes yet.</div>';
+  return bar+body;
 }
 function nlStampSVG(oc){
   return '<div class="nl-stamp-seal '+((oc==='neg')?'neg':'pos')+'"><svg class="nl-stampsvg" viewBox="0 0 200 96" aria-label="Lead closed stamp"><g filter="url(#nlGrunge)" fill="none" stroke="currentColor"><rect x="6" y="6" width="188" height="84" rx="8" stroke-width="6"/><rect x="14" y="14" width="172" height="68" rx="5" stroke-width="1.8" stroke-dasharray="2.5 3"/><text x="100" y="35" text-anchor="middle" class="nl-stamptop">LEAD</text><text x="100" y="75" text-anchor="middle" class="nl-stamptext">CLOSED</text></g></svg></div>';
@@ -3734,7 +3740,7 @@ function nlSubmitAssign(){
 }
 
 /* ---- lead actions from cards ---- */
-function nlLeadById(id){ return (App._leads||[]).concat(App._leadsAdmin||[]).find(function(l){return String(l.id)===String(id);}); }
+function nlLeadById(id){ var lv=App._leadView||{}; var pools=[App._leads,App._leadsAdmin,lv.abm,lv.staffLeads,lv.biz]; for(var i=0;i<pools.length;i++){ var a=pools[i]; if(a){ for(var j=0;j<a.length;j++){ if(a[j]&&String(a[j].id)===String(id)) return a[j]; } } } }
 function nlDo(id, act, extra){
   var p=Object.assign({leadId:id, act:act}, extra||{});
   return apiCall('leadAction',p).then(function(){ if(App.view==='leads') refreshView(); }).catch(function(e){ toast('Action failed. '+((e&&e.message)||''),'err'); });
@@ -3743,7 +3749,7 @@ function nlRemark(id){
   var l=nlLeadById(id); var eff=l?nlEffective(l):'';
   nlInput((eff==='ignored'?'Add a remark to revive this lead':'Add a remark'),'Your remark…',function(txt){ if(!(txt||'').trim()){ return; } nlDo(id,'remark',{text:txt.trim()}).then(function(){ toast('✓ Remark added','success'); }); });
 }
-function nlReopen(id){ nlDuration(function(days){ nlDo(id,'reopen',{durationDays:days}).then(function(){ toast('↩ Reopened — moved to In Process','success'); }); }); }
+function nlReopen(id){ nlDuration(function(days){ nlDo(id,'reopen',{durationDays:days}).then(function(){ toast('↩ Reopened — moved to In Process','success'); var sub=(App._leadView&&App._leadView.sub); if(sub==='abm') nlGoABM(); else if(sub==='staff') nlGoStaff(App._leadView.staffId); }); }); }
 function nlInProcess(id){
   nlDuration(function(days){ nlDo(id,'inprocess',{durationDays:days}).then(function(){ toast('✓ Moved to In Process ('+days+'-day plan)','success'); }); });
 }
@@ -3770,8 +3776,8 @@ function nlOpenChain(id){
   document.getElementById('nl-ch-title').textContent=l.clientName||'Lead';
   document.getElementById('nl-ch-sub').textContent=(l.department||'')+' · '+(l.category||'')+' · shared by '+((l.assignees||[]).map(function(a){return a.name;}).slice(0,3).join(', ')||'—');
   var hist=(l.history||[]).slice();
-  var icons={assigned:'',acknowledged:'',remark:'',inprocess:'',done:'exec',ignored:'ign',revived:'rev','admin-urgent':'','admin-comment':''};
-  var lab={assigned:'Lead assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived','admin-urgent':'Flagged urgent (admin)','admin-comment':'Admin comment'};
+  var icons={assigned:'',acknowledged:'',remark:'',inprocess:'',done:'exec',ignored:'ign',revived:'rev',reopened:'rev','admin-urgent':'','admin-comment':''};
+  var lab={assigned:'Lead assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived',reopened:'↩ Reopened → In Process','admin-urgent':'Flagged urgent (admin)','admin-comment':'Admin comment'};
   var rows=hist.map(function(ev){
     var cls=icons[ev.type]||'';
     var when=nlFmt(ev.t);
@@ -3779,7 +3785,9 @@ function nlOpenChain(id){
     var q=(ev.text && ev.type!=='inprocess')?'<div class="nl-q">“'+esc(ev.text)+'”</div>':'';
     return '<div class="nl-tk '+cls+'"><div class="nl-kt">'+(ev.type==='done'?('Closed — '+((ev.outcome==='negative')?'Negative':'Positive')):(lab[ev.type]||'Update'))+'</div><div class="nl-kd">'+when+'</div>'+loc+q+'</div>';
   }).join('');
-  document.getElementById('nl-ch-body').innerHTML='<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
+  var meId=nlMeId(); var mine=(l.assigneeIds||[]).map(String).indexOf(meId)>=0 || String(l.createdById||'')===meId; var effc=nlEffective(l);
+  var reop=(mine && (effc==='executed'||effc==='ignored'))?'<div class="nl-ch-reopenrow"><button class="btn nl-b go" data-action="nl-reopen-chain" data-lead="'+esc(l.id)+'">↩ Reopen → In Process</button></div>':'';
+  document.getElementById('nl-ch-body').innerHTML=reop+'<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
   openModal('nl-chain-modal');
 }
 function nlFmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return ''; try{ return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return iso; } }
@@ -7716,9 +7724,11 @@ document.addEventListener('click', function(e){
     case 'newtask': openAssign('', ''); break;
     case 'newlead': nlOpenAssign(); break;
     case 'nl-tab': App._leadView=App._leadView||{}; App._leadView.tab=el.getAttribute('data-tab'); renderLeads(); break;
+    case 'nl-closetab': App._leadView=App._leadView||{}; App._leadView.csub=el.getAttribute('data-ct'); renderLeads(); break;
     case 'nl-remark': nlRemark(el.getAttribute('data-lead')); break;
     case 'nl-inprocess': nlInProcess(el.getAttribute('data-lead')); break;
     case 'nl-reopen': nlReopen(el.getAttribute('data-lead')); break;
+    case 'nl-reopen-chain': closeModal('nl-chain-modal'); nlReopen(el.getAttribute('data-lead')); break;
     case 'nl-done': nlDone(el.getAttribute('data-lead')); break;
     case 'nl-close-pos': nlCloseWith('positive'); break;
     case 'nl-close-neg': nlCloseWith('negative'); break;
