@@ -1749,6 +1749,16 @@ body.modal-open .install-bar{ display:none !important; }
 .nl-ctab.on.pos{border-color:#1a8f4c;color:#1a8f4c;background:rgba(26,143,76,.08)}
 .nl-ctab.on.neg{border-color:#c0271f;color:#c0271f;background:rgba(192,39,31,.08)}
 .nl-ch-reopenrow{margin:0 0 14px}
+.nl-remind-line{margin:8px 0 2px;font-size:.86rem;color:#b26a00;font-weight:600}
+.nl-remind-line.muted{color:var(--text-sec);font-weight:500}
+.nl-remind-ct{color:var(--text-sec);font-weight:500}
+.nl-remhead{font-weight:800;margin:4px 0 8px;font-size:.92rem}
+.nl-remrow{border-left:3px solid var(--border);padding:4px 0 4px 10px;margin:0 0 8px}
+.nl-remrow.pend{border-color:#b26a00}
+.nl-remrow.done{border-color:#1a8f4c;opacity:.85}
+.nl-remwhen{font-size:.82rem;font-weight:700}
+.nl-remq{font-size:.82rem;color:var(--text-sec);font-style:italic}
+.nl-remby{font-size:.74rem;color:var(--text-muted)}
 /* NL floating ball */
 .nl-fab{position:fixed;right:20px;bottom:150px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:900;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 12px 30px -8px rgba(79,70,229,.7);z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .nl-fab:hover{transform:scale(1.07)}
@@ -2187,6 +2197,18 @@ textarea.nl-in{min-height:64px;resize:vertical}
       </div>
     </div>
     <div class="modal-f"><button class="btn ghost" data-action="close-modal" data-modal="nl-close-modal">Cancel</button></div>
+  </div>
+</div>
+<div id="nl-remind-modal" class="overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-h"><h3>Set a reminder</h3><button class="modal-x" data-action="close-modal" data-modal="nl-remind-modal">&times;</button></div>
+    <div class="modal-b">
+      <label class="nl-lb">When to remind you</label>
+      <input id="nl-rem-at" class="nl-in" type="datetime-local">
+      <label class="nl-lb">Remark (what is this for?)</label>
+      <textarea id="nl-rem-note" class="nl-in" placeholder="e.g. Call back with the premium quote"></textarea>
+    </div>
+    <div class="modal-f"><button class="btn ghost" data-action="close-modal" data-modal="nl-remind-modal">Cancel</button><button class="btn primary" data-action="nl-remind-save">Set reminder</button></div>
   </div>
 </div>
 <div id="nl-chain-modal" class="overlay hidden">
@@ -2802,6 +2824,20 @@ var FB = (function(){
           case 'leadDelete': {
             if(!isAdmin()) return {ok:false, error:'Only an admin can delete a lead.'};
             return col('leads').doc(String(b.leadId)).delete().then(function(){ try{ logAudit('Lead deleted', String(b.leadId), '', ''); }catch(e){} return {ok:true}; });
+          }
+          case 'leadRemind': {
+            var ur=me(); var nowr=nowISO();
+            return col('leads').doc(String(b.leadId)).get().then(function(s){
+              if(!s.exists) return {ok:false, error:'Lead not found.'};
+              var l=s.data(); var rems=(l.reminders||[]); var atMs=Date.parse(String(b.at));
+              if(isNaN(atMs) || atMs < Date.now()-60000) return {ok:false, error:'Pick a future date & time.'};
+              if(rems.some(function(r){ return String(r.byId)===String(ur.userId) && Date.parse(r.at)>Date.now(); })) return {ok:false, error:'You already have an active reminder on this lead \u2014 it moves to the log once it fires.'};
+              var rid=newId('LR'); rems.push({ id:rid, at:String(b.at), remark:String(b.remark||''), byId:String(ur.userId), byName:String(ur.name||''), setAt:nowr });
+              return col('leads').doc(String(b.leadId)).set({reminders:rems, updatedAt:nowr},{merge:true}).then(function(){
+                try{ col('dueReminders').doc('lead__'+rid).set({ kind:'lead', leadId:String(b.leadId), ownerId:String(ur.userId), ownerName:String(ur.name||''), loop:[], title:String(l.clientName||'Lead'), clientName:String(l.clientName||''), message:String(b.remark||''), atMillis:atMs, due:String(b.at) }); }catch(e){}
+                return {ok:true};
+              });
+            });
           }
         default: return {ok:false, error:'Unknown action: '+action};
       }
@@ -3633,7 +3669,7 @@ function nlActions(l,eff,admin){
   else if(eff==='inprocess') out+=b('nl-remark','＋ Remark','primary')+b('nl-done','✓ Done','done');
   else if(eff==='ignored') out+=b('nl-remark','＋ Remark to revive','primary')+b('nl-reopen','↩ Reopen','go');
   else if(eff==='executed') out+=b('nl-reopen','↩ Reopen','go');
-  out+=b('nl-chain','Track lead','ghost');
+  out+=b('nl-remind','\u23f0 Remind','ghost')+b('nl-chain','Track lead','ghost');
   return out;
 }
 function nlOutcome(l){ return (l && l.closeOutcome==='negative')?'neg':'pos'; }
@@ -3653,6 +3689,13 @@ function nlClosedSplit(list){
 function nlStampSVG(oc){
   return '<div class="nl-stamp-seal '+((oc==='neg')?'neg':'pos')+'"><svg class="nl-stampsvg" viewBox="0 0 200 96" aria-label="Lead closed stamp"><g filter="url(#nlGrunge)" fill="none" stroke="currentColor"><rect x="6" y="6" width="188" height="84" rx="8" stroke-width="6"/><rect x="14" y="14" width="172" height="68" rx="5" stroke-width="1.8" stroke-dasharray="2.5 3"/><text x="100" y="35" text-anchor="middle" class="nl-stamptop">LEAD</text><text x="100" y="75" text-anchor="middle" class="nl-stamptext">CLOSED</text></g></svg></div>';
 }
+function nlReminderLine(l){
+  var rems=(l&&l.reminders)||[]; if(!rems.length) return '';
+  var now=Date.now();
+  var pend=rems.filter(function(r){ return Date.parse(r.at)>now; }).sort(function(a,b){ return Date.parse(a.at)-Date.parse(b.at); });
+  if(pend.length){ var r=pend[0]; return '<div class="nl-remind-line">\u23f0 Reminder: <b>'+esc(nlFmt(r.at))+'</b>'+(r.remark?' \u2014 '+esc(r.remark):'')+(rems.length>1?' <span class="nl-remind-ct">('+rems.length+' set)</span>':'')+'</div>'; }
+  return '<div class="nl-remind-line muted">\u23f0 '+rems.length+' reminder'+(rems.length>1?'s':'')+' logged</div>';
+}
 function nlCard(l,admin){
   var eff=nlEffective(l);
   var pr=(l.priority||'medium');
@@ -3668,7 +3711,7 @@ function nlCard(l,admin){
   var nudgeH=(nudge.html && eff!=='executed')?'<div class="nl-nudge '+nudge.cls+'">'+nudge.html+'</div>':'';
   var who='<div class="nl-who">'+(avs?'<div class="nl-avs">'+avs+'</div>':'')+'<span class="nl-with">with '+esc(withTxt||'—')+'</span><span class="nl-stampline">'+nlLastEvent(l)+'</span></div>';
   var acts='<div class="nl-acts">'+nlActions(l,eff,admin)+'</div>';
-  var inner=top+nudgeH+who+acts;
+  var inner=top+nudgeH+nlReminderLine(l)+who+acts;
   var body = (eff==='executed') ? ('<div class="nl-stamp-wrap"><div class="nl-stamp-main">'+inner+'</div>'+nlStampSVG(oc)+'</div>') : inner;
   return '<div class="nl-lead s-'+eff+(oc?(' nl-c-'+oc):'')+'" data-lead="'+esc(l.id)+'">'+body+'</div>';
 }
@@ -3772,6 +3815,15 @@ function nlConfirm(msg, cb){ App._nlConfirmCb=cb; document.getElementById('nl-c-
 function nlConfirmYes(){ closeModal('nl-confirm-modal'); if(App._nlConfirmCb) App._nlConfirmCb(); }
 
 /* ---- tracking chain (detail) modal ---- */
+function nlRemindOpen(id){ App._nlRemindId=id; var a=document.getElementById('nl-rem-at'); if(a) a.value=''; var n=document.getElementById('nl-rem-note'); if(n) n.value=''; openModal('nl-remind-modal'); setTimeout(function(){ try{ if(a) a.focus(); }catch(e){} },30); }
+function nlRemindSave(){
+  var id=App._nlRemindId; var av=(document.getElementById('nl-rem-at')||{}).value||''; var note=(((document.getElementById('nl-rem-note')||{}).value)||'').trim();
+  if(!av){ toast('Pick a date & time.','warn'); return; }
+  var d=new Date(av); if(isNaN(d.getTime())){ toast('Invalid date & time.','warn'); return; }
+  if(d.getTime()<Date.now()){ toast('Pick a future time.','warn'); return; }
+  closeModal('nl-remind-modal');
+  apiCall('leadRemind',{leadId:id, at:d.toISOString(), remark:note}).then(function(r){ if(r&&r.ok){ toast('\u23f0 Reminder set','success'); if(App.view==='leads') refreshView(); } else { toast((r&&r.error)||'Could not set reminder.','warn'); } }).catch(function(e){ toast('Could not set reminder. '+((e&&e.message)||''),'err'); });
+}
 function nlOpenChain(id){
   var l=nlLeadById(id); if(!l){ toast('Lead not found','warn'); return; }
   document.getElementById('nl-ch-title').textContent=l.clientName||'Lead';
@@ -3788,7 +3840,9 @@ function nlOpenChain(id){
   }).join('');
   var meId=nlMeId(); var mine=(l.assigneeIds||[]).map(String).indexOf(meId)>=0 || String(l.createdById||'')===meId; var effc=nlEffective(l);
   var reop=(mine && (effc==='executed'||effc==='ignored'))?'<div class="nl-ch-reopenrow"><button class="btn nl-b go" data-action="nl-reopen-chain" data-lead="'+esc(l.id)+'">↩ Reopen → In Process</button></div>':'';
-  document.getElementById('nl-ch-body').innerHTML=reop+'<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
+  var _rems=(l.reminders||[]).slice().sort(function(a,b){return Date.parse(a.at)-Date.parse(b.at);});
+  var remLog=_rems.length?('<div class="nl-remhead">\u23f0 Reminders ('+_rems.length+')</div>'+_rems.map(function(r){ var past=Date.parse(r.at)<=Date.now(); return '<div class="nl-remrow '+(past?'done':'pend')+'"><div class="nl-remwhen">'+esc(nlFmt(r.at))+' \u00b7 '+(past?'reminded':'pending')+'</div>'+(r.remark?'<div class="nl-remq">\u201c'+esc(r.remark)+'\u201d</div>':'')+'<div class="nl-remby">set by '+esc(r.byName||'')+'</div></div>'; }).join('')):'';
+  document.getElementById('nl-ch-body').innerHTML=reop+remLog+'<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
   openModal('nl-chain-modal');
 }
 function nlFmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return ''; try{ return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return iso; } }
@@ -7749,6 +7803,8 @@ document.addEventListener('click', function(e){
     case 'nl-stab': App._leadView=App._leadView||{}; App._leadView.stab=el.getAttribute('data-tab'); renderLeads(); break;
     case 'nl-sclosetab': App._leadView=App._leadView||{}; App._leadView.scsub=el.getAttribute('data-ct'); renderLeads(); break;
     case 'nl-remark': nlRemark(el.getAttribute('data-lead')); break;
+    case 'nl-remind': nlRemindOpen(el.getAttribute('data-lead')); break;
+    case 'nl-remind-save': nlRemindSave(); break;
     case 'nl-inprocess': nlInProcess(el.getAttribute('data-lead')); break;
     case 'nl-reopen': nlReopen(el.getAttribute('data-lead')); break;
     case 'nl-reopen-chain': closeModal('nl-chain-modal'); nlReopen(el.getAttribute('data-lead')); break;
