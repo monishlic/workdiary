@@ -1727,6 +1727,22 @@ body.modal-open .install-bar{ display:none !important; }
 .nl-stampsvg{width:150px;height:auto;color:#c0271f;opacity:.85;transform:rotate(-7deg);flex:none}
 .nl-stamptext{font:900 34px/1 "Arial Narrow","Helvetica Neue",Impact,"Segoe UI",system-ui,sans-serif;letter-spacing:1px;fill:currentColor;stroke:none}
 .nl-stamptop{font:800 9px/1 "Segoe UI",system-ui,sans-serif;letter-spacing:3.5px;fill:currentColor;stroke:none}
+.nl-stamp-seal.pos .nl-stampsvg{color:#1a8f4c}
+.nl-stamp-seal.neg .nl-stampsvg{color:#c0271f}
+.nl-lead.s-executed.nl-c-pos{--nlc:#1a8f4c}
+.nl-lead.s-executed.nl-c-neg{--nlc:#c0271f}
+.nl-st.executed.pos{background:#1a8f4c}
+.nl-st.executed.neg{background:#c0271f}
+.nl-cgrouphd{font-weight:800;font-size:.95rem;margin:16px 2px 8px;display:flex;align-items:center;gap:7px}
+.nl-cgrouphd.nl-pos{color:#1a8f4c}
+.nl-cgrouphd.nl-neg{color:#c0271f}
+.nl-closenote{margin:0 0 12px;color:var(--text-sec);font-size:.9rem;line-height:1.4}
+.nl-closebtns{display:flex;flex-direction:column;gap:10px}
+.nl-closebtn{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg-card);color:var(--text);cursor:pointer;transition:border-color .12s,background .12s}
+.nl-closebtn b{font-size:1rem}
+.nl-closebtn span{font-size:.82rem;color:var(--text-sec)}
+.nl-closebtn.pos:hover,.nl-closebtn.pos:focus{border-color:#1a8f4c;background:rgba(26,143,76,.08)}
+.nl-closebtn.neg:hover,.nl-closebtn.neg:focus{border-color:#c0271f;background:rgba(192,39,31,.08)}
 /* NL floating ball */
 .nl-fab{position:fixed;right:20px;bottom:150px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:900;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 12px 30px -8px rgba(79,70,229,.7);z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .nl-fab:hover{transform:scale(1.07)}
@@ -2152,6 +2168,19 @@ textarea.nl-in{min-height:64px;resize:vertical}
     <div class="modal-h"><h3>Please confirm</h3><button class="modal-x" data-action="close-modal" data-modal="nl-confirm-modal">&times;</button></div>
     <div class="modal-b"><p id="nl-c-msg"></p></div>
     <div class="modal-f"><button class="btn ghost" data-action="close-modal" data-modal="nl-confirm-modal">Cancel</button><button class="btn primary" data-action="nl-confirm-yes">Yes, continue</button></div>
+  </div>
+</div>
+<div id="nl-close-modal" class="overlay hidden">
+  <div class="modal modal-sm">
+    <div class="modal-h"><h3>Close this lead</h3><button class="modal-x" data-action="close-modal" data-modal="nl-close-modal">&times;</button></div>
+    <div class="modal-b">
+      <p class="nl-closenote">How did this lead end? Pick an outcome — a lead can’t be reopened once closed.</p>
+      <div class="nl-closebtns">
+        <button type="button" class="nl-closebtn pos" data-action="nl-close-pos"><b>✅ Positive</b><span>Business done / client will convert</span></button>
+        <button type="button" class="nl-closebtn neg" data-action="nl-close-neg"><b>❌ Negative</b><span>On hold / not interested</span></button>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn ghost" data-action="close-modal" data-modal="nl-close-modal">Cancel</button></div>
   </div>
 </div>
 <div id="nl-chain-modal" class="overlay hidden">
@@ -2724,8 +2753,15 @@ var FB = (function(){
                 notifyOthers=u2.name+' moved the lead to In Process: '+l.clientName;
               } else if(act==='done'){
                 if(stage!=='inprocess') return {ok:false};
-                upd.stage='executed'; upd.nextDeadlineAt=''; upd.history=(l.history||[]).concat([{t:now2,type:'done',byId:u2.userId,byName:u2.name}]);
-                notifyOthers=u2.name+' closed the lead: '+l.clientName;
+                var oc=(b.outcome==='negative')?'negative':'positive';
+                upd.stage='executed'; upd.closeOutcome=oc; upd.nextDeadlineAt=''; upd.history=(l.history||[]).concat([{t:now2,type:'done',byId:u2.userId,byName:u2.name,outcome:oc}]);
+                notifyOthers=u2.name+' closed the lead ('+(oc==='negative'?'Negative':'Positive')+'): '+l.clientName;
+              } else if(act==='reopen'){
+                var dd2=parseInt(b.durationDays,10)||l.durationDays||15; var due2=new Date(Date.now()+dd2*86400000);
+                upd.stage='inprocess'; upd.everInProcess=true; upd.renewBounded=false; upd.durationDays=dd2; upd.inProcessStartAt=now2; upd.dueAt=due2.toISOString(); upd.dueReminderAt=new Date(due2.getTime()-86400000).toISOString(); upd.dueReminderSent=false; upd.lastActionAt=now2; upd.nextDeadlineAt=new Date(due2.getTime()+86400000).toISOString();
+                upd.closeOutcome=''; upd.ignoredAt=''; upd.lapsedFrom='';
+                upd.history=(l.history||[]).concat([{t:now2,type:'revived',byId:u2.userId,byName:u2.name,text:'Reopened → In Process'}]);
+                notifyOthers=u2.name+' reopened the lead (In Process): '+l.clientName;
               } else if(act==='autoIgnore'){
                 if(stage==='executed'||stage==='ignored') return {ok:true};
                 upd.stage='ignored'; upd.lapsedFrom=(stage==='inprocess'?'inprocess':(stage==='acknowledged'?'acknowledged':'new')); upd.ignoredAt=now2;
@@ -3531,6 +3567,7 @@ function nlLastEvent(l){
   var h=(l.history||[]); var last=h.length?h[h.length-1]:null; if(!last) return 'Assigned by '+esc(l.createdByName||'');
   var map={assigned:'Assigned by ',acknowledged:'Acknowledged by ',remark:'Remark by ',inprocess:'In Process by ',done:'Closed by ',ignored:'Auto-moved to Ignored',revived:'Revived by ','admin-urgent':'Flagged urgent by ','admin-comment':'Comment by '};
   var base=map[last.type]||'Updated by ';
+  if(last.type==='done') base='Closed ('+((last.outcome==='negative')?'Negative':'Positive')+') by ';
   if(last.type==='ignored') return base;
   return base+esc(last.byName||'')+' · '+nlSince(nlParse(last.t));
 }
@@ -3575,6 +3612,7 @@ function nlRenderBoard(){
   var list=all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
   list.sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); });
   if(!list.length) h+='<div class="nl-empty">No leads here yet. Use <b>＋ Assign a lead</b> or the NL button.</div>';
+  else if(tab==='executed'){ h+=nlClosedSplit(list); }
   else list.forEach(function(l){ h+=nlCard(l,false); });
   document.getElementById('content').innerHTML=h;
 }
@@ -3586,31 +3624,46 @@ function nlActions(l,eff,admin){
   if(eff==='new') out+=b('nl-remark','＋ Add remark (acknowledge)','primary');
   else if(eff==='acknowledged') out+=b('nl-remark','＋ Remark','primary')+b('nl-inprocess','▶ Move to In Process','go');
   else if(eff==='inprocess') out+=b('nl-remark','＋ Remark','primary')+b('nl-done','✓ Done','done');
-  else if(eff==='ignored') out+=b('nl-remark','＋ Remark to revive','primary');
+  else if(eff==='ignored') out+=b('nl-remark','＋ Remark to revive','primary')+b('nl-reopen','↩ Reopen','go');
+  else if(eff==='executed') out+=b('nl-reopen','↩ Reopen','go');
   out+=b('nl-chain','Track lead','ghost');
   return out;
 }
-function nlStampSVG(){
-  return '<div class="nl-stamp-seal"><svg class="nl-stampsvg" viewBox="0 0 200 96" aria-label="Lead closed stamp"><g filter="url(#nlGrunge)" fill="none" stroke="currentColor"><rect x="6" y="6" width="188" height="84" rx="8" stroke-width="6"/><rect x="14" y="14" width="172" height="68" rx="5" stroke-width="1.8" stroke-dasharray="2.5 3"/><text x="100" y="35" text-anchor="middle" class="nl-stamptop">LEAD</text><text x="100" y="75" text-anchor="middle" class="nl-stamptext">CLOSED</text></g></svg></div>';
+function nlOutcome(l){ return (l && l.closeOutcome==='negative')?'neg':'pos'; }
+function nlStInfo(l,eff){
+  if(eff!=='executed') return { cls:eff, label:({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored'})[eff]||eff };
+  var oc=nlOutcome(l); return { cls:'executed '+oc, label:(oc==='neg'?'Closed ✕':'Closed ✓') };
+}
+function nlClosedSplit(list){
+  var pos=[], neg=[];
+  list.forEach(function(l){ (nlOutcome(l)==='neg'?neg:pos).push(l); });
+  var out='<div class="nl-cgrouphd nl-pos">✅ Positive — closed ('+pos.length+')</div>';
+  out+= pos.length ? pos.map(function(l){return nlCard(l,false);}).join('') : '<div class="nl-empty">No positive closes yet.</div>';
+  out+='<div class="nl-cgrouphd nl-neg">❌ Negative — closed ('+neg.length+')</div>';
+  out+= neg.length ? neg.map(function(l){return nlCard(l,false);}).join('') : '<div class="nl-empty">No negative closes yet.</div>';
+  return out;
+}
+function nlStampSVG(oc){
+  return '<div class="nl-stamp-seal '+((oc==='neg')?'neg':'pos')+'"><svg class="nl-stampsvg" viewBox="0 0 200 96" aria-label="Lead closed stamp"><g filter="url(#nlGrunge)" fill="none" stroke="currentColor"><rect x="6" y="6" width="188" height="84" rx="8" stroke-width="6"/><rect x="14" y="14" width="172" height="68" rx="5" stroke-width="1.8" stroke-dasharray="2.5 3"/><text x="100" y="35" text-anchor="middle" class="nl-stamptop">LEAD</text><text x="100" y="75" text-anchor="middle" class="nl-stamptext">CLOSED</text></g></svg></div>';
 }
 function nlCard(l,admin){
   var eff=nlEffective(l);
   var pr=(l.priority||'medium');
   var prLabel=({urgent:'🔴 Urgent',medium:'🟠 Medium',low:'🟢 Low'})[pr]||'🟠 Medium';
-  var stLabel=({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored',executed:'Closed'})[eff];
+  var sti=nlStInfo(l,eff); var stLabel=sti.label; var oc=(eff==='executed')?nlOutcome(l):'';
   var assignees=(l.assignees||[]);
   var avs=assignees.slice(0,3).map(function(a){ return '<span class="nl-av">'+esc(nlInitials(a.name).toUpperCase())+'</span>'; }).join('');
   if(assignees.length>3) avs+='<span class="nl-av">+'+(assignees.length-3)+'</span>';
   var withTxt=assignees.map(function(a){return a.name;}).slice(0,2).join(', ')+(assignees.length>2?' +'+(assignees.length-2):'');
   var nudge=nlNudge(l);
   var top='<div class="nl-top"><div class="nl-cl">'+esc(l.clientName||'—')+(l.mobile?' <span class="nl-mob">· '+esc(l.mobile)+'</span>':'')+'</div>'+
-    '<div class="nl-pills"><span class="nl-pill nl-p-dept">'+esc(l.department||'')+'</span><span class="nl-pill nl-p-cat">'+esc(l.category||'')+'</span><span class="nl-pill nl-pr '+pr+'">'+prLabel+'</span><span class="nl-st '+eff+'">'+stLabel+'</span>'+(l.adminUrgent?'<span class="nl-pill nl-pr urgent">★ Admin</span>':'')+'</div></div>';
+    '<div class="nl-pills"><span class="nl-pill nl-p-dept">'+esc(l.department||'')+'</span><span class="nl-pill nl-p-cat">'+esc(l.category||'')+'</span><span class="nl-pill nl-pr '+pr+'">'+prLabel+'</span><span class="nl-st '+sti.cls+'">'+stLabel+'</span>'+(l.adminUrgent?'<span class="nl-pill nl-pr urgent">★ Admin</span>':'')+'</div></div>';
   var nudgeH=(nudge.html && eff!=='executed')?'<div class="nl-nudge '+nudge.cls+'">'+nudge.html+'</div>':'';
   var who='<div class="nl-who">'+(avs?'<div class="nl-avs">'+avs+'</div>':'')+'<span class="nl-with">with '+esc(withTxt||'—')+'</span><span class="nl-stampline">'+nlLastEvent(l)+'</span></div>';
   var acts='<div class="nl-acts">'+nlActions(l,eff,admin)+'</div>';
   var inner=top+nudgeH+who+acts;
-  var body = (eff==='executed') ? ('<div class="nl-stamp-wrap"><div class="nl-stamp-main">'+inner+'</div>'+nlStampSVG()+'</div>') : inner;
-  return '<div class="nl-lead s-'+eff+'" data-lead="'+esc(l.id)+'">'+body+'</div>';
+  var body = (eff==='executed') ? ('<div class="nl-stamp-wrap"><div class="nl-stamp-main">'+inner+'</div>'+nlStampSVG(oc)+'</div>') : inner;
+  return '<div class="nl-lead s-'+eff+(oc?(' nl-c-'+oc):'')+'" data-lead="'+esc(l.id)+'">'+body+'</div>';
 }
 
 /* ---- assign-lead modal ---- */
@@ -3690,10 +3743,12 @@ function nlRemark(id){
   var l=nlLeadById(id); var eff=l?nlEffective(l):'';
   nlInput((eff==='ignored'?'Add a remark to revive this lead':'Add a remark'),'Your remark…',function(txt){ if(!(txt||'').trim()){ return; } nlDo(id,'remark',{text:txt.trim()}).then(function(){ toast('✓ Remark added','success'); }); });
 }
+function nlReopen(id){ nlDuration(function(days){ nlDo(id,'reopen',{durationDays:days}).then(function(){ toast('↩ Reopened — moved to In Process','success'); }); }); }
 function nlInProcess(id){
   nlDuration(function(days){ nlDo(id,'inprocess',{durationDays:days}).then(function(){ toast('✓ Moved to In Process ('+days+'-day plan)','success'); }); });
 }
-function nlDone(id){ nlConfirm('Mark this lead as Closed? It cannot be reopened.', function(){ nlDo(id,'done').then(function(){ toast('✓ Lead closed','success'); }); }); }
+function nlDone(id){ App._nlCloseId=id; openModal('nl-close-modal'); }
+function nlCloseWith(oc){ var id=App._nlCloseId; closeModal('nl-close-modal'); if(!id) return; nlDo(id,'done',{outcome:oc}).then(function(){ toast(oc==='negative'?'✓ Closed — Negative':'✓ Closed — Positive','success'); }); }
 function nlUrgent(id){ nlDo(id,'adminUrgent').then(function(){ toast('🔴 Flagged urgent — assignees notified','success'); }); }
 function nlComment(id){ nlInput('Comment to the assignees','Your note…',function(txt){ if(!(txt||'').trim()) return; nlDo(id,'comment',{text:txt.trim()}).then(function(){ toast('✓ Comment sent','success'); }); }); }
 
@@ -3722,7 +3777,7 @@ function nlOpenChain(id){
     var when=nlFmt(ev.t);
     var loc=ev.byName?('<span class="nl-loc">by '+esc(ev.byName)+(ev.text&&ev.type==='inprocess'?' · '+esc(ev.text):'')+'</span>'):'';
     var q=(ev.text && ev.type!=='inprocess')?'<div class="nl-q">“'+esc(ev.text)+'”</div>':'';
-    return '<div class="nl-tk '+cls+'"><div class="nl-kt">'+(lab[ev.type]||'Update')+'</div><div class="nl-kd">'+when+'</div>'+loc+q+'</div>';
+    return '<div class="nl-tk '+cls+'"><div class="nl-kt">'+(ev.type==='done'?('Closed — '+((ev.outcome==='negative')?'Negative':'Positive')):(lab[ev.type]||'Update'))+'</div><div class="nl-kd">'+when+'</div>'+loc+q+'</div>';
   }).join('');
   document.getElementById('nl-ch-body').innerHTML='<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
   openModal('nl-chain-modal');
@@ -3744,9 +3799,9 @@ function nlDelete(id){
 function nlGoABM(){ App._leadView=App._leadView||{}; App._leadView.sub='abm'; App._leadView.abm=null; nlRenderABM(); apiCall('leadsByMe').then(function(r){ App._leadView.abm=(r&&r.leads)||[]; if(App._leadView.sub==='abm') nlRenderABM(); }).catch(function(){ App._leadView.abm=[]; if(App._leadView.sub==='abm') nlRenderABM(); }); }
 function nlABMRow(l){
   var eff=nlEffective(l);
-  var stLabel=({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored',executed:'Closed'})[eff];
+  var sti=nlStInfo(l,eff); var stLabel=sti.label; var oc=(eff==='executed')?nlOutcome(l):'';
   var withTxt=(l.assignees||[]).map(function(a){return a.name;}).slice(0,3).join(', ');
-  return '<div class="nl-abm" data-action="nl-chain" data-lead="'+esc(l.id)+'"><div class="nl-abm-top"><span class="nl-abm-cl">'+esc(l.clientName||'—')+'</span><span class="nl-pill nl-p-dept">'+esc(l.department||'')+'</span><span class="nl-st '+eff+'">'+stLabel+'</span><span class="nl-abm-meta">to '+esc(withTxt||'—')+'</span></div><div class="nl-abm-sub">'+nlLastEvent(l)+'</div></div>';
+  return '<div class="nl-abm" data-action="nl-chain" data-lead="'+esc(l.id)+'"><div class="nl-abm-top"><span class="nl-abm-cl">'+esc(l.clientName||'—')+'</span><span class="nl-pill nl-p-dept">'+esc(l.department||'')+'</span><span class="nl-st '+sti.cls+'">'+stLabel+'</span><span class="nl-abm-meta">to '+esc(withTxt||'—')+'</span></div><div class="nl-abm-sub">'+nlLastEvent(l)+'</div></div>';
 }
 function nlRenderABM(){
   var h='<div class="cat-head"><div class="cat-title">Leads I assigned</div><div class="cat-sub">Read-only — watch how your referrals are moving.</div></div>'+nlBacklink();
@@ -3797,10 +3852,11 @@ function nlRenderBiz(){
   var total=arr.length;
   var cnt={'new':0,acknowledged:0,inprocess:0,ignored:0,executed:0};
   arr.forEach(function(l){ var e=nlEffective(l); cnt[e]=(cnt[e]||0)+1; });
-  var conv=total?Math.round(cnt.executed/total*100):0, ignr=total?Math.round(cnt.ignored/total*100):0;
+  var cntPos=0; arr.forEach(function(l){ if(nlEffective(l)==='executed' && (l.closeOutcome||'positive')!=='negative') cntPos++; });
+  var conv=total?Math.round(cntPos/total*100):0, ignr=total?Math.round(cnt.ignored/total*100):0;
   var times=[]; arr.forEach(function(l){ if(l.stage==='executed'){ var done=null; (l.history||[]).forEach(function(ev){ if(ev.type==='done') done=nlParse(ev.t); }); if(done && l.assignedAt) times.push((done-nlParse(l.assignedAt))/86400000); } });
   var avg=times.length?(times.reduce(function(a,b){return a+b;},0)/times.length):0;
-  h+='<div class="nl-kpis">'+nlKpi(total,'Leads received')+nlKpi(conv+'%','Conversion (closed)')+nlKpi((avg?avg.toFixed(1):'0')+'d','Avg time to close')+nlKpi(ignr+'%','Ignored rate')+'</div>';
+  h+='<div class="nl-kpis">'+nlKpi(total,'Leads received')+nlKpi(conv+'%','Conversion (positive)')+nlKpi((avg?avg.toFixed(1):'0')+'d','Avg time to close')+nlKpi(ignr+'%','Ignored rate')+'</div>';
   var segs=[['new',cnt['new'],'#2563eb'],['acknowledged',cnt.acknowledged,'#c99700'],['inprocess',cnt.inprocess,'#0f9d58'],['ignored',cnt.ignored,'#dc2626'],['executed',cnt.executed,'#6b7280']];
   var acc=0, stops=[]; segs.forEach(function(sg){ var p=total?(sg[1]/total*100):0; stops.push(sg[2]+' '+acc.toFixed(3)+'% '+(acc+p).toFixed(3)+'%'); acc+=p; });
   var lbl={'new':'New',acknowledged:'Ack',inprocess:'In Proc',ignored:'Ignored',executed:'Closed'};
@@ -3816,7 +3872,7 @@ function nlRenderBiz(){
   arr.forEach(function(l){ var d=new Date(l.assignedAt); if(!isNaN(d.getTime())){ var k=d.getFullYear()+'-'+d.getMonth(); var mm=months.find(function(x){return x.k===k;}); if(mm) mm.n++; } });
   var maxm=Math.max.apply(null,[1].concat(months.map(function(m){return m.n;})));
   h+='<div class="nl-acard"><h3>Leads received — last 6 months</h3><div class="nl-bars">'+months.map(function(m){ return '<div class="nl-bar"><em>'+m.n+'</em><i style="height:'+Math.round(m.n/maxm*100)+'%"></i><span>'+m.lab+'</span></div>'; }).join('')+'</div></div>';
-  var closers={}; arr.forEach(function(l){ (l.history||[]).forEach(function(ev){ if(ev.type==='done' && ev.byName){ closers[ev.byName]=(closers[ev.byName]||0)+1; } }); });
+  var closers={}; arr.forEach(function(l){ (l.history||[]).forEach(function(ev){ if(ev.type==='done' && ev.byName && ev.outcome!=='negative'){ closers[ev.byName]=(closers[ev.byName]||0)+1; } }); });
   var ck=Object.keys(closers).sort(function(a,b){return closers[b]-closers[a];}).slice(0,5);
   h+='<div class="nl-acard"><h3>Top closers</h3>'+(ck.length?ck.map(function(k,i){return '<div class="nl-lbrow"><span class="nl-rank">'+(i+1)+'</span><span class="nl-av">'+esc(nlInitials(k).toUpperCase())+'</span><span>'+esc(k)+'</span><span class="nl-lbval">'+closers[k]+'</span></div>';}).join(''):'<div class="nl-hint">No closed leads yet.</div>')+'</div>';
   h+='<div class="nl-acard"><h3>Lead activity — '+new Date().getFullYear()+'</h3>'+nlHeat(arr)+'</div>';
@@ -7662,7 +7718,10 @@ document.addEventListener('click', function(e){
     case 'nl-tab': App._leadView=App._leadView||{}; App._leadView.tab=el.getAttribute('data-tab'); renderLeads(); break;
     case 'nl-remark': nlRemark(el.getAttribute('data-lead')); break;
     case 'nl-inprocess': nlInProcess(el.getAttribute('data-lead')); break;
+    case 'nl-reopen': nlReopen(el.getAttribute('data-lead')); break;
     case 'nl-done': nlDone(el.getAttribute('data-lead')); break;
+    case 'nl-close-pos': nlCloseWith('positive'); break;
+    case 'nl-close-neg': nlCloseWith('negative'); break;
     case 'nl-chain': nlOpenChain(el.getAttribute('data-lead')); break;
     case 'nl-urgent': nlUrgent(el.getAttribute('data-lead')); break;
     case 'nl-comment': nlComment(el.getAttribute('data-lead')); break;
