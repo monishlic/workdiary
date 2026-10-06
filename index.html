@@ -1765,6 +1765,33 @@ body.modal-open .install-bar{ display:none !important; }
 .perf-idle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);opacity:.85}
 .pir-name{font-weight:700;font-size:.9rem}
 .pir-meta{font-size:.82rem;color:var(--text-sec)}
+.dsh-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:16px}
+.dsh-mt{margin-top:14px}
+.dsh-ch{display:flex;justify-content:space-between;align-items:center}
+.dsh-ct{font-weight:700;font-size:.92rem;color:var(--text)}
+.dsh-badge{background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:.78rem;border-radius:999px;padding:2px 10px}
+.dsh-mlabs{display:flex;justify-content:space-between;font-size:.64rem;color:var(--text-muted);margin-top:3px}
+.dsh-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.dsh-donutwrap{display:flex;align-items:center;gap:16px;margin-top:12px}
+.dsh-donut{width:118px;height:118px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.dsh-donut.empty{background:var(--border)}
+.dsh-hole{width:80px;height:80px;border-radius:50%;background:var(--bg-card);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dsh-hole b{font-size:1.4rem;font-weight:800;color:var(--text)}.dsh-hole span{font-size:.64rem;color:var(--text-muted)}
+.dsh-legs{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-size:.78rem;color:var(--text-sec)}
+.dsh-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}.dsh-lg b{color:var(--text)}
+.dsh-bars{display:flex;align-items:flex-end;gap:8px;height:118px;margin-top:14px}
+.dsh-bg{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.dsh-bg em{font-size:.66rem;color:var(--text-muted);font-style:normal}
+.dsh-bg i{width:58%;max-width:22px;border-radius:5px 5px 0 0;background:var(--accent);min-height:3px}
+.dsh-bg span{font-size:.64rem;color:var(--text-muted)}
+.dsh-tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:14px 0}
+.dsh-tile{display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px 8px;cursor:pointer;color:var(--text);font:inherit}
+.dsh-tile:hover{border-color:var(--accent)}
+.dsh-ti{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.dsh-tl{font-size:.8rem;font-weight:700}
+.dsh-prow{margin:10px 0}.dsh-pt{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:5px;color:var(--text)}.dsh-amt{color:var(--text-muted)}
+.dsh-ptrack{height:8px;border-radius:6px;background:var(--accent-soft);overflow:hidden}.dsh-ptrack i{display:block;height:100%;border-radius:6px}
+@media(max-width:760px){.dsh-row2{grid-template-columns:1fr}.dsh-tiles{grid-template-columns:repeat(3,1fr)}}
 /* NL floating ball */
 .nl-fab{position:fixed;right:20px;bottom:150px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;font-weight:900;font-size:.95rem;border:none;cursor:pointer;box-shadow:0 12px 30px -8px rgba(79,70,229,.7);z-index:120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .nl-fab:hover{transform:scale(1.07)}
@@ -4755,60 +4782,101 @@ function startNudgeCycle(){
 }
 function stopNudgeCycle(){ if(App.nudgeTimer){ clearInterval(App.nudgeTimer); App.nudgeTimer=null; } }
 function renderDashboard(){
+  var now=Date.now(), nowI=nowISO(), today=fmtDate(nowI);
   var pending=App.tasks.filter(isVisiblePending);
+  var completed=App.tasks.filter(function(t){return t.status==='Completed';});
+  var overdue=pending.filter(function(t){return t.dueDate && new Date(t.dueDate).getTime()<now;}).length;
+  var doneToday=completed.filter(function(t){return fmtDate(t.completedTimestamp)===today;}).length;
   var snoozedCount=App.tasks.filter(isSnoozed).length;
   var streak=streakDays();
-  var completed=App.tasks.filter(function(t){return t.status==='Completed';});
-  var today=fmtDate(nowISO());
-  var addedToday=App.tasks.filter(function(t){return fmtDate(t.createdTimestamp)===today;}).length;
-  var doneToday=completed.filter(function(t){return fmtDate(t.completedTimestamp)===today;}).length;
   var hour=new Date().getHours();
   var greet=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
+  var leads=(App._leads||[]);
+  var leadsInProc=leads.filter(function(l){return nlEffective(l)==='inprocess';}).length;
+  var boss=isBoss();
 
-  var now=Date.now();
-  var overdue=pending.filter(function(t){return t.dueDate && new Date(t.dueDate).getTime()<now;}).length;
-
-  // HERO
+  // ---- Greeting hero ----
   var heroLine = pending.length ? (pending.length+' open item'+(pending.length!==1?'s':'')) : "You're all clear ✨";
-  var heroSub = pending.length ? (overdue? (overdue+' overdue — best to clear those first.') : 'Nothing overdue. Keep the streak going.') : 'Nothing pending right now. Add your next task when you\'re ready.';
-  var h='<div class="dash-hero"><div class="hero-eyebrow">'+greet+', '+esc(App.identity.employeeName.split(' ')[0])+(streak>0?'<span class="streak-chip">🔥 '+streak+'-day clear streak</span>':'')+'</div><h2>'+heroLine+'</h2><p>'+heroSub+'</p>';
-  h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="mytasks">✅ My Tasks</button><button class="hero-btn" data-action="nav" data-view="board">▤ Board</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button>'+(snoozedCount?'<button class="hero-btn" data-action="show-list" data-filter="snoozed">😴 '+snoozedCount+' snoozed</button>':'')+'</div></div>';
+  var heroSub = pending.length ? (overdue? (overdue+' overdue — best to clear those first.') : 'Nothing overdue. Keep the streak going.') : 'Nothing pending right now. Add your next task when you’re ready.';
+  var h='<div class="dash-hero"><div class="hero-eyebrow">'+greet+', '+esc((App.identity.employeeName||'').split(' ')[0])+(streak>0?'<span class="streak-chip">🔥 '+streak+'-day clear streak</span>':'')+'</div><h2>'+heroLine+'</h2><p>'+heroSub+'</p>';
+  h+='<div class="hero-actions"><button class="hero-btn" data-action="open-assign">'+plusIco()+'New Task</button><button class="hero-btn" data-action="nav" data-view="mytasks">✅ My Tasks</button><button class="hero-btn" data-action="nav" data-view="leads">🎯 New Leads</button><button class="hero-btn" data-action="open-cmdk">⌘ Quick jump</button>'+(snoozedCount?'<button class="hero-btn" data-action="show-list" data-filter="snoozed">😴 '+snoozedCount+' snoozed</button>':'')+'</div></div>';
 
-  // Escalation banner — anything overdue by 3+ days
   var escalated=pending.filter(function(t){return overdueDays(t)>=3;}).length;
   if(escalated>0) h+='<div class="esc-banner">&#128681; <span>'+escalated+' task'+(escalated!==1?'s':'')+' badly overdue (3+ days). These need attention now.</span><button class="esc-cta" data-action="show-list" data-filter="overdue">Review overdue</button></div>';
 
-  // Rotating roast banner (timer runs continuously in the background)
-  h+='<div class="nudge"><div class="nudge-inner" id="nudge-inner">'+nudgeHTML(currentNudge())+'</div></div>';
-
-  // Stats
+  // ---- KPI stats (reuse existing clickable stat cards) ----
   h+='<div class="stats">';
   h+=stat(pending.length,'Pending','st-pending','pending');
   h+=stat(overdue,'Overdue','st-over','overdue');
   h+=stat(doneToday,'Done Today','st-done','today-done');
-  h+=stat(completed.length,'Completed','st-total','completed');
+  h+='<div class="stat st-total" data-action="nav" data-view="leads"><div class="stat-v">'+leadsInProc+'</div><div class="stat-l">Leads in process</div></div>';
   h+='</div>';
 
-  // FOCUS NOW — the single most urgent task, by nearest due date (overdue first)
+  // ---- Activity area chart (tasks created + leads assigned, last 6 months) ----
+  var months=[]; var nd=new Date();
+  for(var mi=5;mi>=0;mi--){ var md=new Date(nd.getFullYear(),nd.getMonth()-mi,1); months.push({k:md.getFullYear()+'-'+md.getMonth(), lab:md.toLocaleString([],{month:'short'}), n:0}); }
+  var bump=function(ts){ if(!ts) return; var d=new Date(ts); if(isNaN(d.getTime())) return; var k=d.getFullYear()+'-'+d.getMonth(); var m=null; for(var j=0;j<months.length;j++){ if(months[j].k===k){ m=months[j]; break; } } if(m) m.n++; };
+  App.tasks.forEach(function(t){ bump(t.createdTimestamp); });
+  leads.forEach(function(l){ bump(l.assignedAt); });
+  var mmax=Math.max.apply(null,[1].concat(months.map(function(x){return x.n;})));
+  var W=600,H=120,pad=14;
+  var pts=months.map(function(m,i){ var x=months.length>1?(i/(months.length-1))*(W-2*pad)+pad:W/2; var y=H-pad-(m.n/mmax)*(H-2*pad); return [Math.round(x),Math.round(y)]; });
+  var line=pts.map(function(p,i){return (i?'L':'M')+p[0]+','+p[1];}).join(' ');
+  var area=line+' L'+(W-pad)+','+(H-pad)+' L'+pad+','+(H-pad)+' Z';
+  var total6=months.reduce(function(a,b){return a+b.n;},0);
+  h+='<div class="dsh-card dsh-mt"><div class="dsh-ch"><div class="dsh-ct">Activity — last 6 months</div><span class="dsh-badge">'+total6+'</span></div>'
+    +'<svg viewBox="0 0 600 130" width="100%" height="118" preserveAspectRatio="none" aria-hidden="true"><path d="'+area+'" style="fill:var(--accent);opacity:.10"/><path d="'+line+'" style="fill:none;stroke:var(--accent);stroke-width:3"/></svg>'
+    +'<div class="dsh-mlabs">'+months.map(function(m){return '<span>'+esc(m.lab)+'</span>';}).join('')+'</div></div>';
+
+  // ---- Charts row: leads-by-stage donut + completed-this-week bars ----
+  var SG=[['new','New','#2563eb'],['acknowledged','Acknowledged','#c99700'],['inprocess','In Process','#0f9d58'],['ignored','Ignored','#dc2626'],['executed','Closed','#6b7280']];
+  var lc={}; leads.forEach(function(l){ var e=nlEffective(l); lc[e]=(lc[e]||0)+1; });
+  var lt=leads.length;
+  var don;
+  if(lt){ var acc=0, stops=[]; SG.forEach(function(s){ var p=(lc[s[0]]||0)/lt*100; if(p>0){ stops.push(s[2]+' '+acc.toFixed(2)+'% '+(acc+p).toFixed(2)+'%'); acc+=p; } });
+    don='<div class="dsh-donut" style="background:conic-gradient('+stops.join(',')+')"><div class="dsh-hole"><b>'+lt+'</b><span>leads</span></div></div>';
+  } else { don='<div class="dsh-donut empty"><div class="dsh-hole"><b>0</b><span>leads</span></div></div>'; }
+  var leg=SG.map(function(s){ return '<div class="dsh-lg"><i style="background:'+s[2]+'"></i>'+s[1]+' <b>'+(lc[s[0]]||0)+'</b></div>'; }).join('');
+  var days=[]; for(var di=6;di>=0;di--){ var dd=new Date(now-di*86400000); days.push({lab:['Su','Mo','Tu','We','Th','Fr','Sa'][dd.getDay()], key:fmtDate(dd.toISOString()), n:0}); }
+  completed.forEach(function(t){ if(!t.completedTimestamp) return; var k=fmtDate(t.completedTimestamp); for(var j=0;j<days.length;j++){ if(days[j].key===k){ days[j].n++; break; } } });
+  var dmax=Math.max.apply(null,[1].concat(days.map(function(x){return x.n;})));
+  var bars=days.map(function(x){ return '<div class="dsh-bg"><em>'+x.n+'</em><i style="height:'+Math.round(x.n/dmax*100)+'%"></i><span>'+x.lab+'</span></div>'; }).join('');
+  var wkDone=days.reduce(function(a,b){return a+b.n;},0);
+  h+='<div class="dsh-row2">';
+  h+='<div class="dsh-card"><div class="dsh-ct">Leads by stage</div><div class="dsh-donutwrap">'+don+'<div class="dsh-legs">'+leg+'</div></div></div>';
+  h+='<div class="dsh-card"><div class="dsh-ch"><div class="dsh-ct">Completed — last 7 days</div><span class="dsh-badge">'+wkDone+'</span></div><div class="dsh-bars">'+bars+'</div></div>';
+  h+='</div>';
+
+  // ---- Section tiles ----
+  var tiles=[['slate','📝','Slate','#1f4bd8'],['leads','🎯','New Leads','#0f9d58'],['assigned','📤','Assigned by Me','#2563eb']];
+  if(boss){ tiles.push(['team','👥','Team','#c99700']); tiles.push(['performance','📈','Performance','#e0588f']); }
+  tiles.push(['clients','👤','Clients','#1aa3a3']);
+  h+='<div class="dsh-tiles">'+tiles.map(function(t){ return '<button class="dsh-tile" data-action="nav" data-view="'+t[0]+'"><span class="dsh-ti" style="background:'+t[3]+'">'+t[1]+'</span><span class="dsh-tl">'+t[2]+'</span></button>'; }).join('')+'</div>';
+
+  // ---- Focus now + up next (kept) ----
   var order=pending.slice().sort(cmpUrgency);
   if(order.length){
-    h+='<div class="dash-section-t">🎯 Focus now</div>';
-    h+=focusCard(order[0]);
+    h+='<div class="dash-section-t">🎯 Focus now</div>'+focusCard(order[0]);
     var upNext=order.slice(1,4);
-    if(upNext.length){
-      h+='<div class="focus-next-h">Up next</div><div class="task-list">';
-      upNext.forEach(function(t){ h+=taskCard(t,false,true); });
-      h+='</div>';
-    }
+    if(upNext.length){ h+='<div class="focus-next-h">Up next</div><div class="task-list">'; upNext.forEach(function(t){ h+=taskCard(t,false,true); }); h+='</div>'; }
     if(order.length>1) h+='<button class="seeall-btn" data-action="nav" data-view="mytasks">View all '+order.length+' in My Tasks →</button>';
   } else {
-    h+='<div class="empty"><div class="empty-ico">🎉</div><div class="empty-t">You\'re all clear</div><div class="empty-s">Nothing pending right now. Add your next task when you\'re ready.</div><button class="add-btn" data-action="open-assign">'+plusIco()+'New Task</button></div>';
+    h+='<div class="empty"><div class="empty-ico">🎉</div><div class="empty-t">You’re all clear</div><div class="empty-s">Nothing pending right now. Add your next task when you’re ready.</div><button class="add-btn" data-action="open-assign">'+plusIco()+'New Task</button></div>';
   }
 
-  // Departments
+  // ---- Leads by department (only if the user has leads) ----
+  if(lt){
+    var byd={}; leads.forEach(function(l){ var d=l.department||'—'; byd[d]=(byd[d]||0)+1; });
+    var dks=Object.keys(byd).sort(function(a,b){return byd[b]-byd[a];}).slice(0,5);
+    var pcols=['#1f4bd8','#0f9d58','#c99700','#2563eb','#e0588f'];
+    h+='<div class="dash-section-t">Leads by department</div><div class="dsh-card">'+dks.map(function(k,i){ var p=Math.round(byd[k]/lt*100); return '<div class="dsh-prow"><div class="dsh-pt"><span>'+esc(k)+'</span><span class="dsh-amt">'+byd[k]+' · '+p+'%</span></div><div class="dsh-ptrack"><i style="width:'+p+'%;background:'+pcols[i%pcols.length]+'"></i></div></div>'; }).join('')+'</div>';
+  }
+
+  // ---- Departments quick grid (kept) ----
   h+='<div class="dash-section-t">Departments</div><div class="dept-grid">';
   visibleDepartments().forEach(function(d){ h+='<div class="dept-card" data-action="nav" data-view="category" data-dept="'+esc(d.department)+'" data-cat="'+esc(d.categories[0]||'Other')+'"><div class="dept-card-n">'+esc(d.department)+'</div><div class="dept-card-c">'+deptPending(d.department)+' pending</div></div>'; });
   h+='</div>';
+
   document.getElementById('content').innerHTML=h;
 }
 function stat(v,l,c,filter){ return '<div class="stat '+c+'" data-action="show-list" data-filter="'+filter+'"><div class="stat-v">'+v+'</div><div class="stat-l">'+l+'</div></div>'; }
