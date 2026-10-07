@@ -2404,7 +2404,11 @@ var FB = (function(){
           return Promise.all(tasks.map(function(t){
             return col('tasks').doc(String(t.uid)).get().then(function(snap){
               var old=snap.exists?snap.data():null;
-              t.ownerId=u.userId; t.ownerName=u.name;
+              // SAFETY: a device may only sync tasks its own user owns. Never hijack a task owned
+              // by someone else, and never let a routine sync rewrite who assigned or created it.
+              if(old && String(old.ownerId)!==String(u.userId)) return;                  // foreign task leaked in -> leave the server copy untouched
+              if(!old){ t.ownerId=u.userId; t.ownerName=u.name; }                         // brand-new self task -> the creator owns it
+              else { t.ownerId=old.ownerId; t.ownerName=old.ownerName; t.assignedById=old.assignedById; t.assignedByName=old.assignedByName; t.createdById=old.createdById; t.createdByName=old.createdByName; if(old.reassignedFromId!==undefined){ t.reassignedFromId=old.reassignedFromId; t.reassignedFromName=old.reassignedFromName; } }
               batch.set(col('tasks').doc(String(t.uid)), t, {merge:false});
               var oldStatus=old?old.status:'';
               var msg='', typ='';
@@ -2458,7 +2462,7 @@ var FB = (function(){
             if(!ts.exists) throw new Error('Target staff not found.');
             var tgt=ts.data();
             return Promise.all(items.map(function(it){ return col('tasks').doc(String(it.uid)).get(); })).then(function(snaps){
-              var batch=db.batch(); var count=0; var fromName='';
+              var batch=db.batch(); var count=0; var fromName=''; var remJobs=[]; var lostBy={};
               snaps.forEach(function(snap, i){
                 if(!snap.exists) return; var t=snap.data();
                 if(t.status==='Completed') return;                        // active tasks only — never touch completed history
@@ -2479,18 +2483,18 @@ var FB = (function(){
                     createdTimestamp:ts2, completedTimestamp:'', lastUpdatedTimestamp:ts2,
                     createdById:admin.userId, createdByName:admin.name, assignedById:admin.userId, assignedByName:admin.name,
                     reassignedFromId:oldOwnerId, reassignedFromName:oldOwnerName, syncStatus:'SYNCED' };
-                  batch.set(col('tasks').doc(nuid), copy); count++;
+                  batch.set(col('tasks').doc(nuid), copy); count++; if(Array.isArray(copy.reminders)&&copy.reminders.length){ remJobs.push({uid:nuid, ownerId:tgt.userId, ownerName:tgt.name, loop:(Array.isArray(copy.loop)?copy.loop:[]), title:(copy.clientName||''), clientName:(copy.clientName||''), reminders:copy.reminders}); }
                 } else {
                   var patch={ ownerId:tgt.userId, ownerName:tgt.name, lastUpdatedTimestamp:nowISO(), reassignedFromId:oldOwnerId, reassignedFromName:oldOwnerName };
                   Object.keys(applied).forEach(function(k){ patch[k]=applied[k]; });
                   if(String(t.assignedById)===oldOwnerId){ patch.assignedById=admin.userId; patch.assignedByName=admin.name; }   // self-made task → admin becomes the assigner
-                  batch.set(col('tasks').doc(String(t.uid)), patch, {merge:true}); count++;
+                  batch.set(col('tasks').doc(String(t.uid)), patch, {merge:true}); count++; if(Array.isArray(t.reminders)&&t.reminders.length){ remJobs.push({uid:String(t.uid), ownerId:tgt.userId, ownerName:tgt.name, loop:(Array.isArray(t.loop)?t.loop:[]), title:(t.title||''), clientName:(applied.clientName||t.clientName||''), reminders:t.reminders}); } lostBy[oldOwnerId]=(applied.clientName||t.clientName||'a task');
                 }
               });
               if(!count) return {ok:true, count:0};
               return batch.commit().then(function(){
-                var jobs=[ addNotif(targetId, admin.name, admin.name+(mode==='copy'?' copied ':' moved ')+count+' task'+(count!==1?'s':'')+' to you'+(fromName?(' from '+fromName):''), '', 'assignment'),
-                           logAudit(mode==='copy'?'Copied tasks':'Moved tasks', '', '', count+' task(s) to '+tgt.name+(fromName?(' from '+fromName):'')) ];
+                remJobs.forEach(function(j){ try{ dueRemSync(j.uid, j.ownerId, j.ownerName, j.loop, j.title, j.clientName, j.reminders); }catch(e){} }); var jobs=[ addNotif(targetId, admin.name, admin.name+(mode==='copy'?' copied ':' moved ')+count+' task'+(count!==1?'s':'')+' to you'+(fromName?(' from '+fromName):''), '', 'assignment'),
+                           logAudit(mode==='copy'?'Copied tasks':'Moved tasks', '', '', count+' task(s) to '+tgt.name+(fromName?(' from '+fromName):'')) ]; if(mode==='move'){ Object.keys(lostBy).forEach(function(oid){ if(oid && String(oid)!==String(targetId)) jobs.push(addNotif(oid, admin.name, admin.name+' moved "'+(lostBy[oid]||'a task')+'" to '+tgt.name, '', 'status')); }); }
                 if(b.swapDepts && b.sourceId){ jobs.push(applyDeptSwap_(String(b.sourceId), targetId, mode)); }
                 return Promise.all(jobs).then(function(){ return {ok:true, count:count}; });
               });
@@ -2517,10 +2521,20 @@ var FB = (function(){
             ['title','clientName','department','category','details','dueDate','status','reminders','repeat'].forEach(function(k){ if(b[k]!==undefined) patch[k]=b[k]; });
             if(b.status==='Completed'){ patch.completedTimestamp=nowISO(); }
             if(b.remark){ var _rk=Array.isArray(t.remarks)?t.remarks.slice():[]; _rk.push({ by:me().name, byId:me().userId, at:nowISO(), action:b.remarkAction||'Update', text:String(b.remark).slice(0,600) }); patch.remarks=_rk; }
-            return col('tasks').doc(String(b.uid)).set(patch,{merge:true})
-              .then(function(){ if(String(t.ownerId)!==String(me().userId)) return addNotif(t.ownerId, me().name, me().name+' updated: '+(b.clientName||t.clientName), t.uid, 'status'); })
-              .then(function(){ return logAudit('Edited shared task', t.uid, b.clientName||t.clientName, ''); })
-              .then(function(){ if(b.reminders!==undefined || b.status==='Completed'){ try{ if(b.status==='Completed') dueRemClear(t.uid); else dueRemSync(t.uid, t.ownerId, t.ownerName, t.loop, (b.title||t.title), (b.clientName||t.clientName), b.reminders); }catch(e){} } return {ok:true}; });
+            var reTo = (b.reassignTo && String(b.reassignTo)!==String(t.ownerId)) ? String(b.reassignTo) : '';
+            var finishUST=function(newOwner){
+              var moved=!!newOwner;
+              if(moved){ patch.ownerId=newOwner.userId; patch.ownerName=newOwner.name; patch.reassignedFromId=String(t.ownerId); patch.reassignedFromName=t.ownerName||''; if(String(t.assignedById)===String(t.ownerId)){ patch.assignedById=me().userId; patch.assignedByName=me().name; } }
+              return col('tasks').doc(String(b.uid)).set(patch,{merge:true})
+                .then(function(){
+                  if(moved){ return Promise.all([ addNotif(newOwner.userId, me().name, me().name+' assigned you: '+(b.clientName||t.clientName)+(t.category?(' ('+t.category+')'):''), t.uid, 'assignment'), (String(t.ownerId)!==String(me().userId)? addNotif(t.ownerId, me().name, me().name+' moved "'+(b.clientName||t.clientName)+'" to '+newOwner.name, t.uid, 'status') : null) ]); }
+                  if(String(t.ownerId)!==String(me().userId)) return addNotif(t.ownerId, me().name, me().name+' updated: '+(b.clientName||t.clientName), t.uid, 'status');
+                })
+                .then(function(){ return logAudit(moved?'Reassigned task':'Edited shared task', t.uid, b.clientName||t.clientName, moved?('to '+newOwner.name+' from '+(t.ownerName||'')):''); })
+                .then(function(){ var roId=moved?newOwner.userId:t.ownerId, roNm=moved?newOwner.name:t.ownerName; if(moved || b.reminders!==undefined || b.status==='Completed'){ try{ if(b.status==='Completed') dueRemClear(t.uid); else dueRemSync(t.uid, roId, roNm, t.loop, (b.title||t.title), (b.clientName||t.clientName), (b.reminders!==undefined?b.reminders:(t.reminders||[]))); }catch(e){} } return {ok:true}; });
+            };
+            if(reTo){ return col('users').doc(reTo).get().then(function(us){ if(!us.exists) throw new Error('Target staff not found.'); return finishUST(us.data()); }); }
+            return finishUST(null);
           });
         }
 
@@ -2712,7 +2726,7 @@ var FB = (function(){
           if(!isAdmin()) throw new Error('Admin access required.');
           return col('tasks').where('ownerId','==',String(b.userId)).get().then(function(qs){
             var mine=qs.docs.filter(function(d){ var t=d.data(); return !t.assignedById || String(t.assignedById)===String(b.userId); });
-            return Promise.all(mine.map(function(d){ return d.ref.delete(); })).then(function(){ return logAudit('Reset member data','',b.userId, mine.length+' task(s) cleared'); }).then(function(){ return {ok:true, deleted:mine.length}; });
+            return Promise.all(mine.map(function(d){ try{ dueRemClear(String(d.id)); }catch(e){} return d.ref.delete(); })).then(function(){ return logAudit('Reset member data','',b.userId, mine.length+' task(s) cleared'); }).then(function(){ return {ok:true, deleted:mine.length}; });
           });
         }
 
@@ -2722,7 +2736,7 @@ var FB = (function(){
           return col('tasks').doc(String(b.uid)).get().then(function(s){
             var t=s.exists?s.data():{};
             return col('tasks').doc(String(b.uid)).delete()
-              .then(function(){ return logAudit('Deleted task', String(b.uid), t.clientName||'', 'by admin'); })
+              .then(function(){ try{ dueRemClear(String(b.uid)); }catch(e){} return logAudit('Deleted task', String(b.uid), t.clientName||'', 'by admin'); })
               .then(function(){ return {ok:true}; });
           });
         }
@@ -2730,7 +2744,7 @@ var FB = (function(){
           if(!isAdmin()) throw new Error('Admin access required.');
           if(!b.userId) throw new Error('Missing user.');
           return col('tasks').where('ownerId','==',String(b.userId)).get().then(function(qs){
-            return Promise.all(qs.docs.map(function(d){ return d.ref.delete(); }))
+            return Promise.all(qs.docs.map(function(d){ try{ dueRemClear(String(d.id)); }catch(e){} return d.ref.delete(); }))
               .then(function(){ return logAudit('Deleted ALL tasks', '', b.userId, qs.size+' task(s) deleted by admin'); })
               .then(function(){ return {ok:true, deleted:qs.size}; });
           });
@@ -5544,7 +5558,7 @@ function attachOneNoteDnD(el){
   var board=document.getElementById('slate-board'); if(!board) return;
   el.addEventListener('pointerdown', function(e){
     slateTouch();
-    if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked') || e.target.closest('.sn-remind')) return;
+    if(e.target.closest('.sn-btn') || e.target.closest('.sn-tasked') || e.target.closest('.sn-remind') || e.target.closest('.sn-edit-wrap')) return;
     var id=el.getAttribute('data-note');
     // In select mode a tap toggles selection instead of dragging.
     if(App._slateSel){ e.preventDefault(); slateSelNote(id); return; }
