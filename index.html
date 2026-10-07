@@ -1770,6 +1770,33 @@ body.modal-open .install-bar{ display:none !important; }
 .dsh-ch{display:flex;justify-content:space-between;align-items:center}
 .dsh-ct{font-weight:700;font-size:.92rem;color:var(--text)}
 .dsh-badge{background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:.78rem;border-radius:999px;padding:2px 10px}
+.dsh-leg2{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.lg2{font-size:.74rem;color:var(--text-sec);display:inline-flex;align-items:center;gap:5px}
+.lg2 i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.lg2 b{color:var(--text)}
+.biz-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:4px 0 14px}
+.biz-kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:12px}
+.biz-kv{font-size:1.35rem;font-weight:800;color:var(--text);letter-spacing:-.5px}
+.biz-kl{font-size:.72rem;color:var(--text-sec);margin-top:2px}
+.biz-bad{background:rgba(220,38,38,.07)}.biz-warn{background:rgba(201,151,0,.08)}
+.biz-bad .biz-kv,.biz-bad .biz-cv{color:#dc2626}.biz-warn .biz-kv,.biz-warn .biz-cv{color:#b98900}.biz-good .biz-kv,.biz-good .biz-cv{color:#0f9d58}
+.biz-tabs{display:flex;gap:8px;margin:0 0 14px}
+.biz-tab{font:700 .9rem/1 inherit;padding:10px 18px;border-radius:10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-sec);cursor:pointer}
+.biz-tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.biz-row4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.biz-c{text-align:center;padding:14px}.biz-cv{font-size:1.4rem;font-weight:800;color:var(--text)}.biz-cl{font-size:.74rem;color:var(--text-sec);margin-top:3px}
+.biz-mt{margin-top:14px}
+.biz-list{margin-top:6px;display:flex;flex-direction:column}
+.biz-li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}.biz-li:last-child{border-bottom:0}
+.biz-li-m{min-width:0;flex:1}.biz-li-m b{font-size:.88rem;font-weight:600;color:var(--text)}.biz-li-m span{display:block;font-size:.76rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.biz-due{font-size:.76rem;font-weight:700;color:var(--text-sec);white-space:nowrap;flex:0 0 auto}.biz-due.od{color:#dc2626}
+.biz-tbl{margin-top:8px}
+.biz-tr{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;padding:9px 8px;border-bottom:1px solid var(--border);font-size:.84rem;align-items:center;border-radius:7px}
+.biz-tr-l{grid-template-columns:2fr 1fr 1fr 1fr}
+.biz-th{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);font-weight:700}
+.biz-tr span:not(.biz-nm){text-align:center;color:var(--text-sec)}
+.biz-nm{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:760px){.biz-kpis{grid-template-columns:repeat(3,1fr)}.biz-row4{grid-template-columns:repeat(2,1fr)}}
 .dsh-mlabs{display:flex;justify-content:space-between;font-size:.64rem;color:var(--text-muted);margin-top:3px}
 .dsh-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
 .dsh-donutwrap{display:flex;align-items:center;gap:16px;margin-top:12px}
@@ -2919,7 +2946,7 @@ var CATEGORY_MASTER = [
 var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
-  _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{},
+  _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false,
   departments:[], categoryMaster:[], prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
   reminders:[], staffCache:null, members:[], _staffView:null, _notifSeen:{}, dashFilter:'all', templates:[], slateNotes:[], _slateView:null,
@@ -4215,6 +4242,7 @@ function buildSidebar(){
   if(App.identity && isBoss()){
     h+='<button class="nav-link'+((App.view==='team'||App.view==='staff')?' active':'')+'" data-action="nav" data-view="team"><span class="nav-ico">'+ico('team')+'</span> Team</button>';
     h+='<button class="nav-link'+((App.view==='performance'||App.view==='analytics'||App.view==='leaderboard')?' active':'')+'" data-action="nav" data-view="performance"><span class="nav-ico">📈</span> Performance</button>';
+    if(isBoss()) h+='<button class="nav-link'+(App.view==='business'?' active':'')+'" data-action="nav" data-view="business"><span class="nav-ico">📊</span> Business</button>';
     h+='<button class="nav-link'+(App.view==='weekly'?' active':'')+'" data-action="nav" data-view="weekly"><span class="nav-ico">🗓️</span> Weekly Report</button>';
   }
   h+='<button class="nav-link'+(App.view==='settings'?' active':'')+'" data-action="nav" data-view="settings"><span class="nav-ico">'+ico('gear')+'</span> Settings</button>';
@@ -4689,6 +4717,7 @@ function navigate(view,dept,cat){
     else if(view==='mytasks') renderMyTasks();
     else if(view==='slate') renderSlate();
       else if(view==='leads') nlOpenSection();
+      else if(view==='business') renderBusiness();
     else if(view==='board') renderBoard();
     else if(view==='clients') renderClients();
     else if(view==='category') renderCategory();
@@ -4781,6 +4810,86 @@ function startNudgeCycle(){
   }, 75000);
 }
 function stopNudgeCycle(){ if(App.nudgeTimer){ clearInterval(App.nudgeTimer); App.nudgeTimer=null; } }
+/* ===================== ADMIN BUSINESS DASHBOARD (whole office) — additive ===================== */
+function bizPct(n,d){ return d? Math.round(n/d*100)+'%' : '—'; }
+function bizKpi(v,l,ic,flag){ return '<div class="biz-kpi'+(flag?(' biz-'+flag):'')+'"><div class="biz-kv">'+v+'</div><div class="biz-kl">'+ic+' '+l+'</div></div>'; }
+function bizCard(l,v,flag){ return '<div class="dsh-card biz-c'+(flag?(' biz-'+flag):'')+'"><div class="biz-cv">'+v+'</div><div class="biz-cl">'+esc(l)+'</div></div>'; }
+function bizTaskList(arr,nameOf,kind){
+  if(!arr.length) return '<div class="nl-empty" style="padding:14px">Nothing here. 🎉</div>';
+  return '<div class="biz-list">'+arr.map(function(t){ var od=overdueDays(t); var due=t.dueDate?fmtDue(t.dueDate):'no due date'; var who=nameOf[String(t.ownerId)]||t.ownerName||'—';
+    return '<div class="biz-li"><div class="biz-li-m"><b>'+esc(taskHeadline(t))+'</b><span>'+esc(t.department||'')+' › '+esc(t.category||'')+' · '+esc(who)+'</span></div><span class="biz-due '+(kind==='over'?'od':'')+'">'+(kind==='over'?(od+'d overdue'):esc(due))+'</span></div>';
+  }).join('')+'</div>';
+}
+function bizLeadList(arr){
+  if(!arr.length) return '<div class="nl-empty" style="padding:14px">None closing soon.</div>';
+  return '<div class="biz-list">'+arr.map(function(l){ var who=(l.assignees||[]).map(function(a){return a.name;}).slice(0,2).join(', '); var due=l.dueAt?fmtDue(l.dueAt):'';
+    return '<div class="biz-li"><div class="biz-li-m"><b>'+esc(l.clientName||'—')+'</b><span>'+esc(l.department||'')+' › '+esc(l.category||'')+' · '+esc(who||'—')+'</span></div><span class="biz-due">'+esc(due)+'</span></div>';
+  }).join('')+'</div>';
+}
+function bizDeptBars(title,byd,total){
+  var ks=Object.keys(byd).sort(function(a,b){return byd[b]-byd[a];}).slice(0,6);
+  var cols=['#1f4bd8','#0f9d58','#c99700','#2563eb','#e0588f','#1aa3a3'];
+  return '<div class="dsh-card biz-mt"><div class="dsh-ct">'+esc(title)+'</div>'+(ks.length?ks.map(function(k,i){ var p=total?Math.round(byd[k]/total*100):0; return '<div class="dsh-prow"><div class="dsh-pt"><span>'+esc(k)+'</span><span class="dsh-amt">'+byd[k]+' · '+p+'%</span></div><div class="dsh-ptrack"><i style="width:'+p+'%;background:'+cols[i%cols.length]+'"></i></div></div>'; }).join(''):'<div class="nl-empty">No data yet.</div>')+'</div>';
+}
+function renderBusiness(){
+  App.view='business'; buildSidebar();
+  var c=document.getElementById('content'); if(!c) return;
+  if(!isBoss()){ c.innerHTML='<div class="cat-head"><div class="cat-title">📊 Business</div><div class="cat-sub">Admins &amp; managers only.</div></div>'; return; }
+  App._bizTab=App._bizTab||'tasks';
+  if(App._bizLeads==null && !App._bizBusy){ App._bizBusy=true; apiCall('allLeads').then(function(r){ App._bizLeads=(r&&r.leads)||[]; App._bizBusy=false; if(App.view==='business') renderBusiness(); }).catch(function(){ App._bizLeads=[]; App._bizBusy=false; if(App.view==='business') renderBusiness(); }); }
+  var now=Date.now(); var tasks=App._allTasks||[]; var leads=App._bizLeads||[]; var loading=(App._bizLeads==null);
+  var nameOf={}; (App.members||[]).forEach(function(m){ nameOf[String(m.userId)]=m.name; });
+  tasks.forEach(function(t){ if(t.ownerId&&!nameOf[String(t.ownerId)]) nameOf[String(t.ownerId)]=t.ownerName||('User '+String(t.ownerId).slice(0,4)); });
+  var staff={}; function row(id){ id=String(id||'?'); if(!staff[id]) staff[id]={name:nameOf[id]||('User '+id.slice(0,4)),open:0,over:0,done:0,onN:0,onD:0,lactive:0,lwon:0,lign:0}; return staff[id]; }
+  var tOpen=0,tOver=0,tDone=0,tOnN=0,tOnD=0, tAssigned=tasks.length;
+  tasks.forEach(function(t){ var r=row(t.ownerId);
+    if(t.status==='Completed'){ tDone++; r.done++; if(t.dueDate&&t.completedTimestamp){ r.onD++; tOnD++; if(new Date(t.completedTimestamp)<=new Date(t.dueDate)){ r.onN++; tOnN++; } } }
+    else { tOpen++; r.open++; if(t.dueDate&&new Date(t.dueDate).getTime()<now){ tOver++; r.over++; } }
+  });
+  var lTot=leads.length, lc={new:0,acknowledged:0,inprocess:0,ignored:0,executed:0}, lWon=0;
+  leads.forEach(function(l){ var e=nlEffective(l); lc[e]=(lc[e]||0)+1; if(e==='executed'&&nlOutcome(l)!=='neg') lWon++;
+    (l.assignees||[]).forEach(function(a){ if(a.userId&&!nameOf[String(a.userId)]) nameOf[String(a.userId)]=a.name; });
+    (l.assigneeIds||[]).forEach(function(aid){ var r=row(aid); if(e==='ignored') r.lign++; else if(e==='executed'){ if(nlOutcome(l)!=='neg') r.lwon++; } else r.lactive++; });
+  });
+  var lActive=lc.new+lc.acknowledged+lc.inprocess, conv=bizPct(lWon,lTot), ignr=bizPct(lc.ignored,lTot);
+  var rows=Object.keys(staff).map(function(k){return staff[k];});
+
+  var h='<div class="cat-head"><div class="cat-title">📊 Business — whole office</div><div class="cat-sub">All staff &amp; admins · live'+(loading?' · loading leads…':'')+'</div></div>';
+  h+='<div class="biz-kpis">'+bizKpi(lActive,'Active leads','🎯')+bizKpi(tOpen,'Open tasks','📋')+bizKpi(tOver,'Overdue tasks','🚩',tOver>0?'bad':'')+bizKpi(conv,'Lead conversion','✅')+bizKpi(bizPct(tDone,tAssigned),'Task completion','📈')+bizKpi(rows.length,'People active','👥')+'</div>';
+  h+='<div class="biz-tabs"><button class="biz-tab'+(App._bizTab==='tasks'?' on':'')+'" data-action="biz2-tab" data-t="tasks">📋 Tasks</button><button class="biz-tab'+(App._bizTab==='leads'?' on':'')+'" data-action="biz2-tab" data-t="leads">🎯 Leads</button></div>';
+
+  if(App._bizTab==='tasks'){
+    h+='<div class="biz-row4">'+bizCard('Assigned',tAssigned)+bizCard('Pending',tOpen)+bizCard('Overdue',tOver,tOver>0?'bad':'')+bizCard('On-time',bizPct(tOnN,tOnD))+'</div>';
+    var open=tasks.filter(function(t){return t.status!=='Completed';});
+    var overdue=open.filter(function(t){return t.dueDate&&new Date(t.dueDate).getTime()<now;}).sort(function(a,b){return new Date(a.dueDate)-new Date(b.dueDate);});
+    var soon=open.filter(function(t){var d=t.dueDate?new Date(t.dueDate).getTime():0; return d>=now&&d<now+7*864e5;}).sort(function(a,b){return new Date(a.dueDate)-new Date(b.dueDate);});
+    h+='<div class="dsh-card biz-mt"><div class="dsh-ct">🚩 Needs attention — overdue ('+overdue.length+')</div>'+bizTaskList(overdue.slice(0,8),nameOf,'over')+'</div>';
+    h+='<div class="dsh-card biz-mt"><div class="dsh-ct">⏳ Due soon — next 7 days ('+soon.length+')</div>'+bizTaskList(soon.slice(0,8),nameOf,'soon')+'</div>';
+    rows.sort(function(a,b){return (b.over-a.over)||(b.open-a.open);});
+    h+='<div class="dsh-card biz-mt"><div class="dsh-ct">By staff — who needs a hand</div><div class="biz-tbl"><div class="biz-tr biz-th"><span>Staff</span><span>Open</span><span>Overdue</span><span>Done</span><span>On-time</span></div>'
+      +rows.map(function(r){ var fl=r.over>=3?' biz-bad':((r.onD&&(r.onN/r.onD)<0.5)?' biz-warn':''); return '<div class="biz-tr'+fl+'"><span class="biz-nm">'+esc(r.name)+'</span><span>'+r.open+'</span><span>'+r.over+'</span><span>'+r.done+'</span><span>'+bizPct(r.onN,r.onD)+'</span></div>'; }).join('')+'</div></div>';
+    var byd={}; tasks.forEach(function(t){ var d=t.department||'—'; byd[d]=(byd[d]||0)+1; });
+    h+=bizDeptBars('Tasks by department', byd, tAssigned);
+  } else {
+    if(loading){ h+='<div class="dsh-card biz-mt"><div class="nl-empty" style="padding:20px">Loading office leads…</div></div>'; }
+    else {
+      h+='<div class="biz-row4">'+bizCard('Assigned',lTot)+bizCard('Won',lWon,'good')+bizCard('Conversion',conv)+bizCard('Ignored',ignr,lc.ignored>0?'warn':'')+'</div>';
+      var SG=[['new','New','#2563eb'],['acknowledged','Acknowledged','#c99700'],['inprocess','In Process','#0f9d58'],['ignored','Ignored','#dc2626'],['executed','Closed','#6b7280']];
+      var don; if(lTot){ var acc=0,stp=[]; SG.forEach(function(s){ var p=(lc[s[0]]||0)/lTot*100; if(p>0){ stp.push(s[2]+' '+acc.toFixed(2)+'% '+(acc+p).toFixed(2)+'%'); acc+=p; } }); don='<div class="dsh-donut" style="background:conic-gradient('+stp.join(',')+')"><div class="dsh-hole"><b>'+lTot+'</b><span>leads</span></div></div>'; } else { don='<div class="dsh-donut empty"><div class="dsh-hole"><b>0</b><span>leads</span></div></div>'; }
+      var leg=SG.map(function(s){return '<div class="dsh-lg"><i style="background:'+s[2]+'"></i>'+s[1]+' <b>'+(lc[s[0]]||0)+'</b></div>';}).join('');
+      h+='<div class="dsh-card biz-mt"><div class="dsh-ct">Leads by stage</div><div class="dsh-donutwrap">'+don+'<div class="dsh-legs">'+leg+'</div></div></div>';
+      var inProc=leads.filter(function(l){return nlEffective(l)==='inprocess';});
+      var atrisk=inProc.filter(function(l){return l.dueAt;}).sort(function(a,b){return new Date(a.dueAt)-new Date(b.dueAt);}).slice(0,8);
+      h+='<div class="dsh-card biz-mt"><div class="dsh-ct">⏱️ Leads at risk — closing soon ('+inProc.length+' in process)</div>'+bizLeadList(atrisk)+'</div>';
+      rows.sort(function(a,b){return (b.lign-a.lign)||(b.lactive-a.lactive);});
+      h+='<div class="dsh-card biz-mt"><div class="dsh-ct">By staff — lead handling</div><div class="biz-tbl"><div class="biz-tr biz-tr-l biz-th"><span>Staff</span><span>Active</span><span>Won</span><span>Ignored</span></div>'
+        +rows.map(function(r){ var fl=r.lign>=3?' biz-bad':''; return '<div class="biz-tr biz-tr-l'+fl+'"><span class="biz-nm">'+esc(r.name)+'</span><span>'+r.lactive+'</span><span>'+r.lwon+'</span><span>'+r.lign+'</span></div>'; }).join('')+'</div></div>';
+      var byd2={}; leads.forEach(function(l){ var d=l.department||'—'; byd2[d]=(byd2[d]||0)+1; });
+      h+=bizDeptBars('Leads by department', byd2, lTot);
+    }
+  }
+  c.innerHTML=h;
+}
 function renderDashboard(){
   var now=Date.now(), nowI=nowISO(), today=fmtDate(nowI);
   var pending=App.tasks.filter(isVisiblePending);
@@ -4804,6 +4913,8 @@ function renderDashboard(){
   var escalated=pending.filter(function(t){return overdueDays(t)>=3;}).length;
   if(escalated>0) h+='<div class="esc-banner">&#128681; <span>'+escalated+' task'+(escalated!==1?'s':'')+' badly overdue (3+ days). These need attention now.</span><button class="esc-cta" data-action="show-list" data-filter="overdue">Review overdue</button></div>';
 
+  // Rotating roast / nudge banner (timer keeps refreshing #nudge-inner in the background)
+  h+='<div class="nudge"><div class="nudge-inner" id="nudge-inner">'+nudgeHTML(currentNudge())+'</div></div>';
   // ---- KPI stats (reuse existing clickable stat cards) ----
   h+='<div class="stats">';
   h+=stat(pending.length,'Pending','st-pending','pending');
@@ -4812,22 +4923,25 @@ function renderDashboard(){
   h+='<div class="stat st-total" data-action="nav" data-view="leads"><div class="stat-v">'+leadsInProc+'</div><div class="stat-l">Leads in process</div></div>';
   h+='</div>';
 
-  // ---- Activity area chart (tasks created + leads assigned, last 6 months) ----
+  // ---- Activity: completed tasks vs positive-closed leads, last 6 months (two lines) ----
   var months=[]; var nd=new Date();
-  for(var mi=5;mi>=0;mi--){ var md=new Date(nd.getFullYear(),nd.getMonth()-mi,1); months.push({k:md.getFullYear()+'-'+md.getMonth(), lab:md.toLocaleString([],{month:'short'}), n:0}); }
-  var bump=function(ts){ if(!ts) return; var d=new Date(ts); if(isNaN(d.getTime())) return; var k=d.getFullYear()+'-'+d.getMonth(); var m=null; for(var j=0;j<months.length;j++){ if(months[j].k===k){ m=months[j]; break; } } if(m) m.n++; };
-  App.tasks.forEach(function(t){ bump(t.createdTimestamp); });
-  leads.forEach(function(l){ bump(l.assignedAt); });
-  var mmax=Math.max.apply(null,[1].concat(months.map(function(x){return x.n;})));
+  for(var mi=5;mi>=0;mi--){ var md=new Date(nd.getFullYear(),nd.getMonth()-mi,1); months.push({k:md.getFullYear()+'-'+md.getMonth(), lab:md.toLocaleString([],{month:'short'}), tn:0, ln:0}); }
+  var midx=function(ts){ if(!ts) return -1; var d=new Date(ts); if(isNaN(d.getTime())) return -1; var k=d.getFullYear()+'-'+d.getMonth(); for(var j=0;j<months.length;j++){ if(months[j].k===k) return j; } return -1; };
+  App.tasks.forEach(function(t){ if(t.status==='Completed' && t.completedTimestamp){ var i=midx(t.completedTimestamp); if(i>=0) months[i].tn++; } });
+  leads.forEach(function(l){ if(nlEffective(l)==='executed' && (l.closeOutcome||'positive')!=='negative'){ var dt=null; (l.history||[]).forEach(function(ev){ if(ev.type==='done') dt=ev.t; }); var i=midx(dt||l.updatedAt||l.assignedAt); if(i>=0) months[i].ln++; } });
+  var mmax=Math.max.apply(null,[1].concat(months.map(function(x){return Math.max(x.tn,x.ln);})));
   var W=600,H=120,pad=14;
-  var pts=months.map(function(m,i){ var x=months.length>1?(i/(months.length-1))*(W-2*pad)+pad:W/2; var y=H-pad-(m.n/mmax)*(H-2*pad); return [Math.round(x),Math.round(y)]; });
-  var line=pts.map(function(p,i){return (i?'L':'M')+p[0]+','+p[1];}).join(' ');
-  var area=line+' L'+(W-pad)+','+(H-pad)+' L'+pad+','+(H-pad)+' Z';
-  var total6=months.reduce(function(a,b){return a+b.n;},0);
-  h+='<div class="dsh-card dsh-mt"><div class="dsh-ch"><div class="dsh-ct">Activity — last 6 months</div><span class="dsh-badge">'+total6+'</span></div>'
-    +'<svg viewBox="0 0 600 130" width="100%" height="118" preserveAspectRatio="none" aria-hidden="true"><path d="'+area+'" style="fill:var(--accent);opacity:.10"/><path d="'+line+'" style="fill:none;stroke:var(--accent);stroke-width:3"/></svg>'
+  var axy=function(i,v){ var x=months.length>1?(i/(months.length-1))*(W-2*pad)+pad:W/2; var y=H-pad-(v/mmax)*(H-2*pad); return Math.round(x)+','+Math.round(y); };
+  var tline=months.map(function(m,i){return (i?'L':'M')+axy(i,m.tn);}).join(' ');
+  var lline=months.map(function(m,i){return (i?'L':'M')+axy(i,m.ln);}).join(' ');
+  var tTot=months.reduce(function(a,b){return a+b.tn;},0), lTot=months.reduce(function(a,b){return a+b.ln;},0);
+  h+='<div class="dsh-card dsh-mt"><div class="dsh-ch"><div class="dsh-ct">Activity — last 6 months</div>'
+    +'<div class="dsh-leg2"><span class="lg2"><i style="background:var(--accent)"></i>Tasks done <b>'+tTot+'</b></span><span class="lg2"><i style="background:#0f9d58"></i>Leads won <b>'+lTot+'</b></span></div></div>'
+    +'<svg viewBox="0 0 600 130" width="100%" height="118" preserveAspectRatio="none" aria-hidden="true">'
+    +'<path d="'+tline+'" style="fill:none;stroke:var(--accent);stroke-width:2.5"/>'
+    +'<path d="'+lline+'" fill="none" stroke="#0f9d58" stroke-width="2.5"/>'
+    +'</svg>'
     +'<div class="dsh-mlabs">'+months.map(function(m){return '<span>'+esc(m.lab)+'</span>';}).join('')+'</div></div>';
-
   // ---- Charts row: leads-by-stage donut + completed-this-week bars ----
   var SG=[['new','New','#2563eb'],['acknowledged','Acknowledged','#c99700'],['inprocess','In Process','#0f9d58'],['ignored','Ignored','#dc2626'],['executed','Closed','#6b7280']];
   var lc={}; leads.forEach(function(l){ var e=nlEffective(l); lc[e]=(lc[e]||0)+1; });
@@ -6579,6 +6693,7 @@ function paintWeekly(staff){
 function refreshView(){
   if(App.view==='dashboard') renderDashboard();
   else if(App.view==='leads') renderLeads();
+  else if(App.view==='business') renderBusiness();
   else if(App.view==='mytasks') renderMyTasks();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
@@ -8113,6 +8228,7 @@ document.addEventListener('click', function(e){
     case 'nl-staff': nlGoStaff(el.getAttribute('data-id')); break;
     case 'nl-back': nlBack(); break;
     case 'nl-reload': nlReload(); break;
+    case 'biz2-tab': App._bizTab=el.getAttribute('data-t'); renderBusiness(); break;
     case 'nl-export-xls': nlExportDo('xls'); break;
     case 'nl-export-html': nlExportDo('html'); break;
     case 'nl-delete': nlDelete(el.getAttribute('data-lead')); break;
