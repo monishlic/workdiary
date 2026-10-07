@@ -231,6 +231,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .card-client{font-size:.96rem;font-weight:700;margin-bottom:3px}
 .hl-sub{font-size:.92em;font-weight:600;color:var(--text-sec)}
 .card-meta{font-size:.75rem;color:var(--text-sec)}
+.sc-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 2px}
+.sc-who{display:inline-flex;align-items:center;gap:5px;background:var(--accent);color:#fff;font-weight:800;font-size:.77rem;padding:3px 11px;border-radius:999px;box-shadow:0 2px 8px -1px var(--accent-soft)}
+.sc-due{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:.74rem;padding:3px 9px;border-radius:999px}
+.sc-due.over{background:var(--danger-bg);color:var(--danger)}
+.sc-due.none{background:rgba(120,120,140,.12);color:var(--text-muted);font-weight:600}
+.sc-due.done{background:var(--success-bg);color:var(--success-dark)}
+.sc-rem{display:inline-flex;align-items:center;gap:3px;background:rgba(31,75,216,.10);color:var(--accent);font-weight:700;font-size:.72rem;padding:3px 8px;border-radius:999px}
+.sc-from{display:inline-flex;align-items:center;gap:3px;background:rgba(120,120,140,.12);color:var(--text-sec);font-weight:600;font-size:.72rem;padding:3px 8px;border-radius:999px}
+.sc-cat{font-size:.76rem;color:var(--text-muted);font-weight:600;margin-top:5px}
 .card-preview{font-size:.82rem;color:var(--text-sec);margin-top:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
 .card-right{display:flex;flex-direction:column;align-items:flex-end;gap:9px;flex-shrink:0}
 .days{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap}
@@ -7609,11 +7618,21 @@ function adminSaveVisibility(id,btn){
 
 function sharedCard(t){
   var isDone=t.status==='Completed';
+  var od=overdueDays(t);
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-shared" data-uid="'+esc(t.uid)+'">';
   h+='<div class="card-body"><div class="card-client">'+taskHeadline(t)+'</div>';
-  h+='<div class="card-meta">To '+esc(t.ownerName)+' · '+esc(t.department)+' › '+esc(t.category)+(isDone&&t.completedTimestamp?' · Completed '+fmtDate(t.completedTimestamp):'')+(t.reassignedFromName?' · ↪ from '+esc(t.reassignedFromName):'')+'</div>';
+  h+='<div class="sc-chips">';
+  h+='<span class="sc-who">\uD83D\uDC64 To '+esc(t.ownerName||'\u2014')+'</span>';
+  if(isDone){ h+='<span class="sc-due done">\u2713 '+(t.completedTimestamp?('Done '+esc(fmtDate(t.completedTimestamp))):'Done')+'</span>'; }
+  else if(t.dueDate){ h+='<span class="sc-due'+(od>0?' over':'')+'">\uD83D\uDCC5 '+esc(fmtDue(t.dueDate))+(od>0?(' \u00b7 '+od+'d late'):'')+'</span>'; }
+  else { h+='<span class="sc-due none">\uD83D\uDCC5 No due date</span>'; }
+  h+=prioTag(t.priority);
+  var _rn=(Array.isArray(t.reminders)?t.reminders.length:0); if(_rn) h+='<span class="sc-rem">\u23F0 '+_rn+'</span>';
+  if(t.reassignedFromName) h+='<span class="sc-from">\u21aa from '+esc(t.reassignedFromName)+'</span>';
+  h+='</div>';
+  h+='<div class="sc-cat">'+esc(t.department)+' \u203a '+esc(t.category)+'</div>';
   if(t.details) h+='<div class="card-preview">'+esc(t.details)+'</div>';
-  h+='</div><div class="card-right"><span class="'+(isDone?'done-badge':'days days-warn')+'">'+(isDone?ico('check')+' Done':'⏳ '+esc(t.status))+'</span></div></div>';
+  h+='</div><div class="card-right"><span class="'+(isDone?'done-badge':'days days-warn')+'">'+(isDone?ico('check')+' Done':'\u23f3 '+esc(t.status))+'</span></div></div>';
   return h;
 }
 function openShared(uid){
