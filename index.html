@@ -1042,8 +1042,8 @@ body{ background:var(--bg); }
 .slate-note.dim{ opacity:.22; }
 .slate-board.ro .slate-note{ cursor:default; }
 .sn-text{ white-space:pre-wrap; }
-.sn-foot{ display:flex; align-items:center; gap:6px; margin-top:8px; min-height:15px; }
-.sn-age{ font-size:.68rem; color:rgba(58,53,82,.55); margin-left:auto; }
+.sn-foot{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; row-gap:5px; margin-top:8px; min-height:15px; }
+.sn-age{ font-size:.68rem; color:rgba(58,53,82,.55); margin-left:auto; white-space:nowrap; }
 .slate-note.angry .sn-age{ color:rgba(185,30,25,calc(.55 + var(--anger,0)*.45)); font-weight:600; }
 .sn-tasked{ font-size:.66rem; font-weight:700; background:rgba(15,157,111,.16); color:#0b7a55; padding:2px 7px; border-radius:20px; cursor:pointer; }
 .sn-tasked:hover{ background:rgba(15,157,111,.3); }
@@ -1071,7 +1071,7 @@ body{ background:var(--bg); }
 .si-day:hover{ border-color:#1f4bd8; }
 .si-day.on{ background:#1f4bd8; color:#fff; border-color:#1f4bd8; }
 .si-day.dis{ opacity:.4; cursor:not-allowed; text-decoration:line-through; }
-.sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 7px; border-radius:20px; cursor:pointer; }
+.sn-remind{ font-size:.66rem; font-weight:700; background:rgba(31,75,216,.14); color:#1f4bd8; padding:2px 8px; border-radius:20px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:3px; }
 .sn-remind:hover{ background:rgba(31,75,216,.24); }
 .sn-remind-done{ background:rgba(120,120,140,.16); color:#6b6b7a; }
 .sn-remind-done:hover{ background:rgba(120,120,140,.28); }
