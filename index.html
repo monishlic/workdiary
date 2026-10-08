@@ -1061,9 +1061,13 @@ body{ background:var(--bg); }
 .si-time-ic{ font-size:.9rem; }
 .si-add{ margin-left:auto; border:none; background:#3a3552; color:#fff; border-radius:9px; padding:6px 16px; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer; transition:transform .12s,background .14s; }
 .si-add:hover{ background:#26213a; transform:translateY(-1px); }
-.si-days{ display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
-.si-days-lbl{ font-size:.72rem; font-weight:700; color:#5b6675; margin-right:2px; }
-.si-day{ border:1px solid rgba(58,53,82,.22); background:rgba(255,255,255,.6); color:#3a3552; border-radius:999px; padding:4px 13px; font:inherit; font-size:.76rem; font-weight:700; cursor:pointer; transition:.14s; }
+.slate-input{ width:252px !important; }
+.slate-input-foot{ gap:7px; }
+.si-time{ white-space:nowrap; flex:0 0 auto; }
+.si-add{ flex:0 0 auto; }
+.si-days{ display:flex; align-items:center; gap:5px; margin-top:8px; flex-wrap:nowrap; }
+.si-days-lbl{ font-size:.72rem; font-weight:700; color:#5b6675; margin-right:1px; flex:0 0 auto; }
+.si-day{ flex:1 1 0; min-width:0; text-align:center; border:1px solid rgba(58,53,82,.22); background:rgba(255,255,255,.6); color:#3a3552; border-radius:10px; padding:6px 6px; font:inherit; font-size:.76rem; font-weight:700; cursor:pointer; transition:.14s; white-space:nowrap; }
 .si-day:hover{ border-color:#1f4bd8; }
 .si-day.on{ background:#1f4bd8; color:#fff; border-color:#1f4bd8; }
 .si-day.dis{ opacity:.4; cursor:not-allowed; text-decoration:line-through; }
@@ -1075,15 +1079,15 @@ body{ background:var(--bg); }
 .sn-edit-time{ border:1px solid rgba(58,53,82,.22); background:rgba(255,255,255,.6); color:#3a3552; border-radius:999px; padding:4px 10px; font:inherit; font-size:.72rem; font-weight:700; cursor:pointer; }
 .sn-edit-time.on{ border-color:#1f4bd8; color:#1f4bd8; background:rgba(31,75,216,.08); }
 /* Compact custom time picker */
-.edtime-pop{ position:fixed; z-index:1200; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:16px; box-shadow:0 20px 44px -14px rgba(20,22,40,.4); padding:14px; width:auto; animation:etIn .14s ease; }
+.edtime-pop{ position:fixed; z-index:1200; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:16px; box-shadow:0 20px 44px -14px rgba(20,22,40,.4); padding:11px; width:auto; animation:etIn .14s ease; }
 @keyframes etIn{ from{ opacity:0; transform:translateY(-4px);} to{ opacity:1; transform:none; } }
-.et-row{ display:flex; align-items:center; gap:8px; }
+.et-row{ display:flex; align-items:center; gap:6px; }
 .et-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
-.et-step{ border:none; background:var(--bg-soft,rgba(120,120,140,.1)); color:var(--text,#1e2a44); width:46px; height:22px; border-radius:7px; cursor:pointer; font-size:.7rem; line-height:1; }
+.et-step{ border:none; background:var(--bg-soft,rgba(120,120,140,.1)); color:var(--text,#1e2a44); width:42px; height:20px; border-radius:7px; cursor:pointer; font-size:.7rem; line-height:1; }
 .et-step:hover{ background:rgba(31,75,216,.14); color:#1f4bd8; }
-.et-num{ width:52px; height:46px; text-align:center; border:1px solid var(--border,#e2e6ef); border-radius:10px; font:inherit; font-size:1.5rem; font-weight:800; color:var(--text,#1e2a44); background:var(--bg-soft,rgba(120,120,140,.06)); outline:none; }
+.et-num{ width:46px; height:40px; text-align:center; border:1px solid var(--border,#e2e6ef); border-radius:10px; font:inherit; font-size:1.3rem; font-weight:800; color:var(--text,#1e2a44); background:var(--bg-soft,rgba(120,120,140,.06)); outline:none; }
 .et-num:focus{ border-color:#1f4bd8; }
-.et-colon{ font-size:1.4rem; font-weight:800; color:var(--text-muted,#7a8399); }
+.et-colon{ font-size:1.2rem; font-weight:800; color:var(--text-muted,#7a8399); }
 .et-ap{ display:flex; flex-direction:column; gap:4px; margin-left:4px; }
 .et-ap-b{ border:1px solid var(--border,#e2e6ef); background:transparent; color:var(--text-muted,#7a8399); border-radius:8px; padding:6px 12px; font:inherit; font-size:.78rem; font-weight:800; cursor:pointer; }
 .et-ap-b.on{ background:#1f4bd8; color:#fff; border-color:#1f4bd8; }
@@ -1673,6 +1677,7 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
   .slate-board.selmode .slate-note .sn-actions{ display:none; }
 }
 @media(max-width:430px){ .slate-note{ width:100% !important; } }
+@media(max-width:820px){ .slate-note.slate-input{ width:100% !important; } }
 /* ---- Read-only Slate (admin viewing a staff member's board): reflow the absolutely
    positioned notes into a tidy grid that always fits the viewer's screen — no horizontal
    swipe/scroll no matter how wide the screen was that the notes were placed on. This only
@@ -5623,14 +5628,14 @@ function slateClick(e){
 function spawnNoteInput(x,y){
   var ex=document.getElementById('slate-input-wrap'); if(ex){ try{ commitSlateInput(); }catch(_e){ ex.remove(); } }
   var board=document.getElementById('slate-board'); if(!board) return;
-  var maxX=Math.max(4, board.clientWidth-184); if(x>maxX)x=maxX; if(x<4)x=4; if(y<4)y=4;
+  var maxX=Math.max(4, board.clientWidth-256); if(x>maxX)x=maxX; if(x<4)x=4; if(y<4)y=4;
   var color=Slate.pick();
   var w=document.createElement('div'); w.id='slate-input-wrap'; w.className='slate-note slate-input'; w.style.left=x+'px'; w.style.top=y+'px'; w.style.background=color; w.style.setProperty('--rot','0deg');
   w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type your note…" maxlength="600"></textarea>'
     +'<div class="slate-input-foot"><input type="hidden" id="slate-input-time"><input type="hidden" id="slate-input-day" value="today">'
     +'<button type="button" class="si-time" id="slate-time-btn" data-action="slate-time-open"><span class="si-time-ic">⏰</span><span id="slate-time-lbl">Set time</span></button>'
     +'<button type="button" class="si-add" data-action="slate-input-save">Add note</button></div>'
-    +'<div class="si-days" id="slate-day-row" style="display:none"><span class="si-days-lbl">Remind</span><button type="button" class="si-day on" id="slate-day-today" data-action="slate-day" data-day="today">Today</button><button type="button" class="si-day" id="slate-day-tom" data-action="slate-day" data-day="tomorrow">Tomorrow</button></div>';
+    +'<div class="si-days" id="slate-day-row" style="display:none"><button type="button" class="si-day on" id="slate-day-today" data-action="slate-day" data-day="today">Today</button><button type="button" class="si-day" id="slate-day-tom" data-action="slate-day" data-day="tomorrow">Tomorrow</button></div>';
   board.appendChild(w);
   var ta=document.getElementById('slate-input'); ta._x=x; ta._y=y; ta._color=color;
   // Commit only when focus leaves the whole box — and never while the time picker is open.
@@ -5735,8 +5740,8 @@ function slateEdit(id){
   var curHHMM = newRemind ? isoToHHMM(newRemind) : '';
   var dayChoice = (newRemind && isoIsTomorrow(newRemind)) ? 'tomorrow' : 'today';
   var days=document.createElement('div'); days.className='si-days';
-  days.innerHTML='<span class="si-days-lbl">Remind</span><button type="button" class="si-day" data-d="today">Today</button><button type="button" class="si-day" data-d="tomorrow">Tomorrow</button>';
-  var dT=days.children[1], dM=days.children[2];
+  days.innerHTML='<button type="button" class="si-day" data-d="today">Today</button><button type="button" class="si-day" data-d="tomorrow">Tomorrow</button>';
+  var dT=days.children[0], dM=days.children[1];
   var tlabel=function(){ tbtn.textContent = newRemind ? ('⏰ '+hhmmFriendly(isoToHHMM(newRemind))+(isoIsTomorrow(newRemind)?' · Tmrw':'')) : '⏰ Add time'; tbtn.classList.toggle('on', !!newRemind); };
   var renderDays=function(){ days.style.display = curHHMM ? 'flex' : 'none'; var past=hhmmPast(curHHMM); dT.classList.toggle('dis', !!past); dT.classList.toggle('on', dayChoice==='today' && !past); dM.classList.toggle('on', dayChoice==='tomorrow'); };
   var recompute=function(){ newRemind = curHHMM ? timeToDayISO(curHHMM, dayChoice) : ''; tlabel(); renderDays(); };
