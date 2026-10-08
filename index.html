@@ -2673,24 +2673,29 @@ var FB = (function(){
         }
         case 'mergeDepartment': {
           if(!isAdmin()) throw new Error('Admins only.');
-          var mfrom=String(b.from||''), mto=String(b.to||''); if(!mfrom||!mto||mfrom===mto) throw new Error('Bad merge.');
+          var mto=String(b.to||''); var fromArr=(Array.isArray(b.fromList)?b.fromList:[String(b.from||'')]).map(String).filter(function(x){return x && x!==mto;}); if(!mto||!fromArr.length) throw new Error('Bad merge.'); var fromSet={}; fromArr.forEach(function(x){fromSet[x]=1;});
           var counts={leads:0,tasks:0,users:0};
           return col('leads').get().then(function(qs){
-            var batch=db.batch(); qs.forEach(function(d){ var l=d.data(); if(String(l.department)===mfrom){ batch.set(col('leads').doc(d.id),{department:mto,updatedAt:nowISO()},{merge:true}); counts.leads++; } });
-            return batch.commit().then(function(){ return col('tasks').where('department','==',mfrom).get(); });
+            var batch=db.batch(); qs.forEach(function(d){ var l=d.data(); if(fromSet[String(l.department)]){ batch.set(col('leads').doc(d.id),{department:mto,updatedAt:nowISO()},{merge:true}); counts.leads++; } });
+            return batch.commit().then(function(){ return col('tasks').get(); });
           }).then(function(qs){
-            var batch=db.batch(); qs.forEach(function(d){ batch.set(col('tasks').doc(d.id),{department:mto,lastUpdatedTimestamp:nowISO()},{merge:true}); counts.tasks++; });
+            var batch=db.batch(); qs.forEach(function(d){ var t=d.data(); if(fromSet[String(t.department)]){ batch.set(col('tasks').doc(d.id),{department:mto,lastUpdatedTimestamp:nowISO()},{merge:true}); counts.tasks++; } });
             return batch.commit().then(function(){ return col('users').get(); });
           }).then(function(us){
-            var batch=db.batch(); us.forEach(function(ud){ var u=ud.data(); if(Array.isArray(u.allowedDepartments) && u.allowedDepartments.indexOf(mfrom)!==-1){ var a=u.allowedDepartments.filter(function(x){return x!==mfrom;}); if(a.indexOf(mto)===-1) a.push(mto); batch.set(col('users').doc(String(u.userId)),{allowedDepartments:a},{merge:true}); counts.users++; } });
+            var batch=db.batch(); us.forEach(function(ud){ var u=ud.data(); if(Array.isArray(u.allowedDepartments) && u.allowedDepartments.some(function(x){return fromSet[x];})){ var a=[]; u.allowedDepartments.forEach(function(x){ var v=fromSet[x]?mto:x; if(a.indexOf(v)===-1) a.push(v); }); batch.set(col('users').doc(String(u.userId)),{allowedDepartments:a},{merge:true}); counts.users++; } });
             return batch.commit().then(function(){ return col('config').doc('app').get(); });
           }).then(function(s){
             var c=s.exists?s.data():{}; var deps=Array.isArray(c.departments)?c.departments.slice():[];
-            var fromCats=[]; deps.forEach(function(d){ if(d.department===mfrom) fromCats=(d.categories||[]).slice(); });
-            deps=deps.filter(function(d){ return d.department!==mfrom; });
-            deps.forEach(function(d){ if(d.department===mto){ var set={}; (d.categories||[]).forEach(function(x){set[x]=1;}); fromCats.forEach(function(x){ if(!set[x]){ d.categories=(d.categories||[]).concat([x]); set[x]=1; } }); } });
-            return col('config').doc('app').set({departments:deps, updated:nowISO()},{merge:true});
-          }).then(function(){ try{ logAudit('Merged department', '', mfrom, '\u2192 '+mto+' \u00b7 '+counts.leads+' leads, '+counts.tasks+' tasks, '+counts.users+' staff'); }catch(e){} return {ok:true, counts:counts}; });
+            var mergedCats={}; deps.forEach(function(d){ if(fromSet[d.department]){ (d.categories||[]).forEach(function(x){mergedCats[x]=1;}); } });
+            var target=null; deps.forEach(function(d){ if(d.department===mto) target=d; });
+            deps=deps.filter(function(d){ return !fromSet[d.department]; });
+            if(!target){ target={department:mto, categories:[]}; deps.push(target); }
+            (target.categories||[]).forEach(function(x){mergedCats[x]=1;}); target.categories=Object.keys(mergedCats);
+            var _patch={departments:deps, updated:nowISO()};
+            var procs=(c.leadProcesses&&typeof c.leadProcesses==='object')?c.leadProcesses:null;
+            if(procs){ var tp=procs[mto]||{}; fromArr.forEach(function(fn){ if(procs[fn]){ Object.keys(procs[fn]).forEach(function(pn){ if(!tp[pn]) tp[pn]=procs[fn][pn]; }); delete procs[fn]; } }); procs[mto]=tp; _patch.leadProcesses=procs; }
+            return col('config').doc('app').set(_patch,{merge:true});
+          }).then(function(){ try{ logAudit('Consolidated to '+mto, '', fromArr.join(', '), counts.leads+' leads, '+counts.tasks+' tasks, '+counts.users+' staff'); }catch(e){} return {ok:true, counts:counts}; });
         }
 
         case 'addDepartment': {
@@ -3801,9 +3806,9 @@ function nlProcesses(){ return (App.leadProcesses && typeof App.leadProcesses===
 function nlEnsureProcesses(){ if(!App.leadProcesses || typeof App.leadProcesses!=='object'){ App.leadProcesses=JSON.parse(JSON.stringify(LEAD_PROCESSES)); } return App.leadProcesses; }
 function nlMergeMF(){
   if(!(App.identity && App.identity.role==='Admin')){ toast('Admins only.','warn'); return; }
-  if(!confirm('Merge Mutual Fund into Investments? This moves ALL Mutual-Fund leads, tasks and staff access into Investments and removes the Mutual Fund department. This cannot be undone.')) return;
+  if(!confirm('Consolidate all Mutual Fund / Wealth / Wealth and Investment departments into a single Investments department? This re-tags every matching lead, task and staff access, and removes the old names. This cannot be undone.')) return;
   toast('Merging…','info');
-  apiCall('mergeDepartment',{from:'Mutual Fund',to:'Investments'}).then(function(r){
+  apiCall('mergeDepartment',{fromList:['Mutual Fund','Wealth','Wealth and Investment'],to:'Investments'}).then(function(r){
     if(r&&r.ok){ var c=r.counts||{}; toast('\u2713 Merged — '+(c.leads||0)+' leads, '+(c.tasks||0)+' tasks, '+(c.users||0)+' staff moved to Investments','success'); if(App.view==='settings') renderSettings(); }
     else { toast((r&&r.error)||'Merge failed.','err'); }
   }).catch(function(e){ toast('Merge failed. '+((e&&e.message)||''),'err'); });
@@ -7080,7 +7085,7 @@ function renderSettings(){
     h+='<div class="dept-manage">';
     App.departments.forEach(function(d){ h+='<div class="dm-row"><span class="dm-name">'+esc(d.department)+'</span><span class="dm-cats">'+((d.categories&&d.categories.length)||0)+' categories</span><button class="btn btn-ghost btn-sm" data-action="dept-del" data-name="'+esc(d.department)+'">🗑</button></div>'; });
     h+='</div><button class="btn btn-primary btn-sm" data-action="dept-add-open" style="margin-top:10px">'+plusIco()+'Add department</button></div></div>';
-    if(App.identity.role==='Admin' && (App.departments||[]).some(function(d){return d.department==='Mutual Fund';})){ h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Merge Mutual Fund &rarr; Investments</div><div class="set-sub">One-time: moves every Mutual-Fund lead, task and staff access into Investments, then removes the Mutual Fund department. Cannot be undone.</div></div><button class="btn btn-ghost" data-action="merge-mf">Merge now</button></div>'; }
+    if(App.identity.role==='Admin' && (App.departments||[]).some(function(d){return d.department==='Mutual Fund'||d.department==='Wealth'||d.department==='Wealth and Investment';})){ h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Consolidate to Investments</div><div class="set-sub">One-time: moves every Mutual Fund / Wealth / Wealth and Investment lead, task and staff access into a single &ldquo;Investments&rdquo; department and removes the old names. Cannot be undone.</div></div><button class="btn btn-ghost" data-action="merge-mf">Consolidate</button></div>'; }
   } else {
     h+='<div class="set-field"><div><div class="set-k">Categories & departments</div><div class="set-sub">'+App.departments.length+' departments · '+App.categoryMaster.length+' categories. Departments are set by your admin; you can add a new category under a department when assigning.</div></div></div>';
   }
