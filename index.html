@@ -1094,6 +1094,25 @@ body{ background:var(--bg); }
 .sn-edit-time.on{ border-color:#1f4bd8; color:#1f4bd8; background:rgba(31,75,216,.08); }
 /* Compact custom time picker */
 .edtime-pop{ position:fixed; z-index:1200; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:16px; box-shadow:0 20px 44px -14px rgba(20,22,40,.4); padding:11px; width:auto; animation:etIn .14s ease; }
+.tdial-pop{ position:fixed; z-index:1300; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:18px; box-shadow:0 24px 50px -16px rgba(20,22,40,.5); padding:14px; width:264px; animation:etIn .14s ease; }
+.tdial-head{ display:flex; align-items:center; gap:6px; margin-bottom:10px; }
+.tdial-ht{ appearance:none; border:none; background:var(--bg-soft,rgba(120,120,140,.08)); color:var(--text,#222); font:inherit; font-size:1.7rem; font-weight:800; line-height:1; padding:6px 10px; border-radius:10px; cursor:pointer; min-width:52px; }
+.tdial-ht.on{ background:rgba(31,75,216,.14); color:#1f4bd8; }
+.tdial-colon{ font-size:1.7rem; font-weight:800; color:var(--text,#222); }
+.tdial-ap{ display:flex; flex-direction:column; gap:4px; margin-left:8px; }
+.tdial-apb{ appearance:none; border:1px solid var(--border,#d7deea); background:var(--bg-card,#fff); color:var(--text-sec,#667); font:inherit; font-size:.74rem; font-weight:800; padding:4px 9px; border-radius:8px; cursor:pointer; }
+.tdial-apb.on{ background:#1f4bd8; border-color:#1f4bd8; color:#fff; }
+.tdial-face{ display:block; margin:0 auto; touch-action:none; cursor:pointer; width:236px; height:236px; }
+.tdial-bg{ fill:var(--bg-soft,rgba(120,120,140,.08)); }
+.tdial-hand{ stroke:#1f4bd8; stroke-width:2.5; }
+.tdial-knob{ fill:#1f4bd8; }
+.tdial-center{ fill:#1f4bd8; }
+.tdial-num{ fill:var(--text,#333); font-size:15px; font-weight:700; font-family:inherit; }
+.tdial-num.on{ fill:#fff; }
+.tdial-foot{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+.tdial-btn{ appearance:none; border:1px solid var(--border,#d7deea); background:var(--bg-card,#fff); color:var(--text,#333); font:inherit; font-weight:700; font-size:.85rem; padding:7px 14px; border-radius:9px; cursor:pointer; }
+.tdial-ok{ background:#1f4bd8; border-color:#1f4bd8; color:#fff; }
+.tdial-trigger{ text-align:left; cursor:pointer; }
 @keyframes etIn{ from{ opacity:0; transform:translateY(-4px);} to{ opacity:1; transform:none; } }
 .et-row{ display:flex; align-items:center; gap:6px; }
 .et-col{ display:flex; flex-direction:column; align-items:center; gap:4px; }
@@ -2135,9 +2154,9 @@ textarea.nl-in{min-height:64px;resize:vertical}
           <div class="at-r-c"><div id="assign-to-chips"></div></div>
         </div>
         <div class="at-r">
-          <span class="at-r-l">📅 Due date</span>
+          <span class="at-r-l">📅 Due date <span class="req">*</span></span>
           <div class="at-r-c">
-            <div class="dt-row"><input type="date" id="assign-due-d" class="f-input"><input type="time" id="assign-due-t" class="f-input"></div>
+            <div class="dt-row"><input type="date" id="assign-due-d" class="f-input"><input type="hidden" id="assign-due-t"><button type="button" class="f-input tdial-trigger" id="assign-due-tbtn" data-action="opendial" data-for="assign-due-t">Set time</button></div>
             <div class="due-presets">
               <button type="button" data-action="due-preset" data-when="today18">Today 6 PM</button>
               <button type="button" data-action="due-preset" data-when="tom10">Tomorrow 10 AM</button>
@@ -4867,6 +4886,81 @@ var EdTime = {
   _out:function(e){ if(EdTime._el && !EdTime._el.contains(e.target) && e.target!==EdTime._anchor && !EdTime._anchor.contains(e.target)) EdTime.close(); },
   close:function(){ if(EdTime._el){ EdTime._el.remove(); EdTime._el=null; } document.removeEventListener('mousedown', EdTime._out, true); window.removeEventListener('resize', EdTime._position); }
 };
+/* ---- Circular clock dial (tap/drag hour + minute, AM/PM) ---- */
+var TimeDial = {
+  _el:null,_cb:null,_anchor:null,_h:9,_m:0,_mode:'h',_drag:false,
+  open:function(anchor,cur,cb){
+    TimeDial.close(); TimeDial._cb=cb; TimeDial._anchor=anchor; TimeDial._mode='h';
+    var h=9,m=0;
+    if(cur){ var p=String(cur).split(':'); h=parseInt(p[0],10)||0; m=parseInt(p[1],10)||0; }
+    else { var d=new Date(); h=d.getHours(); m=Math.round(d.getMinutes()/5)*5; if(m>=60){m=0;h=(h+1)%24;} }
+    TimeDial._h=((h%24)+24)%24; TimeDial._m=((m%60)+60)%60;
+    var b=document.createElement('div'); b.className='tdial-pop'; b.id='tdial-pop';
+    b.innerHTML='<div class="tdial-head"><button type="button" class="tdial-ht" data-td="mode-h"><span id="tdial-hh">09</span></button><span class="tdial-colon">:</span><button type="button" class="tdial-ht" data-td="mode-m"><span id="tdial-mm">00</span></button><div class="tdial-ap"><button type="button" class="tdial-apb" data-td="am">AM</button><button type="button" class="tdial-apb" data-td="pm">PM</button></div></div>'+
+      '<svg class="tdial-face" viewBox="0 0 236 236"><circle cx="118" cy="118" r="112" class="tdial-bg"></circle><line id="tdial-hand" x1="118" y1="118" x2="118" y2="40" class="tdial-hand"></line><circle id="tdial-knob" cx="118" cy="40" r="17" class="tdial-knob"></circle><circle cx="118" cy="118" r="3.5" class="tdial-center"></circle><g id="tdial-nums"></g></svg>'+
+      '<div class="tdial-foot"><button type="button" class="tdial-btn" data-td="clear">Clear</button><span style="flex:1"></span><button type="button" class="tdial-btn" data-td="cancel">Cancel</button><button type="button" class="tdial-btn tdial-ok" data-td="ok">OK</button></div>';
+    document.body.appendChild(b); TimeDial._el=b;
+    b.addEventListener('mousedown',function(e){ if(e.target.closest('.tdial-face')) return; e.preventDefault(); });
+    b.addEventListener('click',TimeDial._click);
+    var face=b.querySelector('.tdial-face');
+    face.addEventListener('pointerdown',TimeDial._down);
+    document.addEventListener('pointermove',TimeDial._move);
+    document.addEventListener('pointerup',TimeDial._up);
+    TimeDial._paint(); TimeDial._position();
+    setTimeout(function(){ document.addEventListener('mousedown',TimeDial._out,true); window.addEventListener('resize',TimeDial._position); },0);
+  },
+  _ampm:function(){ return TimeDial._h<12?'AM':'PM'; },
+  _h12:function(){ var x=TimeDial._h%12; return x===0?12:x; },
+  _click:function(e){
+    var t=e.target.closest('[data-td]'); if(!t) return; var a=t.getAttribute('data-td');
+    if(a==='mode-h'){ TimeDial._mode='h'; TimeDial._paint(); }
+    else if(a==='mode-m'){ TimeDial._mode='m'; TimeDial._paint(); }
+    else if(a==='am'){ if(TimeDial._h>=12) TimeDial._h-=12; TimeDial._paint(); }
+    else if(a==='pm'){ if(TimeDial._h<12) TimeDial._h+=12; TimeDial._paint(); }
+    else if(a==='clear'){ if(TimeDial._cb) TimeDial._cb(''); TimeDial.close(); }
+    else if(a==='cancel'){ TimeDial.close(); }
+    else if(a==='ok'){ var hh=('0'+TimeDial._h).slice(-2), mm=('0'+TimeDial._m).slice(-2); if(TimeDial._cb) TimeDial._cb(hh+':'+mm); TimeDial.close(); }
+  },
+  _down:function(e){ TimeDial._drag=true; TimeDial._apply(e); },
+  _move:function(e){ if(TimeDial._drag) TimeDial._apply(e); },
+  _up:function(e){ if(!TimeDial._drag) return; TimeDial._drag=false; if(TimeDial._mode==='h'){ TimeDial._mode='m'; TimeDial._paint(); } },
+  _apply:function(e){
+    var svg=TimeDial._el&&TimeDial._el.querySelector('.tdial-face'); if(!svg) return;
+    var r=svg.getBoundingClientRect(); var cx=e.clientX, cy=e.clientY;
+    if((cx==null||isNaN(cx)) && e.touches && e.touches[0]){ cx=e.touches[0].clientX; cy=e.touches[0].clientY; }
+    var x=(cx-r.left)/r.width*236-118, y=(cy-r.top)/r.height*236-118;
+    var deg=(Math.atan2(x,-y)*180/Math.PI+360)%360;
+    if(TimeDial._mode==='h'){ var idx=Math.round(deg/30)%12; var h12=idx===0?12:idx; var pm=TimeDial._h>=12; TimeDial._h=(h12%12)+(pm?12:0); }
+    else { TimeDial._m=Math.round(deg/6)%60; }
+    TimeDial._paint(); if(e.preventDefault) e.preventDefault();
+  },
+  _paint:function(){
+    var b=TimeDial._el; if(!b) return;
+    b.querySelector('#tdial-hh').textContent=('0'+TimeDial._h12()).slice(-2);
+    b.querySelector('#tdial-mm').textContent=('0'+TimeDial._m).slice(-2);
+    b.querySelector('[data-td="mode-h"]').classList.toggle('on',TimeDial._mode==='h');
+    b.querySelector('[data-td="mode-m"]').classList.toggle('on',TimeDial._mode==='m');
+    b.querySelector('[data-td="am"]').classList.toggle('on',TimeDial._ampm()==='AM');
+    b.querySelector('[data-td="pm"]').classList.toggle('on',TimeDial._ampm()==='PM');
+    var g=b.querySelector('#tdial-nums'); var html=''; var C=118, R=92;
+    if(TimeDial._mode==='h'){
+      for(var i=1;i<=12;i++){ var a=i*30*Math.PI/180; var x=C+R*Math.sin(a), y=C-R*Math.cos(a); var on=(i===TimeDial._h12()); html+='<text x="'+x.toFixed(1)+'" y="'+(y+5).toFixed(1)+'" class="tdial-num'+(on?' on':'')+'" text-anchor="middle">'+i+'</text>'; }
+    } else {
+      for(var k=0;k<12;k++){ var v=k*5; var a2=k*30*Math.PI/180; var x2=C+R*Math.sin(a2), y2=C-R*Math.cos(a2); var on2=(v===TimeDial._m); html+='<text x="'+x2.toFixed(1)+'" y="'+(y2+5).toFixed(1)+'" class="tdial-num'+(on2?' on':'')+'" text-anchor="middle">'+('0'+v).slice(-2)+'</text>'; }
+    }
+    g.innerHTML=html;
+    var ang = TimeDial._mode==='h' ? (TimeDial._h12()%12)*30 : TimeDial._m*6;
+    var ar=ang*Math.PI/180; var hx=C+R*Math.sin(ar), hy=C-R*Math.cos(ar);
+    var hand=b.querySelector('#tdial-hand'), knob=b.querySelector('#tdial-knob');
+    hand.setAttribute('x2',hx.toFixed(1)); hand.setAttribute('y2',hy.toFixed(1));
+    knob.setAttribute('cx',hx.toFixed(1)); knob.setAttribute('cy',hy.toFixed(1));
+  },
+  _position:function(){ var b=TimeDial._el,a=TimeDial._anchor; if(!b||!a) return; var r=a.getBoundingClientRect(); var bw=b.offsetWidth||264, bh=b.offsetHeight||360; var top=r.bottom+6, left=r.left; if(top+bh>window.innerHeight-8) top=Math.max(8,r.top-bh-6); if(left+bw>window.innerWidth-8) left=Math.max(8,window.innerWidth-bw-8); b.style.top=top+'px'; b.style.left=left+'px'; },
+  _out:function(e){ if(TimeDial._el && !TimeDial._el.contains(e.target) && e.target!==TimeDial._anchor && !(TimeDial._anchor&&TimeDial._anchor.contains&&TimeDial._anchor.contains(e.target))) TimeDial.close(); },
+  close:function(){ if(TimeDial._el){ TimeDial._el.remove(); TimeDial._el=null; } TimeDial._drag=false; document.removeEventListener('mousedown',TimeDial._out,true); document.removeEventListener('pointermove',TimeDial._move); document.removeEventListener('pointerup',TimeDial._up); window.removeEventListener('resize',TimeDial._position); }
+};
+function dialLabel(hhmm){ if(!hhmm) return 'Set time'; var p=String(hhmm).split(':'); var h=parseInt(p[0],10)||0,m=parseInt(p[1],10)||0; var ap=h<12?'AM':'PM'; var h12=h%12; if(h12===0)h12=12; return h12+':'+('0'+m).slice(-2)+' '+ap; }
+function dialSyncBtn(tId){ var btn=document.getElementById(tId+'btn'); var te=document.getElementById(tId); if(btn&&te) btn.textContent=dialLabel(te.value); }
 function hhmmFriendly(hhmm){ if(!hhmm) return ''; var p=String(hhmm).split(':'); var h=parseInt(p[0],10)||0, m=parseInt(p[1],10)||0; return ('0'+h).slice(-2)+':'+('0'+m).slice(-2); }
 function isoToHHMM(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
 /* Time-only → an ISO for today at that time, or tomorrow if that time already passed. */
@@ -5425,7 +5519,7 @@ function p2(x){return (x<10?'0':'')+x;}
 function isoToDate(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d))return''; return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); }
 function isoToTime(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d))return''; return p2(d.getHours())+':'+p2(d.getMinutes()); }
 function combineDT(dId,tId){ var de=document.getElementById(dId), te=document.getElementById(tId); var d=de?(de.value||''):''; var t=te?(te.value||''):''; if(!d) return ''; if(!t) t='18:00'; var dt=new Date(d+'T'+t); return isNaN(dt)?'':dt.toISOString(); }
-function setDT(dId,tId,iso){ var de=document.getElementById(dId), te=document.getElementById(tId); if(de) de.value=isoToDate(iso); if(te) te.value=isoToTime(iso); }
+function setDT(dId,tId,iso){ var de=document.getElementById(dId), te=document.getElementById(tId); if(de) de.value=isoToDate(iso); if(te){ te.value=isoToTime(iso); dialSyncBtn(tId); } }
 function setDuePreset(when){
   if(when==='clear'){ setDT('assign-due-d','assign-due-t',''); return; }
   var d=new Date();
@@ -6560,7 +6654,7 @@ function suggestFor(el){
     var di=document.getElementById(el.getAttribute('data-dept-input'));
     var dept=di?di.value.trim():'';
     var dObj=App.departments.find(function(d){return d.department.toLowerCase()===dept.toLowerCase();});
-    pool=uniqI((dObj?dObj.categories:[]).concat(App.categoryMaster));
+    pool=uniqI(dObj?dObj.categories:[]);
   }
   var filt=q?pool.filter(function(n){return n.toLowerCase().indexOf(q.toLowerCase())!==-1;}):pool;
   filt=filt.slice(0,12);
@@ -7740,6 +7834,7 @@ function submitAssign(){
   if(!title){ toast('Task title is required.','error'); var _ti=document.getElementById('assign-title-input'); if(_ti) _ti.focus(); return; }
   if(!toList.length){ toast('Pick who this task is for.','error'); var _ac=document.getElementById('assign-to-chips'); if(_ac){ try{ _ac.scrollIntoView({block:'center',behavior:'smooth'}); var _ai=_ac.querySelector('input'); if(_ai) _ai.focus(); }catch(_){} } return; }
   if(!dept||!cat){ toast('Choose a department and category.','error'); var _dp=document.getElementById(!dept?'assign-dept':'assign-cat'); if(_dp){ try{ _dp.scrollIntoView({block:'center',behavior:'smooth'}); _dp.focus(); }catch(_){} } return; }
+  if(!due){ toast('Set a due date.','error'); var _dd=document.getElementById('assign-due-d'); if(_dd){ try{ _dd.scrollIntoView({block:'center',behavior:'smooth'}); _dd.focus(); }catch(_){} } return; }
   var hasSelf = toList.map(String).indexOf(meId)>=0;
   var others = toList.filter(function(id){ return String(id)!==meId; });
   if(others.length && !Sync.online()){ toast('You are offline — you can only add tasks to yourself right now.','error'); return; }
@@ -8680,6 +8775,7 @@ document.addEventListener('click', function(e){
     case 'nl-chain': nlOpenChain(el.getAttribute('data-lead')); break;
     case 'nl-detailtab': nlOpenChain(el.getAttribute('data-lead'), el.getAttribute('data-tab')); break;
     case 'nl-chat-send': nlChatSend(el.getAttribute('data-lead')); break;
+    case 'opendial': { var _df=el.getAttribute('data-for'); var _tg=document.getElementById(_df); TimeDial.open(el, (_tg&&_tg.value)||'', function(v){ if(_tg) _tg.value=v; dialSyncBtn(_df); }); break; }
     case 'nl-check': nlToggleCheck(el.getAttribute('data-lead'), parseInt(el.getAttribute('data-i'),10)); break;
     case 'nl-processes': nlOpenProcesses(); break;
     case 'proc-dept': nlProcDept(el.getAttribute('data-d')); break;
