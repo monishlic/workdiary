@@ -351,6 +351,19 @@ button,input,select,textarea,optgroup{font-family:inherit}
 @keyframes atFloatIn{ from{ opacity:0; transform:translateY(-6px) scale(.98); } to{ opacity:1; transform:none; } }
 .at-backdrop{ position:fixed; inset:0; z-index:330; background:transparent; }
 .at-pills{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 2px; }
+.at-rows{ margin:8px 0 2px; }
+.at-r{ display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-top:1px solid var(--border); }
+.at-r:first-child{ border-top:none; padding-top:6px; }
+.at-r-l{ flex:0 0 118px; display:flex; align-items:center; gap:6px; font-weight:700; font-size:.84rem; color:var(--text-sec); padding-top:9px; line-height:1.2; }
+.at-r-c{ flex:1 1 auto; min-width:0; }
+.at-r-c .dt-row{ margin:0; }
+.at-r-c .due-presets{ margin-top:7px; }
+.at-r-c .pillseg{ margin:0; }
+.at-r-c .row2{ gap:8px; }
+@media(max-width:560px){
+  .at-r{ flex-direction:column; gap:6px; padding:11px 0; }
+  .at-r-l{ flex-basis:auto; padding-top:0; }
+}
 .at-pills-top{ margin:2px 0; }
 .at-pill-primary{ border-color:var(--accent); color:var(--accent); font-weight:700; }
 .at-pill-primary .at-pi{ filter:none; }
@@ -1891,6 +1904,9 @@ textarea.nl-in{min-height:64px;resize:vertical}
 .nl-segb.on.l{border-color:#0f9d58;color:#0b7a4b;background:rgba(15,157,88,.12)}
 .nl-alllink{border:none;background:transparent;color:var(--accent,#4f46e5);font-weight:700;font-size:.72rem;cursor:pointer;text-transform:none;margin-left:6px}
 .nl-people{display:flex;flex-wrap:wrap;gap:7px}
+.nl-asg-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 9px}
+.nl-asg-tools .nl-alllink{margin-left:0}
+.nl-asg-tools .nl-tickrow{margin:0}
 .nl-ptag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border,#e7e9f1);background:var(--bg-card,#fff);color:var(--text,#14151a);border-radius:999px;padding:5px 10px 5px 6px;font-size:.82rem;font-weight:600;cursor:pointer}
 .nl-ptag.sel{background:var(--accent,#4f46e5);border-color:var(--accent,#4f46e5);color:#fff}
 .nl-ptag .nl-mk{width:16px;height:16px;border-radius:50%;border:1.5px solid #c9cede;display:flex;align-items:center;justify-content:center;font-size:.68rem}
@@ -2112,58 +2128,58 @@ textarea.nl-in{min-height:64px;resize:vertical}
       <input type="text" id="assign-client" class="at-field at-client" maxlength="120" placeholder="Client name (optional)" autocomplete="off">
       <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add a description…"></textarea>
 
-      <!-- Collapsible checklist -->
-      <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add Checklist <span class="at-chev">▾</span></button>
+      <!-- Core fields — clean, always-visible rows -->
+      <div class="at-rows">
+        <div class="at-r">
+          <span class="at-r-l">👥 Assigned <span class="req">*</span></span>
+          <div class="at-r-c"><div id="assign-to-chips"></div></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">📅 Due date</span>
+          <div class="at-r-c">
+            <div class="dt-row"><input type="date" id="assign-due-d" class="f-input"><input type="time" id="assign-due-t" class="f-input"></div>
+            <div class="due-presets">
+              <button type="button" data-action="due-preset" data-when="today18">Today 6 PM</button>
+              <button type="button" data-action="due-preset" data-when="tom10">Tomorrow 10 AM</button>
+              <button type="button" data-action="due-preset" data-when="tom18">Tomorrow 6 PM</button>
+              <button type="button" data-action="due-preset" data-when="in2">In 2 days</button>
+              <button type="button" data-action="due-preset" data-when="clear">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">🚩 Priority</span>
+          <div class="at-r-c">
+            <div class="pillseg" id="assign-priority-seg">
+              <input type="hidden" id="assign-priority" value="medium">
+              <button type="button" class="pill-opt prio-high" data-action="pick-pill" data-target="assign-priority" data-val="high">🔴 High / Urgent</button>
+              <button type="button" class="pill-opt prio-med on" data-action="pick-pill" data-target="assign-priority" data-val="medium">🟠 Medium</button>
+              <button type="button" class="pill-opt prio-low" data-action="pick-pill" data-target="assign-priority" data-val="low">🟢 Low</button>
+            </div>
+          </div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">🏢 Department <span class="req">*</span></span>
+          <div class="at-r-c"><select id="assign-dept" class="f-input"></select></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">🏷 Category <span class="req">*</span></span>
+          <div class="at-r-c combo"><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick a category…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
+        </div>
+      </div>
+
+      <!-- Add checklist (optional) -->
+      <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add checklist <span class="at-chev">▾</span></button>
       <div id="assign-panel-checklist" class="at-panel hidden">
         <div id="assign-checklist-box"></div>
         <button type="button" class="btn btn-ghost btn-sm cl-add-btn" data-action="cl-add" data-target="assign-checklist-box">+ Add item</button>
       </div>
 
-      <!-- Everything else: assign to, loop, due, priority, category -->
-      <div class="at-pills">
-        <button type="button" class="at-pill at-pill-primary" id="pill-users" data-action="at-toggle" data-panel="assign-panel-users"><span class="at-pi">👥</span><span id="sum-users">Assign to</span></button>
-        <button type="button" class="at-pill" id="pill-loop" data-action="at-toggle" data-panel="assign-panel-loop"><span class="at-pi">🔁</span><span id="sum-loop">In Loop</span></button>
-        <button type="button" class="at-pill" id="pill-due" data-action="at-toggle" data-panel="assign-panel-due"><span class="at-pi">📅</span><span id="sum-due">Due Date</span></button>
-        <button type="button" class="at-pill prio-med" id="pill-prio" data-action="at-toggle" data-panel="assign-panel-prio"><span class="at-pi">🚩</span><span id="sum-prio">Priority</span></button>
-        <button type="button" class="at-pill" id="pill-cat" data-action="at-toggle" data-panel="assign-panel-cat"><span class="at-pi">🏢</span><span id="sum-cat">Category</span></button>
-      </div>
-
-      <!-- Pill panels (one open at a time) -->
-      <div id="assign-panel-users" class="at-panel hidden">
-        <label class="f-label">Assign to <span class="req">*</span> <span class="opt">(pick one or more — each gets their own copy)</span></label>
-        <div id="assign-to-chips"></div>
-      </div>
+      <!-- Loop others in (optional) -->
+      <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-loop">🔁 Loop people in <span class="at-chev">▾</span></button>
       <div id="assign-panel-loop" class="at-panel hidden">
         <label class="f-label">Loop others in <span class="opt">(optional — they get a quick heads-up on updates &amp; completion)</span></label>
         <div id="assign-loop-chips"></div>
-      </div>
-      <div id="assign-panel-due" class="at-panel hidden">
-        <label class="f-label">Due Date &amp; Time <span class="opt">(optional)</span></label>
-        <div class="dt-row"><input type="date" id="assign-due-d" class="f-input"><input type="time" id="assign-due-t" class="f-input"></div>
-        <div class="due-presets">
-          <button type="button" data-action="due-preset" data-when="today18">Today 6 PM</button>
-          <button type="button" data-action="due-preset" data-when="tom10">Tomorrow 10 AM</button>
-          <button type="button" data-action="due-preset" data-when="tom18">Tomorrow 6 PM</button>
-          <button type="button" data-action="due-preset" data-when="in2">In 2 days</button>
-          <button type="button" data-action="due-preset" data-when="clear">Clear</button>
-        </div>
-      </div>
-
-      <!-- Secondary pill panels -->
-      <div id="assign-panel-prio" class="at-panel hidden">
-        <label class="f-label">Priority</label>
-        <div class="pillseg" id="assign-priority-seg">
-          <input type="hidden" id="assign-priority" value="medium">
-          <button type="button" class="pill-opt prio-high" data-action="pick-pill" data-target="assign-priority" data-val="high">🔴 High / Urgent</button>
-          <button type="button" class="pill-opt prio-med on" data-action="pick-pill" data-target="assign-priority" data-val="medium">🟠 Medium</button>
-          <button type="button" class="pill-opt prio-low" data-action="pick-pill" data-target="assign-priority" data-val="low">🟢 Low</button>
-        </div>
-      </div>
-      <div id="assign-panel-cat" class="at-panel hidden">
-        <div class="row2">
-          <div><label class="f-label">Department <span class="req">*</span></label><select id="assign-dept" class="f-input"></select></div>
-          <div class="combo"><label class="f-label">Category <span class="req">*</span></label><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
-        </div>
       </div>
 
       <!-- Footer-triggered panels -->
@@ -2315,15 +2331,39 @@ textarea.nl-in{min-height:64px;resize:vertical}
   <div class="modal">
     <div class="modal-h"><h3>Assign a lead</h3><button class="modal-x" data-action="close-modal" data-modal="nl-assign-modal">&times;</button></div>
     <div class="modal-b">
-      <label class="nl-lb">Client name</label><input id="nl-a-client" class="nl-in" placeholder="e.g. Ramesh Gupta">
-      <label class="nl-lb">Mobile (optional)</label><input id="nl-a-mobile" class="nl-in" placeholder="Phone number">
-      <label class="nl-lb">Description</label><textarea id="nl-a-desc" class="nl-in" placeholder="What does the client want?"></textarea>
-      <div class="nl-row"><div><label class="nl-lb">Department</label><select id="nl-a-dept" class="nl-in" onchange="nlDeptChanged()"></select></div><div><label class="nl-lb">Process</label><select id="nl-a-cat" class="nl-in"></select></div></div>
-      <label class="nl-lb">Priority</label>
-      <div class="nl-seg"><button type="button" id="nl-pr-urgent" class="nl-segb u" data-action="nl-pr" data-pr="urgent">🔴 Urgent</button><button type="button" id="nl-pr-medium" class="nl-segb m" data-action="nl-pr" data-pr="medium">🟠 Medium</button><button type="button" id="nl-pr-low" class="nl-segb l" data-action="nl-pr" data-pr="low">🟢 Low</button></div>
-      <label class="nl-lb">Assign to <button type="button" class="nl-alllink" data-action="nl-pick-all">select all</button></label>
-      <label class="nl-tickrow"><input type="checkbox" id="nl-dept-all-cb" data-action="nl-dept-all"> Select whole <b id="nl-dept-all-lbl">department</b></label>
-      <div id="nl-a-people" class="nl-people"></div>
+      <div class="at-rows">
+        <div class="at-r">
+          <span class="at-r-l">🧑 Client <span class="req">*</span></span>
+          <div class="at-r-c"><input id="nl-a-client" class="nl-in" placeholder="e.g. Ramesh Gupta"></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">📞 Mobile</span>
+          <div class="at-r-c"><input id="nl-a-mobile" class="nl-in" placeholder="Phone number (optional)"></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">📝 About</span>
+          <div class="at-r-c"><textarea id="nl-a-desc" class="nl-in" placeholder="What does the client want?"></textarea></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">🏢 Department <span class="req">*</span></span>
+          <div class="at-r-c"><select id="nl-a-dept" class="nl-in" onchange="nlDeptChanged()"></select></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">🗂 Process <span class="req">*</span></span>
+          <div class="at-r-c"><select id="nl-a-cat" class="nl-in"></select></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">🚩 Priority</span>
+          <div class="at-r-c"><div class="nl-seg"><button type="button" id="nl-pr-urgent" class="nl-segb u" data-action="nl-pr" data-pr="urgent">🔴 Urgent</button><button type="button" id="nl-pr-medium" class="nl-segb m" data-action="nl-pr" data-pr="medium">🟠 Medium</button><button type="button" id="nl-pr-low" class="nl-segb l" data-action="nl-pr" data-pr="low">🟢 Low</button></div></div>
+        </div>
+        <div class="at-r">
+          <span class="at-r-l">👥 Assign to <span class="req">*</span></span>
+          <div class="at-r-c">
+            <div class="nl-asg-tools"><button type="button" class="nl-alllink" data-action="nl-pick-all">Select all</button><label class="nl-tickrow"><input type="checkbox" id="nl-dept-all-cb" data-action="nl-dept-all"> Whole <b id="nl-dept-all-lbl">department</b></label></div>
+            <div id="nl-a-people" class="nl-people"></div>
+          </div>
+        </div>
+      </div>
       <div class="nl-hint">Assigned to several → one shared lead they all work; whoever acts moves it for everyone.</div>
     </div>
     <div class="modal-f"><button class="btn primary" data-action="nl-assign-submit">Assign lead &rarr;</button></div>
@@ -7599,7 +7639,7 @@ function openAssign(dept,cat){
     var meId=App.identity.employeeId;
     var assignees=[{userId:meId, name:App.identity.employeeName+' (me)', role:''}];
     App.members.forEach(function(m){ if(String(m.userId)!==String(meId)) assignees.push({userId:m.userId, name:m.name, role:m.role||''}); });
-    Chips.init('assign-to-chips', assignees, {selected:[meId], placeholder:'Add staff…'});
+    Chips.init('assign-to-chips', assignees, {selected:[], placeholder:'Add staff…'});
     var others=(App.members||[]).filter(function(m){ return String(m.userId)!==String(meId); }).map(function(m){ return {userId:m.userId, name:m.name, role:(m.role&&m.role!=='Staff'?m.role:'')}; });
     Chips.init('assign-loop-chips', others, {selected:[], placeholder:'Add people to loop…'});
     fillDeptSelect('assign-dept', dept||App.dept||'');
@@ -7698,8 +7738,8 @@ function submitAssign(){
   var saveTpl=!!(document.getElementById('assign-savetpl')||{}).checked;
   var tplName=(document.getElementById('assign-tplname')||{}).value||'';
   if(!title){ toast('Task title is required.','error'); var _ti=document.getElementById('assign-title-input'); if(_ti) _ti.focus(); return; }
-  if(!toList.length){ toast('Pick who this is for — tap the Assign to pill.','error'); openAtPanel('assign-panel-users'); return; }
-  if(!dept||!cat){ toast('Choose a department and category — tap the Category pill.','error'); openAtPanel('assign-panel-cat'); return; }
+  if(!toList.length){ toast('Pick who this task is for.','error'); var _ac=document.getElementById('assign-to-chips'); if(_ac){ try{ _ac.scrollIntoView({block:'center',behavior:'smooth'}); var _ai=_ac.querySelector('input'); if(_ai) _ai.focus(); }catch(_){} } return; }
+  if(!dept||!cat){ toast('Choose a department and category.','error'); var _dp=document.getElementById(!dept?'assign-dept':'assign-cat'); if(_dp){ try{ _dp.scrollIntoView({block:'center',behavior:'smooth'}); _dp.focus(); }catch(_){} } return; }
   var hasSelf = toList.map(String).indexOf(meId)>=0;
   var others = toList.filter(function(id){ return String(id)!==meId; });
   if(others.length && !Sync.online()){ toast('You are offline — you can only add tasks to yourself right now.','error'); return; }
