@@ -356,7 +356,9 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .at-r:first-child{ border-top:none; padding-top:6px; }
 .at-r-l{ flex:0 0 118px; display:flex; align-items:center; gap:6px; font-weight:700; font-size:.84rem; color:var(--text-sec); padding-top:9px; line-height:1.2; }
 .at-r-c{ flex:1 1 auto; min-width:0; }
-.at-r-c .dt-row{ margin:0; }
+.at-r-c .dt-row{ margin:0; gap:8px; }
+.at-r-c .dt-row>#assign-due-d{ flex:1.3 1 0; min-width:0; }
+.at-r-c .dt-row>#assign-due-tbtn{ flex:1 1 0; min-width:0; }
 .at-r-c .due-presets{ margin-top:7px; }
 .at-r-c .pillseg{ margin:0; }
 .at-r-c .row2{ gap:8px; }
@@ -1094,20 +1096,20 @@ body{ background:var(--bg); }
 .sn-edit-time.on{ border-color:#1f4bd8; color:#1f4bd8; background:rgba(31,75,216,.08); }
 /* Compact custom time picker */
 .edtime-pop{ position:fixed; z-index:1200; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:16px; box-shadow:0 20px 44px -14px rgba(20,22,40,.4); padding:11px; width:auto; animation:etIn .14s ease; }
-.tdial-pop{ position:fixed; z-index:1300; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:18px; box-shadow:0 24px 50px -16px rgba(20,22,40,.5); padding:14px; width:264px; animation:etIn .14s ease; }
+.tdial-pop{ position:fixed; z-index:1300; background:var(--bg-card,#fff); border:1px solid var(--border,#e2e6ef); border-radius:18px; box-shadow:0 24px 50px -16px rgba(20,22,40,.5); padding:12px; width:216px; animation:etIn .14s ease; }
 .tdial-head{ display:flex; align-items:center; gap:6px; margin-bottom:10px; }
-.tdial-ht{ appearance:none; border:none; background:var(--bg-soft,rgba(120,120,140,.08)); color:var(--text,#222); font:inherit; font-size:1.7rem; font-weight:800; line-height:1; padding:6px 10px; border-radius:10px; cursor:pointer; min-width:52px; }
+.tdial-ht{ appearance:none; border:none; background:var(--bg-soft,rgba(120,120,140,.08)); color:var(--text,#222); font:inherit; font-size:1.4rem; font-weight:800; line-height:1; padding:5px 9px; border-radius:9px; cursor:pointer; min-width:44px; }
 .tdial-ht.on{ background:rgba(31,75,216,.14); color:#1f4bd8; }
-.tdial-colon{ font-size:1.7rem; font-weight:800; color:var(--text,#222); }
+.tdial-colon{ font-size:1.4rem; font-weight:800; color:var(--text,#222); }
 .tdial-ap{ display:flex; flex-direction:column; gap:4px; margin-left:8px; }
 .tdial-apb{ appearance:none; border:1px solid var(--border,#d7deea); background:var(--bg-card,#fff); color:var(--text-sec,#667); font:inherit; font-size:.74rem; font-weight:800; padding:4px 9px; border-radius:8px; cursor:pointer; }
 .tdial-apb.on{ background:#1f4bd8; border-color:#1f4bd8; color:#fff; }
-.tdial-face{ display:block; margin:0 auto; touch-action:none; cursor:pointer; width:236px; height:236px; }
+.tdial-face{ display:block; margin:0 auto; touch-action:none; cursor:pointer; width:188px; height:188px; }
 .tdial-bg{ fill:var(--bg-soft,rgba(120,120,140,.08)); }
 .tdial-hand{ stroke:#1f4bd8; stroke-width:2.5; }
 .tdial-knob{ fill:#1f4bd8; }
 .tdial-center{ fill:#1f4bd8; }
-.tdial-num{ fill:var(--text,#333); font-size:15px; font-weight:700; font-family:inherit; }
+.tdial-num{ fill:var(--text,#333); font-size:17px; font-weight:700; font-family:inherit; }
 .tdial-num.on{ fill:#fff; }
 .tdial-foot{ display:flex; align-items:center; gap:8px; margin-top:10px; }
 .tdial-btn{ appearance:none; border:1px solid var(--border,#d7deea); background:var(--bg-card,#fff); color:var(--text,#333); font:inherit; font-weight:700; font-size:.85rem; padding:7px 14px; border-radius:9px; cursor:pointer; }
@@ -2742,7 +2744,9 @@ var FB = (function(){
 
         case 'saveDepartments': {
           if(!Array.isArray(b.departments)) throw new Error('Bad payload.');
-          return col('config').doc('app').set({ departments:b.departments, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
+          var _dpatch={ departments:b.departments, updated:nowISO() };
+          if(b.investCatsFixed) _dpatch.investCatsFixed=true;
+          return col('config').doc('app').set(_dpatch,{merge:true}).then(function(){ return {ok:true}; });
         }
         case 'saveLeadProcesses': {
           if(!b.leadProcesses || typeof b.leadProcesses!=='object') throw new Error('Bad payload.');
@@ -3736,6 +3740,7 @@ var FBLive = {
     try{ db.collection('config').doc('app').onSnapshot(function(s){
       if(s.exists){ var c=s.data(); App._visSeeded=!!c.visSeeded;
         if(Array.isArray(c.departments) && c.departments.length){ App.departments=c.departments; try{ Store.put('kv','departments',App.departments); }catch(e){} buildSidebar(); if(App.view==='settings') renderSettings(); else if(App.view==='dashboard') renderDashboard(); }
+        if(isBoss() && !c.investCatsFixed){ nlHealInvestCats(); }
         if(c.leadProcesses && typeof c.leadProcesses==='object'){ App.leadProcesses=c.leadProcesses; try{ Store.put('kv','leadProcesses',App.leadProcesses); }catch(e){} }
       } else if(isBoss()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} }
     }, function(){}); }catch(e){}
@@ -3892,6 +3897,20 @@ function nlParse(iso){ var t=iso?new Date(iso).getTime():0; return isNaN(t)?0:t;
 function nlMeId(){ return String((App.identity&&App.identity.employeeId)||''); }
 function nlProcesses(){ return (App.leadProcesses && typeof App.leadProcesses==='object') ? App.leadProcesses : LEAD_PROCESSES; }
 function nlEnsureProcesses(){ if(!App.leadProcesses || typeof App.leadProcesses!=='object'){ App.leadProcesses=JSON.parse(JSON.stringify(LEAD_PROCESSES)); } return App.leadProcesses; }
+function nlHealInvestCats(){
+  try{
+    var deps=App.departments||[]; var inv=null;
+    for(var i=0;i<deps.length;i++){ if(String(deps[i].department||'').toLowerCase()==='investments'){ inv=deps[i]; break; } }
+    if(!inv) return;
+    var want=null;
+    for(var j=0;j<DEFAULT_DEPARTMENTS.length;j++){ if(DEFAULT_DEPARTMENTS[j].department==='Investments'){ want=DEFAULT_DEPARTMENTS[j].categories; break; } }
+    if(!want || !want.length) return;
+    inv.categories=want.slice();
+    try{ Store.put('kv','departments',App.departments); }catch(e){}
+    apiCall('saveDepartments',{departments:App.departments, investCatsFixed:true});
+    buildSidebar(); if(App.view==='settings') renderSettings();
+  }catch(e){}
+}
 function nlMergeMF(){
   if(!(App.identity && App.identity.role==='Admin')){ toast('Admins only.','warn'); return; }
   if(!confirm('Consolidate all Mutual Fund / Wealth / Wealth and Investment departments into a single Investments department? This re-tags every matching lead, task and staff access, and removes the old names. This cannot be undone.')) return;
