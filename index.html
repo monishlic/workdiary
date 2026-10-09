@@ -1940,6 +1940,24 @@ textarea.nl-in{min-height:64px;resize:vertical}
 .nl-tk .nl-kd{font-size:.76rem;color:var(--text-muted,#6b7280);margin-top:1px}
 .nl-loc{display:inline-block;font-size:.72rem;font-weight:700;color:var(--text,#41506a);background:var(--bg-soft,rgba(120,120,140,.1));border:1px solid var(--border,#e0e6ef);border-radius:6px;padding:1px 7px;margin-top:6px}
 .nl-q{font-size:.83rem;background:var(--bg-soft,rgba(120,120,140,.08));border:1px solid var(--border,#e7e9f1);border-radius:9px;padding:7px 10px;margin-top:6px;color:var(--text,#333)}
+.nl-dtabs{display:flex;gap:6px;margin:0 0 14px;border-bottom:1px solid var(--border,#e7e9f1);padding-bottom:2px}
+.nl-dtab{flex:1;appearance:none;background:transparent;border:0;border-bottom:2px solid transparent;padding:8px 6px;font-weight:700;font-size:.88rem;color:var(--text-muted,#8a93a6);cursor:pointer;border-radius:8px 8px 0 0;font-family:inherit}
+.nl-dtab b{font-weight:800}
+.nl-dtab.on{color:#1f4bd8;border-bottom-color:#1f4bd8;background:rgba(31,75,216,.06)}
+.nl-chat{display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow-y:auto;padding:4px 2px 6px}
+.nl-chat-empty{color:var(--text-muted,#8a93a6);font-size:.86rem;text-align:center;padding:22px 10px}
+.nl-cmsg{display:flex;flex-direction:column;align-items:flex-start;max-width:82%}
+.nl-cmsg.me{align-self:flex-end;align-items:flex-end}
+.nl-cmsg-who{font-size:.72rem;font-weight:800;color:var(--text-muted,#8a93a6);margin:0 4px 2px}
+.nl-cbub{background:var(--bg-soft,rgba(120,120,140,.1));border:1px solid var(--border,#e7e9f1);border-radius:13px;padding:8px 12px;font-size:.9rem;color:var(--text,#222);white-space:pre-wrap;word-break:break-word}
+.nl-cmsg.me .nl-cbub{background:rgba(31,75,216,.12);border-color:transparent;color:#17306e}
+.nl-cmsg-t{font-size:.68rem;color:var(--text-muted,#9aa3b4);margin:2px 5px 0}
+.nl-chatbar{display:flex;gap:8px;align-items:flex-end;margin-top:12px;border-top:1px solid var(--border,#e7e9f1);padding-top:11px}
+.nl-chatinp{flex:1;resize:none;min-height:40px;max-height:120px;border:1px solid var(--border,#d7deea);border-radius:12px;padding:9px 12px;font-size:.9rem;font-family:inherit;background:var(--card,#fff);color:var(--text,#222)}
+.nl-chatbar .nl-b{flex:0 0 auto}
+.nl-remarkline{margin:9px 0 2px;padding:8px 11px;background:var(--bg-soft,rgba(120,120,140,.06));border-left:3px solid #1f4bd8;border-radius:0 10px 10px 0;font-size:.9rem;line-height:1.45;color:var(--text,#2a2f3a)}
+.nl-remarkline b{font-weight:800}
+.nl-remarkline .nl-rwhen{color:var(--text-muted,#8a93a6);font-size:.78rem;white-space:nowrap}
 @media(max-width:760px){.nl-dash{grid-template-columns:repeat(3,1fr)}.nl-tabbar{flex-wrap:nowrap;overflow-x:auto}.nl-tabx{flex:0 0 auto}.nl-stamp-wrap{flex-wrap:wrap;justify-content:center}.nl-stamp-main{flex-basis:100%}.nl-stampsvg{width:132px}.nl-stampline{margin-left:0}.nl-fab{bottom:140px;right:16px}}
 
 /* ===================== NEW LEADS increment 2 styles ===================== */
@@ -2960,16 +2978,17 @@ var FB = (function(){
             return col('leads').doc(String(b.leadId)).get().then(function(s){
               if(!s.exists) throw new Error('Lead not found.');
               var l=s.data(); var stage=l.stage||'new'; var act=b.act; var upd={ updatedAt:now2 }; var notifyOthers=null, notifyAll=null; var etype='remark';
-              if(act==='remark'){
-                if(stage==='new'){ upd.stage='acknowledged'; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); notifyOthers=u2.name+' acknowledged the lead: '+l.clientName; etype='acknowledged'; }
-                else if(stage==='acknowledged'){ upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); etype='remark'; }
-                else if(stage==='inprocess'){ upd.lastActionAt=now2; if(l.renewBounded) upd.nextDeadlineAt=IN48(); etype='remark'; }
-                else if(stage==='ignored'){
-                  if(l.lapsedFrom==='inprocess'){ upd.stage='inprocess'; upd.renewBounded=true; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); notifyOthers=u2.name+' revived the lead (In Process): '+l.clientName; }
-                  else { upd.stage='acknowledged'; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); notifyOthers=u2.name+' revived the lead: '+l.clientName; }
+              if(act==='remark'){ var _asg=(l.assigneeIds||[]).map(String).indexOf(String(u2.userId))>=0; var _rmsg=u2.name+' added a remark: '+l.clientName;
+                if(_asg&&stage==='new'){ upd.stage='acknowledged'; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); _rmsg=u2.name+' acknowledged the lead: '+l.clientName; etype='acknowledged'; }
+                else if(_asg&&stage==='acknowledged'){ upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); etype='remark'; }
+                else if(_asg&&stage==='inprocess'){ upd.lastActionAt=now2; if(l.renewBounded) upd.nextDeadlineAt=IN48(); etype='remark'; }
+                else if(_asg&&stage==='ignored'){
+                  if(l.lapsedFrom==='inprocess'){ upd.stage='inprocess'; upd.renewBounded=true; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); _rmsg=u2.name+' revived the lead (In Process): '+l.clientName; }
+                  else { upd.stage='acknowledged'; upd.lastActionAt=now2; upd.nextDeadlineAt=IN48(); _rmsg=u2.name+' revived the lead: '+l.clientName; }
                   etype='revived';
-                } else { return {ok:false}; }
+                }
                 upd.history=(l.history||[]).concat([{t:now2,type:etype,byId:u2.userId,byName:u2.name,text:String(b.text||'')}]);
+                notifyOthers=_rmsg;
               } else if(act==='inprocess'){
                 if(stage!=='acknowledged') return {ok:false};
                 var dd=parseInt(b.durationDays,10)||7; var due=new Date(Date.now()+dd*86400000);
@@ -3005,7 +3024,7 @@ var FB = (function(){
                 upd.history=(l.history||[]).concat([{t:now2,type:'checklist',byId:u2.userId,byName:u2.name,text:String(b.text||'')}]);
               } else { return {ok:false,error:'unknown lead action'}; }
               return col('leads').doc(String(b.leadId)).set(upd,{merge:true}).then(function(){
-                var jobs=[]; var recips=(l.assigneeIds||[]);
+                var jobs=[]; var recips=(l.assigneeIds||[]).slice(); if(l.createdById && recips.map(String).indexOf(String(l.createdById))<0) recips.push(l.createdById);
                 var _nlPush=function(rid,msg){ try{ Push.send(String(rid), 'New Leads', msg, 'lead-'+l.id+'-'+Date.now()); }catch(e){} };
                 if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)){ jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); _nlPush(rid, notifyOthers); } }); }
                 if(notifyAll){ recips.forEach(function(rid){ jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); _nlPush(rid, notifyAll); }); }
@@ -3714,6 +3733,16 @@ var FBLive = {
         var arr=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; arr.push(l); });
         App._leads=arr;
         if(App.view==='leads') refreshView();
+        nlLiveRefreshChain();
+      }, function(){}); }catch(e){}
+
+      // Leads I assigned to others (so the assigner sees updates live too)
+      try{ db.collection('leads').where('createdById','==',uid).onSnapshot(function(qs){
+        var arr=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; arr.push(l); });
+        App._leadsByMe=arr;
+        var lv=App._leadView||{};
+        if(App.view==='leads' && lv.sub==='abm'){ lv.abm=arr; nlRenderABM(); }
+        nlLiveRefreshChain();
       }, function(){}); }catch(e){}
 
     // My slate notes
@@ -3840,9 +3869,20 @@ function nlNudge(l){
   if(eff==='ignored') return {cls:'gone', html:'⚠️ Lapsed <b>'+nlSince(nlIgnoredAt(l))+'</b> — add a remark to revive it'};
   return {cls:'', html:''};
 }
+function nlFirstName(n){ n=String(n||'').trim(); return n?n.split(' ')[0]:''; }
+function nlLatestRemark(l){
+  var h=(l.history||[]);
+  for(var i=h.length-1;i>=0;i--){ var e=h[i];
+    if(e && e.text && String(e.text).trim() && (e.type==='remark'||e.type==='acknowledged'||e.type==='revived'||e.type==='admin-comment')){
+      var who=nlFirstName(e.byName)||'Someone'; var when=nlSince(nlParse(e.t));
+      return '<div class="nl-remarkline"><b>'+esc(who)+' says,</b> “'+esc(String(e.text).trim())+'”<span class="nl-rwhen"> · '+when+'</span></div>';
+    }
+  }
+  return '';
+}
 function nlLastEvent(l){
   var h=(l.history||[]); var last=h.length?h[h.length-1]:null; if(!last) return 'Assigned by '+esc(l.createdByName||'');
-  var map={assigned:'Assigned by ',acknowledged:'Acknowledged by ',remark:'Remark by ',inprocess:'In Process by ',done:'Closed by ',ignored:'Auto-moved to Ignored',revived:'Revived by ',reopened:'Reopened by ','admin-urgent':'Flagged urgent by ','admin-comment':'Comment by '};
+  var map={assigned:'Assigned by ',acknowledged:'Acknowledged by ',remark:'Remark by ',inprocess:'In Process by ',done:'Closed by ',ignored:'Auto-moved to Ignored',revived:'Revived by ',reopened:'Reopened by ','admin-urgent':'Flagged urgent by ','admin-comment':'Remark by '};
   var base=map[last.type]||'Updated by ';
   if(last.type==='done') base='Closed ('+((last.outcome==='negative')?'Negative':'Positive')+') by ';
   if(last.type==='ignored') return base;
@@ -3881,7 +3921,7 @@ var NL_EX_STAGES=[['New','#2563eb','#eef4ff'],['Acknowledged','#c99700','#fff8e6
 function nlExStage(l){ var e=nlEffective(l); if(e==='executed') return (nlOutcome(l)==='neg')?'Closed — Negative':'Closed — Positive'; return ({'new':'New',acknowledged:'Acknowledged',inprocess:'In Process',ignored:'Ignored'})[e]||e; }
 function nlExSorted(leads, stage){ return (leads||[]).filter(function(l){ return nlExStage(l)===stage; }).sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); }); }
 function nlExChain(l){
-  var lab={assigned:'Assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived',reopened:'Reopened → In Process','admin-urgent':'Flagged urgent (admin)','admin-comment':'Admin comment'};
+  var lab={assigned:'Assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived',reopened:'Reopened → In Process','admin-urgent':'Flagged urgent (admin)','admin-comment':'Remark'};
   return (l.history||[]).map(function(ev){
     var base=(ev.type==='done')?('Closed — '+((ev.outcome==='negative')?'Negative':'Positive')):(lab[ev.type]||'Update');
     var who=ev.byName?(' by '+ev.byName):''; var when=ev.t?(' · '+nlFmt(ev.t)):'';
@@ -4079,7 +4119,7 @@ function nlRenderBoard(){
 function nlActions(l,eff,admin){
   var id=esc(l.id);
   function b(act,label,cls){ return '<button class="btn nl-b '+(cls||'')+'" data-action="'+act+'" data-lead="'+id+'">'+label+'</button>'; }
-  if(admin){ var del=(App.identity && App.identity.role==='Admin') ? b('nl-delete','🗑 Delete','delbtn') : ''; return b('nl-urgent','🔴 Mark Urgent','warnbtn')+b('nl-comment','💬 Comment','primary')+b('nl-chain','Track lead','ghost')+del; }
+  if(admin){ var del=(App.identity && App.identity.role==='Admin') ? b('nl-delete','🗑 Delete','delbtn') : ''; return b('nl-urgent','🔴 Mark Urgent','warnbtn')+b('nl-remark','💬 Remark','primary')+b('nl-chain','Track lead','ghost')+del; }
   var out='';
   if(eff==='new') out+=b('nl-remark','＋ Add remark (acknowledge)','primary');
   else if(eff==='acknowledged') out+=b('nl-remark','＋ Remark','primary')+b('nl-inprocess','▶ Move to In Process','go');
@@ -4128,7 +4168,7 @@ function nlCard(l,admin){
   var nudgeH=(nudge.html && eff!=='executed')?'<div class="nl-nudge '+nudge.cls+'">'+nudge.html+'</div>':'';
   var who='<div class="nl-who">'+(avs?'<div class="nl-avs">'+avs+'</div>':'')+'<span class="nl-with">with '+esc(withTxt||'—')+'</span><span class="nl-stampline">'+nlLastEvent(l)+'</span></div>';
   var acts='<div class="nl-acts">'+nlActions(l,eff,admin)+'</div>';
-  var inner=top+nudgeH+nlReminderLine(l)+who+acts;
+  var inner=top+nudgeH+nlReminderLine(l)+nlLatestRemark(l)+who+acts;
   var body = (eff==='executed') ? ('<div class="nl-stamp-wrap"><div class="nl-stamp-main">'+inner+'</div>'+nlStampSVG(oc)+'</div>') : inner;
   return '<div class="nl-lead s-'+eff+(oc?(' nl-c-'+oc):'')+'" data-lead="'+esc(l.id)+'">'+body+'</div>';
 }
@@ -4232,25 +4272,22 @@ function nlSubmitAssign(){
 }
 
 /* ---- lead actions from cards ---- */
-function nlLeadById(id){ var lv=App._leadView||{}; var pools=[App._leads,App._leadsAdmin,lv.abm,lv.staffLeads,lv.biz]; for(var i=0;i<pools.length;i++){ var a=pools[i]; if(a){ for(var j=0;j<a.length;j++){ if(a[j]&&String(a[j].id)===String(id)) return a[j]; } } } }
+function nlLeadById(id){ var lv=App._leadView||{}; var pools=[App._leads,App._leadsByMe,App._leadsAdmin,lv.abm,lv.staffLeads,lv.biz]; for(var i=0;i<pools.length;i++){ var a=pools[i]; if(a){ for(var j=0;j<a.length;j++){ if(a[j]&&String(a[j].id)===String(id)) return a[j]; } } } }
 function nlDo(id, act, extra){
   var p=Object.assign({leadId:id, act:act}, extra||{});
   return apiCall('leadAction',p).then(function(){ if(App.view==='leads') refreshView(); }).catch(function(e){ toast('Action failed. '+((e&&e.message)||''),'err'); });
 }
 function nlToggleCheck(id, idx){
   var l=nlLeadById(id); if(!l || !Array.isArray(l.checklist) || !l.checklist[idx]) return;
-  var meId=nlMeId(); var mine=(l.assigneeIds||[]).map(String).indexOf(meId)>=0 || String(l.createdById||'')===meId || isBoss();
-  if(!mine){ toast('Only the people on this lead (or an admin) can update the checklist.','warn'); return; }
+  var meId=nlMeId(); var mine=(l.assigneeIds||[]).map(String).indexOf(meId)>=0;
+  if(!mine){ toast('Only the assignee can update this checklist.','warn'); return; }
   var it=l.checklist[idx]; var nd=!it.done; var now=nowISO(); var meName=(App.identity&&App.identity.employeeName)||'';
   it.done=nd; it.at=nd?now:''; it.by=nd?meName:'';
   l.history=(l.history||[]).concat([{t:now,type:'checklist',byId:meId,byName:meName,text:(nd?'✓ ':'↺ ')+it.text}]);
   nlOpenChain(id);
   apiCall('leadAction',{leadId:id,act:'checklist',idx:idx,done:nd,text:(nd?'✓ ':'↺ ')+it.text}).then(function(){ if(App.view==='leads') refreshView(); }).catch(function(e){ toast('Could not update checklist.','err'); });
 }
-function nlRemark(id){
-  var l=nlLeadById(id); var eff=l?nlEffective(l):'';
-  nlInput((eff==='ignored'?'Add a remark to revive this lead':'Add a remark'),'Your remark…',function(txt){ if(!(txt||'').trim()){ return; } nlDo(id,'remark',{text:txt.trim()}).then(function(){ toast('✓ Remark added','success'); }); });
-}
+function nlRemark(id){ nlOpenChain(id,'remark'); }
 function nlReopen(id){ nlDuration(function(days){ nlDo(id,'reopen',{durationDays:days}).then(function(){ toast('↩ Reopened — moved to In Process','success'); var sub=(App._leadView&&App._leadView.sub); if(sub==='abm') nlGoABM(); else if(sub==='staff') nlGoStaff(App._leadView.staffId); }); }); }
 function nlInProcess(id){
   nlDuration(function(days){ nlDo(id,'inprocess',{durationDays:days}).then(function(){ toast('✓ Moved to In Process ('+days+'-day plan)','success'); }); });
@@ -4258,7 +4295,29 @@ function nlInProcess(id){
 function nlDone(id){ App._nlCloseId=id; openModal('nl-close-modal'); }
 function nlCloseWith(oc){ var id=App._nlCloseId; closeModal('nl-close-modal'); if(!id) return; nlDo(id,'done',{outcome:oc}).then(function(){ toast(oc==='negative'?'✓ Closed — Negative':'✓ Closed — Positive','success'); }); }
 function nlUrgent(id){ nlDo(id,'adminUrgent').then(function(){ toast('🔴 Flagged urgent — assignees notified','success'); }); }
-function nlComment(id){ nlInput('Comment to the assignees','Your note…',function(txt){ if(!(txt||'').trim()) return; nlDo(id,'comment',{text:txt.trim()}).then(function(){ toast('✓ Comment sent','success'); }); }); }
+function nlComment(id){ nlOpenChain(id,'remark'); }
+function nlChatMsgs(l){
+  var meId=nlMeId(); var types={remark:1,acknowledged:1,revived:1,'admin-comment':1};
+  var msgs=(l.history||[]).filter(function(e){ return types[e.type]; });
+  if(!msgs.length) return '<div class="nl-chat-empty">No remarks yet — start the conversation below.</div>';
+  return msgs.map(function(e){
+    var mineB=String(e.byId)===meId; var txt=e.text||'';
+    var tag=(e.type==='acknowledged'?'acknowledged':(e.type==='revived'?'revived':''));
+    var bub=txt?esc(txt):(tag?('<i>'+tag+' the lead</i>'):'<i>—</i>');
+    return '<div class="nl-cmsg'+(mineB?' me':'')+'"><div class="nl-cmsg-who">'+esc(e.byName||'—')+(tag?(' · '+tag):'')+'</div><div class="nl-cbub">'+bub+'</div><div class="nl-cmsg-t">'+esc(nlFmt(e.t))+'</div></div>';
+  }).join('');
+}
+function nlChatSend(id){
+  var l=nlLeadById(id); if(!l) return;
+  var inp=document.getElementById('nl-chat-input'); if(!inp) return;
+  var txt=(inp.value||'').trim(); if(!txt){ try{inp.focus();}catch(e){} return; }
+  var meId=nlMeId(); var meName=(App.identity&&App.identity.employeeName)||''; var now=nowISO();
+  var isAsg=(l.assigneeIds||[]).map(String).indexOf(meId)>=0; var et='remark';
+  if(isAsg && l.stage==='new') et='acknowledged'; else if(isAsg && l.stage==='ignored') et='revived';
+  l.history=(l.history||[]).concat([{t:now,type:et,byId:meId,byName:meName,text:txt}]);
+  inp.value=''; App._nlDetailTab='remark'; nlOpenChain(id,'remark');
+  nlDo(id,'remark',{text:txt});
+}
 
 /* ---- small input / confirm / duration modals ---- */
 function nlInput(title, ph, cb){ App._nlInputCb=cb; document.getElementById('nl-i-title').textContent=title; var ta=document.getElementById('nl-i-text'); ta.value=''; ta.placeholder=ph||''; document.getElementById('nl-i-dur').style.display='none'; document.getElementById('nl-i-text').style.display=''; App._nlInputMode='text'; openModal('nl-input-modal'); setTimeout(function(){ try{ ta.focus(); }catch(e){} },30); }
@@ -4282,13 +4341,13 @@ function nlRemindSave(){
   closeModal('nl-remind-modal');
   apiCall('leadRemind',{leadId:id, at:d.toISOString(), remark:note}).then(function(r){ if(r&&r.ok){ toast('\u23f0 Reminder set','success'); if(App.view==='leads') refreshView(); } else { toast((r&&r.error)||'Could not set reminder.','warn'); } }).catch(function(e){ toast('Could not set reminder. '+((e&&e.message)||''),'err'); });
 }
-function nlOpenChain(id){
+function nlOpenChain(id,tab){ if(tab){ App._nlDetailTab=tab; } else if(String(App._nlChainId||'')!==String(id)){ App._nlDetailTab=null; }
   var l=nlLeadById(id); if(!l){ toast('Lead not found','warn'); return; }
   document.getElementById('nl-ch-title').textContent=l.clientName||'Lead';
   document.getElementById('nl-ch-sub').textContent=(l.department||'')+' · '+(l.category||'')+' · shared by '+((l.assignees||[]).map(function(a){return a.name;}).slice(0,3).join(', ')||'—');
   var hist=(l.history||[]).slice();
   var icons={assigned:'',acknowledged:'',remark:'',inprocess:'',done:'exec',ignored:'ign',revived:'rev',reopened:'rev','admin-urgent':'','admin-comment':'',checklist:'chk'};
-  var lab={assigned:'Lead assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived',reopened:'↩ Reopened → In Process','admin-urgent':'Flagged urgent (admin)','admin-comment':'Admin comment',checklist:'Checklist'};
+  var lab={assigned:'Lead assigned',acknowledged:'Acknowledged',remark:'Remark',inprocess:'Moved to In Process',done:'Closed',ignored:'Auto-moved to Ignored',revived:'Revived',reopened:'↩ Reopened → In Process','admin-urgent':'Flagged urgent (admin)','admin-comment':'Remark',checklist:'Checklist'};
   var rows=hist.map(function(ev){
     var cls=icons[ev.type]||'';
     var when=nlFmt(ev.t);
@@ -4296,17 +4355,32 @@ function nlOpenChain(id){
     var q=(ev.text && ev.type!=='inprocess' && ev.type!=='checklist')?'<div class="nl-q">“'+esc(ev.text)+'”</div>':'';
     return '<div class="nl-tk '+cls+'"><div class="nl-kt">'+(ev.type==='checklist'?esc(ev.text):(ev.type==='done'?('Closed — '+((ev.outcome==='negative')?'Negative':'Positive')):(lab[ev.type]||'Update')))+'</div><div class="nl-kd">'+when+'</div>'+loc+q+'</div>';
   }).join('');
-  var meId=nlMeId(); var mine=(l.assigneeIds||[]).map(String).indexOf(meId)>=0 || String(l.createdById||'')===meId; var effc=nlEffective(l);
-  var canTick=mine||isBoss();
+  var meId=nlMeId(); var isAsg=(l.assigneeIds||[]).map(String).indexOf(meId)>=0; var mine=isAsg || String(l.createdById||'')===meId; var effc=nlEffective(l);
+  var canTick=isAsg;
   var _ckl=(l.checklist||[]); var _cdone=_ckl.filter(function(x){return x.done;}).length;
   var cklH=_ckl.length?('<div class="nl-ckl"><div class="nl-cklhead">Process checklist <b>'+_cdone+'/'+_ckl.length+'</b>'+(l.category?(' · '+esc(l.category)):'')+'</div>'+_ckl.map(function(it,i){ return '<div class="nl-ckrow'+(it.done?' on':'')+'"'+(canTick?' data-action="nl-check" data-lead="'+esc(l.id)+'" data-i="'+i+'"':'')+'><span class="nl-ckbox">'+(it.done?'✓':'')+'</span><span class="nl-cktext">'+esc(it.text)+'</span>'+(it.done&&it.by?'<span class="nl-ckby">'+esc(it.by)+' · '+esc(nlFmt(it.at))+'</span>':'')+'</div>'; }).join('')+'</div>'):'';
   var reop=(mine && (effc==='executed'||effc==='ignored'))?'<div class="nl-ch-reopenrow"><button class="btn nl-b go" data-action="nl-reopen-chain" data-lead="'+esc(l.id)+'">↩ Reopen → In Process</button></div>':'';
   var _rems=(l.reminders||[]).slice().sort(function(a,b){return Date.parse(a.at)-Date.parse(b.at);});
   var remLog=_rems.length?('<div class="nl-remhead">\u23f0 Reminders ('+_rems.length+')</div>'+_rems.map(function(r){ var past=Date.parse(r.at)<=Date.now(); return '<div class="nl-remrow '+(past?'done':'pend')+'"><div class="nl-remwhen">'+esc(nlFmt(r.at))+' \u00b7 '+(past?'reminded':'pending')+'</div>'+(r.remark?'<div class="nl-remq">\u201c'+esc(r.remark)+'\u201d</div>':'')+'<div class="nl-remby">set by '+esc(r.byName||'')+'</div></div>'; }).join('')):'';
-  document.getElementById('nl-ch-body').innerHTML=reop+cklH+remLog+'<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>';
+  var _tab=App._nlDetailTab; if(_tab!=='status'&&_tab!=='track'&&_tab!=='remark'){ _tab=_ckl.length?'status':'track'; } App._nlDetailTab=_tab; App._nlChainId=id;
+  var _msgs=nlChatMsgs(l); var _mc=(l.history||[]).filter(function(e){return e.type==='remark'||e.type==='acknowledged'||e.type==='revived'||e.type==='admin-comment';}).length;
+  var _tb='<div class="nl-dtabs"><button class="nl-dtab'+(_tab==='status'?' on':'')+'" data-action="nl-detailtab" data-tab="status" data-lead="'+esc(l.id)+'">Status'+(_ckl.length?(' <b>'+_cdone+'/'+_ckl.length+'</b>'):'')+'</button><button class="nl-dtab'+(_tab==='track'?' on':'')+'" data-action="nl-detailtab" data-tab="track" data-lead="'+esc(l.id)+'">Track</button><button class="nl-dtab'+(_tab==='remark'?' on':'')+'" data-action="nl-detailtab" data-tab="remark" data-lead="'+esc(l.id)+'">Remark'+(_mc?(' <b>'+_mc+'</b>'):'')+'</button></div>';
+  var _bh;
+  if(_tab==='status'){ _bh=reop+(cklH||'<div class="nl-hint">No process checklist on this lead.</div>'); }
+  else if(_tab==='remark'){ _bh='<div class="nl-chat" id="nl-chatscroll">'+_msgs+'</div><div class="nl-chatbar"><textarea id="nl-chat-input" class="nl-chatinp" rows="1" placeholder="Write a remark…"></textarea><button class="btn nl-b primary" data-action="nl-chat-send" data-lead="'+esc(l.id)+'">Send</button></div>'; }
+  else { _bh=remLog+'<div class="nl-track">'+(rows||'<div class="nl-hint">No steps yet.</div>')+'</div>'; }
+  document.getElementById('nl-ch-body').innerHTML=_tb+_bh;
   openModal('nl-chain-modal');
+  if(_tab==='remark'){ setTimeout(function(){ var sc=document.getElementById('nl-chatscroll'); if(sc) sc.scrollTop=sc.scrollHeight; var ci=document.getElementById('nl-chat-input'); if(ci){ try{ci.focus();}catch(e){} ci.onkeydown=function(ev){ if(ev.key==='Enter'&&!ev.shiftKey){ ev.preventDefault(); nlChatSend(id); } }; } },30); }
 }
 function nlFmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return ''; try{ return d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }catch(e){ return iso; } }
+function nlChainModalOpen(){ var m=document.getElementById('nl-chain-modal'); return !!(m && !m.classList.contains('hidden')); }
+function nlLiveRefreshChain(){
+  if(!nlChainModalOpen() || !App._nlChainId) return;
+  var ci=document.getElementById('nl-chat-input'); var draft=ci?ci.value:''; var hadFocus=(document.activeElement===ci);
+  nlOpenChain(App._nlChainId);
+  if(App._nlDetailTab==='remark'){ var ni=document.getElementById('nl-chat-input'); if(ni){ ni.value=draft; if(hadFocus){ try{ ni.focus(); ni.selectionStart=ni.selectionEnd=ni.value.length; }catch(e){} } } }
+}
 
 /* ===================== NEW LEADS — increment 2: Assigned-by-me, Teams, Business dashboard ===================== */
 function nlBacklink(){ return '<div class="nl-actions-row"><button class="nl-back" data-action="nl-back">← Back to my leads</button></div>'; }
@@ -4320,7 +4394,7 @@ function nlDelete(id){
 }
 
 /* ---- Assigned by me (read-only tracking) ---- */
-function nlGoABM(){ App._leadView=App._leadView||{}; App._leadView.sub='abm'; App._leadView.abm=null; nlRenderABM(); apiCall('leadsByMe').then(function(r){ App._leadView.abm=(r&&r.leads)||[]; if(App._leadView.sub==='abm') nlRenderABM(); }).catch(function(){ App._leadView.abm=[]; if(App._leadView.sub==='abm') nlRenderABM(); }); }
+function nlGoABM(){ App._leadView=App._leadView||{}; App._leadView.sub='abm'; App._leadView.abm=(App._leadsByMe||null); nlRenderABM(); apiCall('leadsByMe').then(function(r){ App._leadView.abm=(r&&r.leads)||[]; if(App._leadView.sub==='abm') nlRenderABM(); }).catch(function(){ App._leadView.abm=[]; if(App._leadView.sub==='abm') nlRenderABM(); }); }
 function nlABMRow(l){
   var eff=nlEffective(l);
   var sti=nlStInfo(l,eff); var stLabel=sti.label; var oc=(eff==='executed')?nlOutcome(l):'';
@@ -8564,6 +8638,8 @@ document.addEventListener('click', function(e){
     case 'nl-close-pos': nlCloseWith('positive'); break;
     case 'nl-close-neg': nlCloseWith('negative'); break;
     case 'nl-chain': nlOpenChain(el.getAttribute('data-lead')); break;
+    case 'nl-detailtab': nlOpenChain(el.getAttribute('data-lead'), el.getAttribute('data-tab')); break;
+    case 'nl-chat-send': nlChatSend(el.getAttribute('data-lead')); break;
     case 'nl-check': nlToggleCheck(el.getAttribute('data-lead'), parseInt(el.getAttribute('data-i'),10)); break;
     case 'nl-processes': nlOpenProcesses(); break;
     case 'proc-dept': nlProcDept(el.getAttribute('data-d')); break;
