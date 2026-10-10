@@ -1717,8 +1717,10 @@ body[data-theme="clarity"] .mt-rchip{ border-radius:8px !important; }
    positioned notes into a tidy grid that always fits the viewer's screen — no horizontal
    swipe/scroll no matter how wide the screen was that the notes were placed on. This only
    affects the read-only (.ro) view; the owner's own drag-and-drop board is unchanged. ---- */
-.slate-board.ro, .slate-board.fitmode{ display:grid !important; grid-template-columns:repeat(auto-fill,minmax(188px,1fr)); align-content:start; gap:14px; padding:16px !important; overflow-x:hidden; background-image:none; border-style:solid; }
-.slate-board.ro .slate-note, .slate-board.fitmode .slate-note{ position:relative !important; left:auto !important; top:auto !important; transform:none !important; margin:0 !important; width:auto !important; min-height:88px; animation:none !important; cursor:default; }
+.slate-board.fitmode{ display:grid !important; grid-template-columns:repeat(auto-fill,minmax(188px,1fr)); align-content:start; gap:14px; padding:16px !important; overflow-x:hidden; background-image:none; border-style:solid; }
+.slate-board.ro{ display:grid !important; grid-template-columns:repeat(auto-fill,172px); justify-content:space-between; align-content:start; gap:14px 0; padding:16px !important; overflow-x:hidden; background-image:none; border-style:solid; }
+.slate-board.fitmode .slate-note{ position:relative !important; left:auto !important; top:auto !important; transform:none !important; margin:0 !important; width:auto !important; min-height:88px; animation:none !important; cursor:default; }
+.slate-board.ro .slate-note{ position:relative !important; left:auto !important; top:auto !important; transform:none !important; margin:0 !important; width:172px !important; min-height:88px; animation:none !important; cursor:default; }
 .slate-board.ro .slate-empty, .slate-board.fitmode .slate-empty{ position:static !important; grid-column:1 / -1; }
 /* iOS standalone (installed app): pad the very bottom safe area on the canvas */
 @media(max-width:820px) and (display-mode:standalone){
@@ -6186,9 +6188,14 @@ function slateTidy(){
   var board=document.getElementById('slate-board'); if(!board) return;
   var active=(App.slateNotes||[]).filter(function(n){return !n.done;});
   if(!active.length) return;
-  var pad=20, colW=190, rowH=120, cols=Math.max(1, Math.floor((board.clientWidth-pad)/colW));
+  var NOTE_W=172, pad=24, rowH=120, minGap=16;
+  var W=Math.max(NOTE_W+pad*2, board.clientWidth||0);
+  var usable=W - pad*2 - 2;                                   // -2 keeps the right edge inside the auto-fit threshold
+  var cols=Math.max(1, Math.floor((usable+minGap)/(NOTE_W+minGap)));
+  var colGap = cols>1 ? (usable - cols*NOTE_W)/(cols-1) : 0;  // even space-between so the row fills the width (no right gap)
+  if(colGap<minGap) colGap=minGap;
   active.sort(function(a,b){ return new Date(a.created)-new Date(b.created); });
-  active.forEach(function(n,i){ n.x=pad+(i%cols)*colW; n.y=pad+Math.floor(i/cols)*rowH; });
+  active.forEach(function(n,i){ var c=i%cols, r=Math.floor(i/cols); n.x=Math.round(pad + c*(NOTE_W+colGap)); n.y=pad + r*rowH; });
   Slate.saveLocal(); paintSlate();
   active.forEach(function(n){ if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,x:n.x,y:n.y}).catch(function(){}); });
   toast('✨ Tidied up','success');
