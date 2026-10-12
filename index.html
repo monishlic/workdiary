@@ -1051,7 +1051,7 @@ body{ background:var(--bg); }
 .slate-board{ position:relative; min-height:calc(100vh - 166px); border-radius:26px; background:var(--bg-card); border:1.5px dashed var(--border); overflow:auto; cursor:crosshair; background-image:radial-gradient(rgba(120,110,175,.13) 1px, transparent 1px); background-size:20px 20px; }
 .slate-board.ro{ cursor:default; }
 .slate-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:.95rem; pointer-events:none; text-align:center; padding:20px; }
-.slate-note{ position:absolute; width:172px; min-height:70px; padding:11px 12px 9px; border-radius:15px; border:2px solid rgba(224,49,49,0); box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16); color:#3a3552; font-size:.9rem; line-height:1.4; transform:rotate(var(--rot,0deg)); cursor:grab; transition:box-shadow .2s ease, transform .12s ease, border-color .5s ease; word-break:break-word; touch-action:none; user-select:none; -webkit-user-select:none; }
+.slate-note{ position:absolute; width:208px; min-height:auto; padding:11px 13px 9px; border-radius:15px; border:2px solid rgba(224,49,49,0); box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16); color:#3a3552; font-size:.9rem; line-height:1.4; transform:rotate(var(--rot,0deg)); cursor:grab; transition:box-shadow .2s ease, transform .12s ease, border-color .5s ease; word-break:break-word; touch-action:none; user-select:none; -webkit-user-select:none; }
 .slate-note.angry{ border-color:rgba(224,49,49,var(--anger,0)); box-shadow:0 12px 24px -8px rgba(80,72,150,.36),0 2px 6px rgba(80,72,150,.16), inset 0 0 0 999px rgba(255,74,60,calc(var(--anger,0)*.18)); }
 @media (hover:hover){ .slate-note:hover{ box-shadow:0 18px 34px -10px rgba(80,72,150,.46),0 3px 8px rgba(80,72,150,.2); z-index:6; } }
 .slate-note.dragging{ cursor:grabbing; transform:rotate(0deg) scale(1.05); z-index:20; box-shadow:0 24px 48px -12px rgba(80,72,150,.5); }
@@ -5908,7 +5908,7 @@ function slateTouch(){
 function noteAge(created){ var t=new Date(created).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(created); }
 function renderSlate(){
   App.view='slate';
-  if(!App._slateResizeHooked){ App._slateResizeHooked=true; window.addEventListener('resize', function(){ clearTimeout(App._slateFitT); App._slateFitT=setTimeout(function(){ if(App.view==='slate' && !App._slateView){ var b=document.getElementById('slate-board'); if(!b) return; var was=b.classList.contains('fitmode'); slateFitCheck(); if(b.classList.contains('fitmode')!==was) paintSlate(true); } }, 220); }); }
+  if(!App._slateResizeHooked){ App._slateResizeHooked=true; }
   var ro=!!App._slateView;
   var all = ro ? (App._slateView.notes||[]) : (App.slateNotes||[]);
   var archived = all.filter(function(n){return n.done;});
@@ -5941,13 +5941,7 @@ function refreshSlateMeta(){
   var ac=document.getElementById('arch-count'); if(ac) ac.textContent=arch.length?(' ('+arch.length+')'):'';
   var sm=document.getElementById('slate-summary'); if(sm) sm.innerHTML=active.length+' note'+(active.length!==1?'s':'')+(angry?(' · <b class="angry-count">'+angry+' getting angry 😤</b>'):'')+' · click anywhere to add';
 }
-function slateFitCheck(){
-  var board=document.getElementById('slate-board'); if(!board || App._slateView) return;
-  var notes=(App.slateNotes||[]).filter(function(n){return !n.done;});
-  var NOTE_W=172, pad=24, maxRight=0;
-  for(var i=0;i<notes.length;i++){ var r=Math.max(2,notes[i].x||10)+NOTE_W; if(r>maxRight) maxRight=r; }
-  board.classList.toggle('fitmode', notes.length>0 && maxRight > (board.clientWidth - pad));
-}
+function slateFitCheck(){ var board=document.getElementById('slate-board'); if(board) board.classList.remove('fitmode'); }
 /* Read-only slate: true masonry — pack content-height notes into uniform columns
    (shortest-column placement) so there are no vertical gaps, on any screen width. */
 function roMasonry(board){
@@ -5985,7 +5979,7 @@ function paintSlate(force){
   if(!notes.length) html += '<div class="slate-empty">'+(ro?'This slate is empty.':'Your slate is clear — click anywhere and start typing.')+'</div>';
   board.innerHTML = html;
   board.classList.toggle('selmode', !ro && !!App._slateSel);
-  if(!ro){ slateFitCheck(); if(!board.classList.contains('fitmode')) attachSlateDnD(); }
+  if(!ro){ board.classList.remove('fitmode'); attachSlateDnD(); }
   else { board.classList.remove('fitmode'); roMasonry(board); }
 }
 function slateNoteHTML(n, ro){
@@ -6102,8 +6096,9 @@ function attachOneNoteDnD(el){
     App._slateBusy=true;
     try{ el.setPointerCapture(e.pointerId); }catch(_){}
     el.classList.add('dragging');
-    var clampX=function(v){ return Math.min(Math.max(2, board.clientWidth-el.offsetWidth-4), Math.max(2,v)); };
-    var clampY=function(v){ return Math.min(Math.max(2, board.clientHeight-el.offsetHeight-4), Math.max(2,v)); };
+    var _maxX=Math.max(2, board.clientWidth-el.offsetWidth-4), _maxY=Math.max(2, board.clientHeight-el.offsetHeight-4);  // measured once -> no per-move reflow (smooth drag)
+    var clampX=function(v){ return Math.min(_maxX, Math.max(2,v)); };
+    var clampY=function(v){ return Math.min(_maxY, Math.max(2,v)); };
     var mv=function(ev){ moved=true; n.x=clampX(origX+(ev.clientX-startX)); n.y=clampY(origY+(ev.clientY-startY)); el.style.left=n.x+'px'; el.style.top=n.y+'px'; };
     var up=function(){ el.classList.remove('dragging'); el.removeEventListener('pointermove',mv); el.removeEventListener('pointerup',up); try{el.releasePointerCapture(e.pointerId);}catch(_){} if(moved){ n.x=clampX(Math.round(n.x/20)*20); n.y=clampY(Math.round(n.y/20)*20); el.style.left=n.x+'px'; el.style.top=n.y+'px'; Slate.move(n); } setTimeout(function(){ App._slateBusy=false; },300); };
     el.addEventListener('pointermove',mv); el.addEventListener('pointerup',up);
@@ -6112,12 +6107,10 @@ function attachOneNoteDnD(el){
 function appendNote(n){
   slateTouch();
   var board=document.getElementById('slate-board'); if(!board) return;
-  var wasFit=board.classList.contains('fitmode'); slateFitCheck();
-  if(board.classList.contains('fitmode')!==wasFit){ paintSlate(true); return; }   // crossed the fit boundary -> clean repaint
   var empty=board.querySelector('.slate-empty'); if(empty) empty.remove();
   var tmp=document.createElement('div'); tmp.innerHTML=slateNoteHTML(n,false);
   var el=tmp.firstElementChild; if(!el) return;
-  board.appendChild(el); if(!board.classList.contains('fitmode')) attachOneNoteDnD(el);
+  board.appendChild(el); attachOneNoteDnD(el);
 }
 function slateDone(id){
   slateTouch();
@@ -6205,12 +6198,21 @@ function slateOpenTask(id){
   App.view='search'; buildSidebar(); renderSearch(q); window.scrollTo(0,0);
 }
 function slateTidy(){
-  var board=document.getElementById('slate-board'); if(!board) return;
+  var board=document.getElementById('slate-board'); if(!board || App._slateView) return;
   var active=(App.slateNotes||[]).filter(function(n){return !n.done;});
   if(!active.length) return;
-  var pad=20, colW=190, rowH=120, cols=Math.max(1, Math.floor((board.clientWidth-pad)/colW));
-  active.sort(function(a,b){ return new Date(a.created)-new Date(b.created); });
-  active.forEach(function(n,i){ n.x=pad+(i%cols)*colW; n.y=pad+Math.floor(i/cols)*rowH; });
+  active.sort(function(a,b){ return new Date(a.created||0)-new Date(b.created||0); });
+  var pad=16, colW=208, gap=12;
+  var W=Math.max(colW+pad*2, board.clientWidth||800);
+  var nCols=Math.max(1, Math.floor((W - pad*2 + gap)/(colW+gap)));
+  var elById={}, nodes=board.querySelectorAll('.slate-note[data-note]');
+  for(var i=0;i<nodes.length;i++){ elById[nodes[i].getAttribute('data-note')]=nodes[i]; }
+  var colH=[]; for(var c=0;c<nCols;c++){ colH.push(pad); }
+  active.forEach(function(n){
+    var el=elById[n.id], h=el?(el.offsetHeight||90):90, min=0;
+    for(var c2=1;c2<nCols;c2++){ if(colH[c2]<colH[min]) min=c2; }
+    n.x=pad+min*(colW+gap); n.y=colH[min]; colH[min]+=h+gap;
+  });
   Slate.saveLocal(); paintSlate(true);
   active.forEach(function(n){ Slate._push(n,{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}); });
   toast('✨ Tidied up','success');
