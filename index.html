@@ -6191,8 +6191,8 @@ function slateTidy(){
   var pad=20, colW=190, rowH=120, cols=Math.max(1, Math.floor((board.clientWidth-pad)/colW));
   active.sort(function(a,b){ return new Date(a.created)-new Date(b.created); });
   active.forEach(function(n,i){ n.x=pad+(i%cols)*colW; n.y=pad+Math.floor(i/cols)*rowH; });
-  Slate.saveLocal(); paintSlate();
-  active.forEach(function(n){ if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid,x:n.x,y:n.y}).catch(function(){}); });
+  Slate.saveLocal(); paintSlate(true);
+  active.forEach(function(n){ Slate._push(n,{id:n.sid,x:Math.round(n.x),y:Math.round(n.y)}); });
   toast('✨ Tidied up','success');
 }
 function openArchive(){
