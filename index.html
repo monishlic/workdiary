@@ -1043,6 +1043,78 @@ body{ background:var(--bg); }
 /* Kanban columns */
 .board-col{ background:var(--bg-card) !important; }
 
+/* ---- Reckoner (product knowledge desk) ---- */
+.rk-head{ margin-bottom:12px; }
+.rk-title{ font-size:1.35rem; font-weight:800; display:flex; align-items:center; gap:8px; letter-spacing:-.3px; }
+.rk-sub{ color:var(--text-muted); font-size:.85rem; margin-top:2px; }
+.rk-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 14px; border-bottom:1px solid var(--border); padding-bottom:10px; }
+.rk-tab{ border:1px solid var(--glass-brd); background:var(--bg-card); color:var(--text-muted); border-radius:10px; padding:8px 14px; font:inherit; font-size:.85rem; font-weight:700; cursor:pointer; }
+.rk-tab.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.rk-search{ position:relative; margin-bottom:12px; }
+.rk-search input{ width:100%; border:1px solid var(--glass-brd); background:var(--bg-card); border-radius:12px; padding:12px 14px 12px 40px; font:inherit; font-size:.98rem; color:var(--text); outline:none; }
+.rk-search input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+.rk-search .rk-ic{ position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); }
+.rk-pills{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.rk-pill{ border:1px solid var(--glass-brd); background:var(--bg-card); border-radius:999px; padding:6px 12px; font:inherit; font-size:.8rem; font-weight:600; cursor:pointer; color:var(--text); }
+.rk-pill.on{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.rk-pill .rk-ins{ font-size:.62rem; color:var(--text-muted); display:block; line-height:1; }
+.rk-pill.on .rk-ins{ color:rgba(255,255,255,.78); }
+.rk-list{ background:var(--bg-card); border:1px solid var(--glass-brd); border-radius:14px; overflow:hidden; }
+.rk-row{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-top:1px solid var(--border); cursor:pointer; }
+.rk-row:first-child{ border-top:none; }
+.rk-row:hover{ background:var(--accent-soft); }
+.rk-row .rk-f{ font-size:.86rem; font-weight:700; width:42%; }
+.rk-row .rk-v{ font-size:.82rem; color:var(--text-muted); flex:1; }
+.rk-row .rk-pg{ font-size:.66rem; font-weight:800; color:#0f8f66; background:rgba(15,157,111,.14); border-radius:6px; padding:3px 7px; white-space:nowrap; }
+.rk-ans{ background:var(--bg-card); border:1px solid var(--glass-brd); border-radius:14px; padding:15px 16px; box-shadow:0 10px 26px -18px rgba(80,72,150,.5); margin-bottom:12px; }
+.rk-ans .rk-top{ font-size:.75rem; color:var(--text-muted); font-weight:600; }
+.rk-ans .rk-field{ font-size:1.02rem; font-weight:800; margin:3px 0 6px; }
+.rk-ans .rk-val{ font-size:1rem; font-weight:600; line-height:1.4; }
+.rk-ans .rk-quote{ margin-top:11px; background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:10px 12px; font-size:.84rem; line-height:1.55; font-style:italic; }
+.rk-ans .rk-src{ display:inline-block; margin-top:11px; background:rgba(15,157,111,.14); color:#0f8f66; border-radius:999px; padding:5px 11px; font-size:.72rem; font-weight:700; }
+.rk-ans .rk-cond{ margin-left:7px; background:#fff0c2; color:#b4690e; border-radius:6px; padding:2px 7px; font-size:.65rem; font-weight:800; }
+.rk-kw{ background:var(--bg-card); border:1px solid var(--glass-brd); border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+.rk-kw h4{ margin:0 0 4px; font-size:.95rem; }
+.rk-kw .rk-mean{ font-size:.86rem; line-height:1.5; }
+.rk-kw .rk-eg{ margin-top:6px; font-size:.8rem; color:var(--text-muted); background:var(--accent-soft); border-radius:8px; padding:7px 9px; }
+.rk-empty{ background:var(--bg-card); border:1px dashed var(--glass-brd); border-radius:14px; padding:26px 18px; text-align:center; color:var(--text-muted); font-size:.88rem; line-height:1.6; }
+.rk-adrow{ margin-bottom:12px; }
+.rk-ilist{ display:flex; flex-direction:column; gap:10px; }
+.rk-item{ background:var(--bg-card); border:1px solid var(--glass-brd); border-radius:12px; padding:13px 15px; }
+.rk-ihead{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.rk-ititle{ font-size:.95rem; font-weight:800; flex:1; }
+.rk-iact{ display:flex; gap:8px; }
+.rk-ia{ border:none; background:transparent; color:var(--accent); font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; }
+.rk-ia.del{ color:#c0392b; }
+.rk-dchip{ display:inline-block; font-size:.62rem; font-weight:800; color:var(--text-muted); background:var(--accent-soft); border-radius:6px; padding:2px 7px; margin-right:6px; vertical-align:1px; }
+.rk-steps{ margin:4px 0 2px; padding-left:20px; font-size:.86rem; line-height:1.6; }
+.rk-lk{ font-size:.85rem; font-weight:700; color:var(--accent); word-break:break-all; text-decoration:none; }
+.rk-stamp{ margin-top:8px; font-size:.68rem; color:var(--text-muted); }
+.rk-fl{ display:block; font-size:.74rem; font-weight:700; color:var(--text-muted); margin:12px 0 5px; }
+.rk-inp{ width:100%; border:1px solid var(--glass-brd); background:var(--bg-card); border-radius:9px; padding:9px 11px; font:inherit; font-size:.9rem; color:var(--text); outline:none; }
+.rk-inp:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+textarea.rk-inp{ resize:vertical; }
+.rk-tbl-wrap{ overflow-x:auto; border:1px solid var(--glass-brd); border-radius:10px; }
+.rk-tbl{ border-collapse:collapse; width:100%; font-size:.82rem; }
+.rk-tbl th, .rk-tbl td{ border:1px solid var(--border); padding:7px 10px; text-align:left; white-space:nowrap; }
+.rk-tbl thead th{ background:var(--accent-soft); font-weight:800; color:var(--text); }
+.rk-tbl tbody tr:nth-child(even){ background:rgba(120,110,175,.04); }
+.rk-tbl-edit th, .rk-tbl-edit td{ padding:4px; }
+.rk-col-inp{ width:92px; border:1px solid var(--glass-brd); border-radius:6px; padding:5px 7px; font:inherit; font-size:.78rem; font-weight:700; }
+.rk-cell-inp{ width:92px; border:1px solid var(--glass-brd); border-radius:6px; padding:5px 7px; font:inherit; font-size:.8rem; }
+.rk-xcol, .rk-xrow{ border:none; background:transparent; color:#c0392b; font-weight:800; cursor:pointer; font-size:.9rem; padding:0 4px; }
+.rk-gridbtns{ display:flex; gap:8px; margin-top:8px; }
+.rk-faq-a{ font-size:.86rem; line-height:1.55; margin-top:2px; white-space:pre-wrap; }
+.rk-upd{ display:flex; flex-direction:column; }
+.rk-updrow{ display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--border); }
+.rk-updrow:last-child{ border-bottom:none; }
+.rk-upddot{ width:9px; height:9px; border-radius:50%; background:#0f8f66; margin-top:5px; flex:0 0 auto; }
+.rk-updt{ font-size:.86rem; }
+.rk-updm{ font-size:.7rem; color:var(--text-muted); margin-top:2px; }
+
+
+
+
 /* ---- Slate (sticky notes) ---- */
 .slate-head-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; flex-wrap:wrap; }
 .slate-tools{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -2576,7 +2648,7 @@ var FB = (function(){
             if(qs.empty) throw new Error('Invalid or inactive access key.');
             var u=qs.docs[0].data();
             if(u.active===false) throw new Error('This account is inactive.');
-            return { ok:true, user:{ userId:u.userId, name:u.name, role:u.role, allowedDepartments:u.allowedDepartments||null } };
+            return { ok:true, user:{ userId:u.userId, name:u.name, role:u.role, allowedDepartments:u.allowedDepartments||null, reckonerAccess:(u.reckonerAccess===true) } };
           });
         }
 
@@ -2885,10 +2957,10 @@ var FB = (function(){
             var users=docsToArr(r[0]), tasks=docsToArr(r[1]);
             var pend={}, done={};
             tasks.forEach(function(t){ var o=String(t.ownerId); if(t.status==='Completed') done[o]=(done[o]||0)+1; else pend[o]=(pend[o]||0)+1; });
-            var list=users.filter(function(u){return u.active!==false;}).map(function(u){ return { userId:u.userId, name:u.name, role:u.role, active:u.active!==false, accessKey:u.accessKey||'', allowedDepartments:u.allowedDepartments||null, pending:(pend[u.userId]||0), completed:(done[u.userId]||0) }; });
+            var list=users.filter(function(u){return u.active!==false;}).map(function(u){ return { userId:u.userId, name:u.name, role:u.role, active:u.active!==false, accessKey:u.accessKey||'', allowedDepartments:u.allowedDepartments||null, reckonerAccess:(u.reckonerAccess===true), pending:(pend[u.userId]||0), completed:(done[u.userId]||0) }; });
             if(action==='adminStaff') return {ok:true, staff:list};
             // adminMembers includes inactive too
-            var full=users.map(function(u){ return { userId:u.userId, name:u.name, role:u.role, active:u.active!==false, accessKey:u.accessKey||'', allowedDepartments:u.allowedDepartments||null, pending:(pend[u.userId]||0), completed:(done[u.userId]||0) }; });
+            var full=users.map(function(u){ return { userId:u.userId, name:u.name, role:u.role, active:u.active!==false, accessKey:u.accessKey||'', allowedDepartments:u.allowedDepartments||null, reckonerAccess:(u.reckonerAccess===true), pending:(pend[u.userId]||0), completed:(done[u.userId]||0) }; });
             return {ok:true, members:full};
           });
         }
@@ -2931,7 +3003,7 @@ var FB = (function(){
         case 'adminUpdateUser': {
           if(!isAdmin()) throw new Error('Admin access required.');
           if(!b.userId) throw new Error('Missing user.');
-          var patch={}; if(b.role!==undefined) patch.role=b.role; if(b.active!==undefined) patch.active=!!b.active; if(b.allowedDepartments!==undefined) patch.allowedDepartments=b.allowedDepartments;
+          var patch={}; if(b.role!==undefined) patch.role=b.role; if(b.active!==undefined) patch.active=!!b.active; if(b.allowedDepartments!==undefined) patch.allowedDepartments=b.allowedDepartments; if(b.reckonerAccess!==undefined) patch.reckonerAccess=!!b.reckonerAccess;
           return col('users').doc(String(b.userId)).set(patch,{merge:true}).then(function(){ return logAudit('Updated member', '', b.userId, JSON.stringify(patch)); }).then(function(){ return {ok:true}; });
         }
         case 'adminResetKey': {
@@ -3040,6 +3112,21 @@ var FB = (function(){
         case 'deleteNote': {
           if(!b.id) throw new Error('Missing note id.');
           return col('notes').doc(String(b.id)).delete().then(function(){ return {ok:true}; });
+        }
+        case 'rkList': {
+          return col('reckoner').get().then(function(qs){ var a=[]; qs.forEach(function(d){ var x=d.data(); x.id=d.id; a.push(x); }); return {ok:true, items:a}; });
+        }
+        case 'rkSave': {
+          if(!isOverseer()) throw new Error('Admin access required.');
+          var ru=me(), rnow=nowISO(), rid=b.id||('rk-'+Date.now().toString(36)+Math.floor(Math.random()*1e4));
+          var rdoc={ type:String(b.type||''), department:String(b.department||''), title:String(b.title||''), data:(b.data||{}), order:Number(b.order)||0, updatedById:ru.userId, updatedByName:ru.name, updatedAt:rnow, note:String(b.note||'') };
+          var rref=col('reckoner').doc(String(rid));
+          return rref.get().then(function(s){ if(!s.exists){ rdoc.createdById=ru.userId; rdoc.createdByName=ru.name; rdoc.createdAt=rnow; } return rref.set(rdoc,{merge:true}); }).then(function(){ return logAudit('Reckoner '+(b.id?'updated':'added')+': '+rdoc.type, '', '', rdoc.title); }).then(function(){ return {ok:true, id:rid}; });
+        }
+        case 'rkDelete': {
+          if(!isOverseer()) throw new Error('Admin access required.');
+          if(!b.id) throw new Error('Missing id.');
+          return col('reckoner').doc(String(b.id)).delete().then(function(){ return logAudit('Reckoner deleted','','',String(b.id)); }).then(function(){ return {ok:true}; });
         }
 
           case 'assignLead': {
@@ -3648,7 +3735,7 @@ function doLogin(){
   postJson(url, {action:'login', key:key})
     .then(function(res){
       if(!res||!res.ok||!res.user) throw new Error(res&&res.error?res.error:'Login failed.');
-      App.auth={ url:url, key:key, userId:res.user.userId, name:res.user.name, role:res.user.role, allowedDepartments:res.user.allowedDepartments||null };
+      App.auth={ url:url, key:key, userId:res.user.userId, name:res.user.name, role:res.user.role, allowedDepartments:res.user.allowedDepartments||null, reckonerAccess:(res.user.reckonerAccess===true) };
       App.identity={ employeeId:res.user.userId, employeeName:res.user.name, role:res.user.role };
       return Store.get('kv','lastUserId').then(function(last){
         var prep = (last && last!==res.user.userId) ? Promise.all([Store.clear('tasks'),Store.clear('activityLog'),Store.clear('syncQueue')]) : Promise.resolve();
@@ -3776,12 +3863,13 @@ var FBLive = {
       var members=[]; App._userMeta=App._userMeta||{};
       var myId=App.identity?String(App.identity.employeeId):null;
       var myVisChanged=false, myRoleChanged=false;
-      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}, chanRead:u.chanRead||{}, allowedDepartments:(u.allowedDepartments||null), role:u.role, gender:(u.gender||''), avatar:(u.avatar||'')}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role});
+      qs.forEach(function(d){ var u=d.data(); App._userMeta[String(u.userId)]={lastActive:u.lastActive||'', lastOpened:u.lastOpened||'', dmRead:u.dmRead||{}, chanRead:u.chanRead||{}, allowedDepartments:(u.allowedDepartments||null), role:u.role, gender:(u.gender||''), avatar:(u.avatar||''), reckonerAccess:(u.reckonerAccess===true)}; if(u.active!==false) members.push({userId:u.userId, name:u.name, role:u.role});
         // Keep MY own live session in sync when an admin changes my visibility or role — no re-login needed.
         if(myId && String(u.userId)===myId && App.auth){
           var newVis=(u.allowedDepartments||null);
           if(JSON.stringify(App.auth.allowedDepartments||null)!==JSON.stringify(newVis)){ App.auth.allowedDepartments=newVis; myVisChanged=true; }
           if(u.role && App.identity && App.identity.role!==u.role){ App.identity.role=u.role; App.auth.role=u.role; myRoleChanged=true; }
+          var _newRk=(u.reckonerAccess===true); if((App.auth.reckonerAccess===true)!==_newRk){ App.auth.reckonerAccess=_newRk; myVisChanged=true; }
         }
       });
       App.members=members;
@@ -4602,10 +4690,12 @@ function nlRenderBiz(){
 }
 
 
+function canSeeReckoner(){ return !!(App.auth && App.auth.reckonerAccess===true); }
 function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> New Leads</button>';
+  if(rkHasLit()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> My Tasks</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
@@ -5191,6 +5281,7 @@ function navigate(view,dept,cat){
     if(view==='dashboard') renderDashboard();
     else if(view==='mytasks') renderMyTasks();
     else if(view==='slate') renderSlate();
+    else if(view==='reckoner') renderReckoner();
       else if(view==='leads') nlOpenSection();
       else if(view==='business') renderBusiness();
     else if(view==='board') renderBoard();
@@ -5208,6 +5299,338 @@ function navigate(view,dept,cat){
   window.scrollTo(0,0);
 }
 function showList(filter){ App.view='list'; App.listFilter=filter; closeSidebar(); withVT(function(){ buildSidebar(); renderList(); }); window.scrollTo(0,0); }
+/* ===== Reckoner (product knowledge desk) — Phase 1b: GI/Claims specs + keywords ===== */
+var RK_KNOW_DEPTS=['General Insurance','Claims'];
+var RK_SEED=[
+ {id:'care-supreme',dept:['General Insurance','Claims'],insurer:'Care Health',product:'Care Supreme',uin:'CHIHLIP25047V022425',by:'Priya',on:'14 Oct 2026',pdf:'Care Supreme wording',specs:{
+   'Room rent':{v:'No limit — no separate restriction on room charges.',q:"The eligible Room Rent or Room Category applicable for the Insured Person under the Policy is 'No limit', which means that there is no separate restriction on Room Charges incurred towards stay during Hospitalization.",p:17},
+   'ICU':{v:'No limit.',q:"The eligible ICU Charges applicable for the Insured Person under the Policy is 'No limit', which means that there is no separate restriction on ICU Charges.",p:20},
+   'Co-payment':{v:'20% in specified cases (conditional).',cond:1,q:"The Policyholder/Insured Person shall bear a Co-Payment of 20% on each and every Claim arising in such regard, which will be in addition to any other co-payment (if any) applicable in the Policy.",p:23},
+   'Initial waiting':{v:'30 days.',q:"Covered from the 31st day of Policy start date after serving Initial wait period of 30 days.",p:25},
+   'PED waiting':{v:'36 months (modifiable).',q:"The applicable waiting period of 36 months for Claims related to Pre-existing diseases shall be modified to the specific time period mentioned in the Policy Schedule.",p:24},
+   'Pre-hospitalization':{v:'60 days before admission.',q:"For a period of 60 days immediately prior to the Insured Person's date of admission to the Hospital.",p:17},
+   'Post-hospitalization':{v:'180 days after discharge.',q:"For a period of 180 days immediately after the Insured Person's date of discharge from the hospital.",p:18},
+   'Day care':{v:'All day-care treatments up to Sum Insured.',q:"Benefit: Day Care Treatment: The Company will indemnify the Insured Person on all Day Care Treatments, maximum up to the Sum Insured, where treatment does not exceed 24 hours.",p:16},
+   'AYUSH':{v:'Ayurveda, Yoga, Naturopathy, Siddha, Unani, Homeopathy — up to Sum Insured.',q:"Up to the Sum Insured towards AYUSH Treatments namely Ayurveda, Yoga, Naturopathy, Sidha, Unani and Homeopathy.",p:18},
+   'No-claim / Cumulative Bonus':{v:'50% per claim-free year, up to 100%.',q:"The Company will enhance the Sum Insured by 50% flat, on a cumulative basis, as a Cumulative Bonus; the accrued Cumulative Bonus shall not exceed 100% of the Sum Insured.",p:20}
+ }},
+ {id:'ultimate-care',dept:['General Insurance','Claims'],insurer:'Care Health',product:'Ultimate Care',uin:'CHIHLIP25044V012425',by:'Priya',on:'14 Oct 2026',pdf:'Ultimate Care wording',specs:{
+   'Room rent':{v:'No limit.',q:"The eligible Room Rent or Room Category applicable for the Insured Person under the Policy is 'No limit', which means that there is no separate restriction on Room Charges.",p:26},
+   'ICU':{v:'No limit.',q:"The eligible ICU Charges applicable for the Insured Person under the Policy is 'No limit'.",p:26},
+   'Co-payment':{v:'20% in specified cases (conditional).',cond:1,q:"The Policyholder/Insured Person shall bear a Co-Payment of 20% on each and every Claim arising in such regard.",p:39},
+   'Initial waiting':{v:'30 days.',q:"Covered from the 31st day of Policy start date after serving Initial wait period of 30 days.",p:33},
+   'PED waiting':{v:'36 months (modifiable).',q:"The applicable waiting period of 36 months for Claims related to Pre-existing diseases shall be modified as mentioned in the Policy Schedule.",p:40},
+   'Pre-hospitalization':{v:'60 days.',q:"For a period of 60 days immediately prior to the Insured Person's date of admission to the Hospital.",p:23},
+   'Post-hospitalization':{v:'90 days.',q:"For a period of 90 days immediately after the Insured Person's date of discharge from the hospital.",p:23},
+   'No-claim / Cumulative Bonus':{v:'50% per claim-free year.',q:"The Company will enhance the Sum Insured by 50% flat, on a cumulative basis for each completed and continuous Policy Year.",p:26}
+ }},
+ {id:'activate-booster',dept:['General Insurance','Claims'],insurer:'ICICI Lombard',product:'Activate Booster',uin:'ICIHLIP25046V012425',by:'Aditya',on:'14 Oct 2026',pdf:'Activate Booster wording',specs:{
+   'Room rent':{v:'Capped at a Single Private AC room.',q:"Room Rent charges up to Single Private AC room.",p:13},
+   'Co-payment':{v:'20% if treated at a non-network hospital (conditional).',cond:1,q:"A co-payment of 20% will be applicable on each and every claim in case the treatment is taken in a hospital which is not included in the Preferred Provider Network List.",p:49}
+ }},
+ {id:'elevate',dept:['General Insurance','Claims'],insurer:'ICICI Lombard',product:'Elevate',uin:'ICIHLIP26054V052526',by:'Aditya',on:'14 Oct 2026',pdf:'Elevate wording',specs:{
+   'Room rent':{v:'Up to a Single Private AC Room.',q:"Room Rent up to a Single Private AC Room.",p:5}
+ }},
+ {id:'supreme-enhance',dept:['General Insurance','Claims'],insurer:'Care Health',product:'Supreme Enhance',uin:'CHIHLIP25036V012425',pending:1},
+ {id:'enhance',dept:['General Insurance','Claims'],insurer:'Care Health',product:'Enhance (high-deductible)',uin:'RHIHLIP21372V022021',pending:1},
+ {id:'optima-restore',dept:['General Insurance','Claims'],insurer:'HDFC ERGO',product:'Optima Restore',uin:'HDFHLIP26055V102526',pending:1},
+ {id:'optima-secure',dept:['General Insurance','Claims'],insurer:'HDFC ERGO',product:'my:Optima Secure',uin:'HDFHLIP26058V082526',pending:1},
+ {id:'medisure',dept:['General Insurance','Claims'],insurer:'HDFC ERGO',product:'Medisure Super Top-Up',uin:'',pending:1},
+ {id:'medicare-plus',dept:['General Insurance','Claims'],insurer:'Tata AIG',product:'MediCare Plus',uin:'TATHLIP21253V022021',pending:1},
+ {id:'medicare-select',dept:['General Insurance','Claims'],insurer:'Tata AIG',product:'MediCare Select',uin:'TATHLIP25051V012425',pending:1},
+ {id:'medicare-premier',dept:['General Insurance','Claims'],insurer:'Tata AIG',product:'MediCare Premier',uin:'TATHLIP26052V052526',pending:1}
+];
+var RK_SYN={'Room rent':['room','rent','bed','accommodation'],'Co-payment':['co-pay','copay','co pay','copayment'],'No-claim / Cumulative Bonus':['bonus','ncb','no claim','cumulative'],'Pre-hospitalization':['pre hosp','pre-hosp','before admission'],'Post-hospitalization':['post hosp','post-hosp','after discharge'],'AYUSH':['ayush','ayurveda','homeopathy'],'Day care':['day care','daycare'],'ICU':['icu','intensive care'],'PED waiting':['ped','pre-existing','pre existing'],'Initial waiting':['initial','waiting','30 day']};
+var RK_KW=[
+ ['Sum Insured','The maximum the insurer will pay in a policy year.','A 10 lakh Sum Insured means total claims that year are paid only up to 10 lakh.'],
+ ['Room Rent','What the hospital charges per day for the room and bed.','Some plans cap it (e.g. Single Private AC room); the Care plans here have no limit.'],
+ ['Sub-limit','A cap on one specific expense, inside the overall Sum Insured.','A 5,000/day room sub-limit — even with 10L cover, the room is paid only to 5,000/day.'],
+ ['Co-payment','A fixed percentage of every claim the customer pays themselves.','20% co-pay on a 1,00,000 claim means the customer pays 20,000, insurer pays 80,000.'],
+ ['PED (Pre-Existing Disease)','An illness the customer already had before buying the policy.','Diabetes before purchase is a PED — covered only after its waiting period (often 36 months).'],
+ ['Initial waiting period','A first window (usually 30 days) where only accidents are covered.','Illness in the first 30 days is not payable; an accident is.'],
+ ['No-Claim / Cumulative Bonus','Extra Sum Insured added free for each claim-free year.','50% per claim-free year up to 100% — 10L grows to 15L after one clean year.'],
+ ['Restoration / Recharge','The Sum Insured is topped back up if the customer exhausts it.','Use the full 5L, and restoration refills it for a later unrelated claim the same year.'],
+ ['Pre and Post Hospitalization','Expenses just before admission and after discharge.','60 days before plus 180 days after — tests, medicines and follow-ups in that window are claimable.'],
+ ['Proportionate Deduction','Taking a pricier room than allowed cuts other charges in the same ratio.','Entitled to a 5,000 room but took 10,000 — associated charges are paid at 50%.']
+];
+function rkCanSee(){ return (App.identity && isBoss()) || canSeeReckoner(); }
+function rkVisibleDepts(){ if(App.identity && isBoss()) return (App.departments||[]).map(function(d){ return d.department; }); return visibleDepartments().map(function(d){ return d.department; }); }
+function rkHasLit(){ if(!rkCanSee()) return false; var vd=rkVisibleDepts(); return RK_SEED.some(function(p){ return p.dept.some(function(x){ return vd.indexOf(x)>-1; }); }); }
+function rkProducts(){ var vd=rkVisibleDepts(); return RK_SEED.filter(function(p){ return p.dept.some(function(x){ return vd.indexOf(x)>-1; }); }); }
+function rkTopicFor(q){ q=(q||'').toLowerCase().trim(); if(!q) return null; var t,a,i; for(t in RK_SYN){ if(t.toLowerCase().indexOf(q)>-1) return t; a=RK_SYN[t]; for(i=0;i<a.length;i++){ if(a[i].indexOf(q)>-1 || q.indexOf(a[i])>-1) return t; } } return q; }
+function renderReckoner(){
+  App.view='reckoner'; buildSidebar();
+  var box=document.getElementById('content'); if(!box) return;
+  if(!rkHasLit()){ box.innerHTML='<div class="rk-empty">The Reckoner is not available for your departments yet.</div>'; window.scrollTo(0,0); return; }
+  if(!App._rk) App._rk={ tab:'specs', prod:'', q:'' };
+  var _tl=rkTabList(); if(!_tl.some(function(t){ return t.key===App._rk.tab; })) App._rk.tab=(_tl[0]||{}).key||'specs';
+  var prods=rkProducts(); if(!App._rk.prod || !prods.some(function(p){ return p.id===App._rk.prod; })) App._rk.prod=(prods[0]||{}).id||'';
+  var h='<div class="rk-head"><div class="rk-title">📚 Reckoner</div><div class="rk-sub">Product knowledge — answered word-for-word from the policy wording.</div></div>';
+  h+='<div class="rk-tabs">'+rkTabList().map(function(t){ return '<button class="rk-tab" data-tab="'+t.key+'">'+esc(t.label)+'</button>'; }).join('')+'</div><div id="rk-body"></div>';
+  box.innerHTML=h;
+  box.querySelectorAll('.rk-tab').forEach(function(b){ b.addEventListener('click', function(){ App._rk.tab=b.getAttribute('data-tab'); rkPaintBody(); }); });
+  if(!App._rkItemsLoaded){ App._rkItemsLoaded=true; rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); }
+  rkPaintBody(); window.scrollTo(0,0);
+}
+function rkPaintBody(){
+  var body=document.getElementById('rk-body'); if(!body) return;
+  document.querySelectorAll('.rk-tab').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tab')===App._rk.tab); });
+  if(App._rk.tab==='proc'){ rkPaintType(body,'process'); return; }
+  if(App._rk.tab==='link'){ rkPaintType(body,'link'); return; }
+  if(App._rk.tab==='ratechart'){ rkPaintTable(body,'ratechart'); return; }
+  if(App._rk.tab==='fundlist'){ rkPaintTable(body,'fundlist'); return; }
+  if(App._rk.tab==='compare'){ rkPaintCompare(body); return; }
+  if(App._rk.tab==='faq'){ rkPaintFaq(body); return; }
+  if(App._rk.tab==='updates'){ rkPaintUpdates(body); return; }
+  if(App._rk.tab==='kw'){ body.innerHTML=RK_KW.map(function(k){ return '<div class="rk-kw"><h4>'+esc(k[0])+'</h4><div class="rk-mean">'+esc(k[1])+'</div><div class="rk-eg">💡 '+esc(k[2])+'</div></div>'; }).join(''); return; }
+  var prods=rkProducts();
+  var ph='<div class="rk-search"><span class="rk-ic">🔎</span><input id="rk-q" placeholder="Search a spec — room rent, co-pay, bonus, waiting period..." value="'+esc(App._rk.q||'')+'"></div>';
+  ph+='<div class="rk-pills"><button class="rk-pill" data-id="all">All products</button>'+prods.map(function(p){ return '<button class="rk-pill" data-id="'+esc(p.id)+'">'+esc(p.product)+'<span class="rk-ins">'+esc(p.insurer)+'</span></button>'; }).join('')+'</div><div id="rk-out"></div>';
+  body.innerHTML=ph;
+  var inp=document.getElementById('rk-q'); if(inp){ inp.addEventListener('input', function(){ App._rk.q=inp.value; rkPaintOut(); }); }
+  body.querySelectorAll('.rk-pill').forEach(function(b){ if(b.getAttribute('data-id')===App._rk.prod) b.classList.add('on'); b.addEventListener('click', function(){ App._rk.prod=b.getAttribute('data-id'); body.querySelectorAll('.rk-pill').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on'); rkPaintOut(); }); });
+  rkPaintOut();
+}
+function rkAnsCard(p,topic){ var s=p.specs[topic]; return '<div class="rk-ans"><div class="rk-top">'+esc(p.product)+' · '+esc(p.insurer)+' · UIN '+esc(p.uin||'-')+'</div><div class="rk-field">'+esc(topic)+(s.cond?'<span class="rk-cond">conditional</span>':'')+'</div><div class="rk-val">'+esc(s.v)+'</div><div class="rk-quote">'+esc(s.q)+'</div><div><span class="rk-src">✓ verified '+esc(p.on||'')+' · '+esc(p.by||'')+' · '+esc(p.pdf||'')+' p.'+s.p+'</span></div></div>'; }
+function rkPaintOut(){
+  var out=document.getElementById('rk-out'); if(!out) return;
+  var prods=rkProducts(); var q=App._rk.q||''; var topic=rkTopicFor(q);
+  if(App._rk.prod==='all'){
+    if(!q){ out.innerHTML='<div class="rk-empty">Type a spec (e.g. room rent) to compare it across every product.</div>'; return; }
+    var cards=prods.filter(function(p){ return p.specs && p.specs[topic]; }).map(function(p){ return rkAnsCard(p,topic); }).join('');
+    out.innerHTML=cards||'<div class="rk-empty">No product has that spec recorded yet.</div>'; return;
+  }
+  var p=null,i; for(i=0;i<prods.length;i++){ if(prods[i].id===App._rk.prod){ p=prods[i]; break; } }
+  if(!p){ out.innerHTML=''; return; }
+  if(p.pending || !p.specs){ out.innerHTML='<div class="rk-empty"><b>'+esc(p.product)+'</b> · UIN '+esc(p.uin||'-')+'<br><br>Specs are being entered and verified from its wording.</div>'; return; }
+  var ts=[],k; for(k in p.specs) ts.push(k);
+  var ans='';
+  if(q){ var m=ts.filter(function(t){ return t===topic || t.toLowerCase().indexOf(q.toLowerCase())>-1; }); if(m.length) ans=rkAnsCard(p,m[0]); }
+  var rows=ts.map(function(t){ var s=p.specs[t]; return '<div class="rk-row" data-topic="'+esc(t)+'"><div class="rk-f">'+esc(t)+'</div><div class="rk-v">'+esc(String(s.v).slice(0,64))+'</div><div class="rk-pg">p.'+s.p+'</div></div>'; }).join('');
+  out.innerHTML=ans+'<div class="rk-list">'+rows+'</div>';
+  out.querySelectorAll('.rk-row').forEach(function(r){ r.addEventListener('click', function(){ App._rk.q=r.getAttribute('data-topic'); var inp=document.getElementById('rk-q'); if(inp) inp.value=App._rk.q; rkPaintOut(); }); });
+}
+/* ===== Reckoner Phase 2b+: Compare, FAQ, Updates ===== */
+function rkPaintCompare(body){
+  var prods=rkProducts().filter(function(p){ return p.specs; });
+  if(prods.length<1){ body.innerHTML='<div class="rk-empty">No product specs to compare yet.</div>'; return; }
+  var topics={}; prods.forEach(function(p){ for(var k in p.specs) topics[k]=1; });
+  var tlist=Object.keys(topics);
+  var h='<div class="rk-sub" style="margin-bottom:10px">Side-by-side across '+prods.length+' product'+(prods.length!==1?'s':'')+' · '+tlist.length+' specs.</div>';
+  h+='<div class="rk-tbl-wrap"><table class="rk-tbl"><thead><tr><th>Spec</th>'+prods.map(function(p){ return '<th>'+esc(p.product)+'<div style="font-weight:400;font-size:.88em;opacity:.7">'+esc(p.insurer)+'</div></th>'; }).join('')+'</tr></thead><tbody>';
+  h+=tlist.map(function(t){ return '<tr><td style="font-weight:700;white-space:normal">'+esc(t)+'</td>'+prods.map(function(p){ var s=p.specs[t]; return '<td style="white-space:normal">'+(s?esc(s.v)+'<div style="font-size:.85em;color:var(--text-muted)">p.'+s.p+'</div>':'<span style="color:var(--text-muted)">—</span>')+'</td>'; }).join('')+'</tr>'; }).join('');
+  h+='</tbody></table></div>';
+  body.innerHTML=h;
+}
+function rkFaqCard(it){
+  var multi=(rkVisibleDepts().length>1), dchip=multi?('<span class="rk-dchip">'+esc(it.department)+'</span>'):'';
+  var ed=rkCanEdit()?('<div class="rk-iact"><button class="rk-ia" data-rk-fedit="'+esc(it.id)+'">Edit</button><button class="rk-ia del" data-rk-del="'+esc(it.id)+'">Delete</button></div>'):'';
+  var ans=(it.data&&it.data.answer)||'';
+  return '<div class="rk-item"><div class="rk-ihead"><div class="rk-ititle">'+dchip+esc(it.title||'(question)')+'</div>'+ed+'</div><div class="rk-faq-a">'+esc(ans)+'</div>'+rkStamp(it)+'</div>';
+}
+function rkPaintFaq(body){
+  var items=rkItemsFor('faq');
+  var h='';
+  if(rkCanEdit()){ h+='<div class="rk-adrow"><button class="btn btn-primary btn-sm" data-rk-fadd="1">＋ Add FAQ</button></div>'; }
+  if(!items.length){ h+='<div class="rk-empty">No FAQs for your department yet.'+(rkCanEdit()?' Add one above.':'')+'</div>'; }
+  else { h+='<div class="rk-ilist">'+items.map(function(it){ return rkFaqCard(it); }).join('')+'</div>'; }
+  body.innerHTML=h;
+  body.querySelectorAll('[data-rk-fadd]').forEach(function(b){ b.addEventListener('click',function(){ rkFaqForm(null); }); });
+  body.querySelectorAll('[data-rk-fedit]').forEach(function(b){ b.addEventListener('click',function(){ rkFaqForm(b.getAttribute('data-rk-fedit')); }); });
+  body.querySelectorAll('[data-rk-del]').forEach(function(b){ b.addEventListener('click',function(){ rkDelItem(b.getAttribute('data-rk-del')); }); });
+}
+function rkFaqForm(id){
+  var it=id?(App._rkItems||[]).filter(function(x){return x.id===id;})[0]:null;
+  var depts=rkVisibleDepts(), curDept=(it&&it.department)||depts[0]||'';
+  var q=(it&&it.title)||'', a=(it&&it.data&&it.data.answer)||'';
+  var ex=document.getElementById('rk-ov'); if(ex) ex.remove();
+  var ov=document.createElement('div'); ov.id='rk-ov'; ov.className='overlay';
+  var dsel=depts.map(function(d){ return '<option'+(d===curDept?' selected':'')+'>'+esc(d)+'</option>'; }).join('');
+  ov.innerHTML='<div class="modal" style="max-width:520px"><div class="modal-h"><h3>'+(id?'Edit ':'Add ')+'FAQ</h3><button class="modal-x" id="rk-f-x">&times;</button></div><div class="modal-b">'
+    +'<label class="rk-fl">Department</label><select id="rk-f-dept" class="rk-inp">'+dsel+'</select>'
+    +'<label class="rk-fl">Question</label><input id="rk-f-q" class="rk-inp" value="'+esc(q)+'">'
+    +'<label class="rk-fl">Answer</label><textarea id="rk-f-a" class="rk-inp" rows="4">'+esc(a)+'</textarea>'
+    +'<label class="rk-fl">Change note (optional)</label><input id="rk-f-note" class="rk-inp">'
+    +'</div><div class="modal-f"><button class="btn btn-ghost" id="rk-f-cancel">Cancel</button><button class="btn btn-primary" id="rk-f-save">Save</button></div></div>';
+  document.body.appendChild(ov);
+  function close(){ var o=document.getElementById('rk-ov'); if(o) o.remove(); }
+  document.getElementById('rk-f-x').addEventListener('click',close);
+  document.getElementById('rk-f-cancel').addEventListener('click',close);
+  document.getElementById('rk-f-save').addEventListener('click',function(){
+    var dept=document.getElementById('rk-f-dept').value;
+    var qq=(document.getElementById('rk-f-q').value||'').trim();
+    var aa=(document.getElementById('rk-f-a').value||'').trim();
+    var note=(document.getElementById('rk-f-note').value||'').trim();
+    if(!qq){ toast('Add a question.','warn'); return; }
+    var btn=document.getElementById('rk-f-save'); btn.disabled=true; btn.textContent='Saving…';
+    apiCall('rkSave',{ id:(id||''), type:'faq', department:dept, title:qq, data:{answer:aa}, note:note }).then(function(res){
+      if(!res||!res.ok){ btn.disabled=false; btn.textContent='Save'; toast('Could not save.','error'); return; }
+      close(); rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); toast('Saved.','success');
+    }).catch(function(e){ btn.disabled=false; btn.textContent='Save'; toast(e.message||'Could not save.','error'); });
+  });
+}
+function rkPaintUpdates(body){
+  var vd=rkVisibleDepts();
+  var items=(App._rkItems||[]).filter(function(it){ return vd.indexOf(it.department)>-1; }).slice();
+  items.sort(function(a,b){ return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')); });
+  if(!items.length){ body.innerHTML='<div class="rk-empty">No changes recorded yet. Edits to processes, links, rates, funds and FAQs show here with who and when.</div>'; return; }
+  var typeLabel={process:'Process',link:'Link',ratechart:'Rate chart',fundlist:'Fund list',faq:'FAQ',spec:'Product'};
+  body.innerHTML='<div class="rk-upd">'+items.slice(0,60).map(function(it){ var who=it.updatedByName||it.createdByName||''; var when=fmtDT(it.updatedAt||it.createdAt); return '<div class="rk-updrow"><div class="rk-upddot"></div><div><div class="rk-updt"><b>'+esc(it.title||'(untitled)')+'</b> <span class="rk-dchip">'+esc(typeLabel[it.type]||it.type)+'</span> <span style="color:var(--text-muted)">· '+esc(it.department)+'</span></div><div class="rk-updm">'+esc(who)+(when?' · '+esc(when):'')+(it.note?' · '+esc(it.note):'')+'</div></div></div>'; }).join('')+'</div>';
+}
+
+/* ===== Reckoner Phase 2b: table content (FD/bond rate charts, top-funds) + per-department tab bar ===== */
+var RK_TAB_META=[
+ {key:'specs', label:'Products', type:'spec'},
+ {key:'ratechart', label:'FD / Bond rates', type:'ratechart'},
+ {key:'fundlist', label:'Top funds', type:'fundlist'},
+ {key:'compare', label:'Compare', type:'compare'},
+ {key:'proc', label:'Processes', type:'process'},
+ {key:'link', label:'Links', type:'link'},
+ {key:'faq', label:'FAQ', type:'faq'},
+ {key:'kw', label:'Keywords', type:'kw'},
+ {key:'updates', label:'Updates', type:'updates'}
+];
+var RK_DEPT_TABS={
+ 'General Insurance':['specs','compare','proc','link','faq','kw','updates'],
+ 'Claims':['specs','compare','proc','link','faq','kw','updates'],
+ 'Life Insurance':['specs','compare','proc','link','faq','kw','updates'],
+ 'Investment':['ratechart','fundlist','proc','link','faq','updates']
+};
+function rkTabList(){ var vd=rkVisibleDepts(), want={}; vd.forEach(function(d){ (RK_DEPT_TABS[d]||[]).forEach(function(k){ want[k]=1; }); }); var out=RK_TAB_META.filter(function(t){ return want[t.key]; }); return out.length?out:[RK_TAB_META[0]]; }
+function rkTableCard(it,type){
+  var cols=(it.data&&it.data.cols)||[], rows=(it.data&&it.data.rows)||[];
+  var multi=(rkVisibleDepts().length>1), dchip=multi?('<span class="rk-dchip">'+esc(it.department)+'</span>'):'';
+  var ed=rkCanEdit()?('<div class="rk-iact"><button class="rk-ia" data-rk-tedit="'+esc(it.id)+'" data-rk-ttype="'+esc(type)+'">Edit</button><button class="rk-ia del" data-rk-del="'+esc(it.id)+'">Delete</button></div>'):'';
+  var thead='<tr>'+cols.map(function(c){ return '<th>'+esc(c)+'</th>'; }).join('')+'</tr>';
+  var tbody=rows.map(function(r){ return '<tr>'+cols.map(function(c,ci){ return '<td>'+esc(r[ci]!=null?r[ci]:'')+'</td>'; }).join('')+'</tr>'; }).join('');
+  return '<div class="rk-item"><div class="rk-ihead"><div class="rk-ititle">'+dchip+esc(it.title||'(untitled)')+'</div>'+ed+'</div><div class="rk-tbl-wrap"><table class="rk-tbl"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+rkStamp(it)+'</div>';
+}
+function rkPaintTable(body,type){
+  var items=rkItemsFor(type), label=(type==='ratechart'?'rate chart':'fund list');
+  var h='';
+  if(rkCanEdit()){ h+='<div class="rk-adrow"><button class="btn btn-primary btn-sm" data-rk-tadd="'+type+'">＋ Add '+label+'</button></div>'; }
+  if(!items.length){ h+='<div class="rk-empty">No '+label+'s for your department yet.'+(rkCanEdit()?' Add one above.':'')+'</div>'; }
+  else { h+='<div class="rk-ilist">'+items.map(function(it){ return rkTableCard(it,type); }).join('')+'</div>'; }
+  body.innerHTML=h;
+  body.querySelectorAll('[data-rk-tadd]').forEach(function(b){ b.addEventListener('click',function(){ rkTableForm(b.getAttribute('data-rk-tadd'),null); }); });
+  body.querySelectorAll('[data-rk-tedit]').forEach(function(b){ b.addEventListener('click',function(){ rkTableForm(b.getAttribute('data-rk-ttype'),b.getAttribute('data-rk-tedit')); }); });
+  body.querySelectorAll('[data-rk-del]').forEach(function(b){ b.addEventListener('click',function(){ rkDelItem(b.getAttribute('data-rk-del')); }); });
+}
+function rkTableForm(type,id){
+  var it=id?(App._rkItems||[]).filter(function(x){return x.id===id;})[0]:null;
+  var depts=rkVisibleDepts(), curDept=(it&&it.department)||depts[0]||'';
+  var title=(it&&it.title)||'';
+  var cols=(it&&it.data&&it.data.cols&&it.data.cols.slice())||(type==='ratechart'?['Bank','Tenure','Rate']:['Fund','Category','1Y','3Y','5Y']);
+  var rows=(it&&it.data&&it.data.rows&&it.data.rows.map(function(r){return r.slice();}))||[];
+  if(!rows.length) rows=[cols.map(function(){return '';})];
+  var ex=document.getElementById('rk-ov'); if(ex) ex.remove();
+  var ov=document.createElement('div'); ov.id='rk-ov'; ov.className='overlay';
+  var dsel=depts.map(function(d){ return '<option'+(d===curDept?' selected':'')+'>'+esc(d)+'</option>'; }).join('');
+  ov.innerHTML='<div class="modal" style="max-width:640px"><div class="modal-h"><h3>'+(id?'Edit ':'Add ')+(type==='ratechart'?'rate chart':'fund list')+'</h3><button class="modal-x" id="rk-f-x">&times;</button></div><div class="modal-b">'
+    +'<label class="rk-fl">Department</label><select id="rk-f-dept" class="rk-inp">'+dsel+'</select>'
+    +'<label class="rk-fl">Title</label><input id="rk-f-title" class="rk-inp" value="'+esc(title)+'" placeholder="'+(type==='ratechart'?'e.g. FD rates — Oct 2026':'e.g. Top equity funds — Q3')+'">'
+    +'<label class="rk-fl">Table (edit cells, add or remove rows and columns)</label><div id="rk-grid"></div>'
+    +'<label class="rk-fl">Change note (optional)</label><input id="rk-f-note" class="rk-inp" placeholder="e.g. refreshed rates">'
+    +'</div><div class="modal-f"><button class="btn btn-ghost" id="rk-f-cancel">Cancel</button><button class="btn btn-primary" id="rk-f-save">Save</button></div></div>';
+  document.body.appendChild(ov);
+  function close(){ var o=document.getElementById('rk-ov'); if(o) o.remove(); }
+  function readGrid(){ var ci=document.querySelectorAll('#rk-grid .rk-col-inp'); var nc=[]; ci.forEach(function(inp){ nc.push(inp.value); }); cols=nc; var trs=document.querySelectorAll('#rk-grid tbody tr'); var nr=[]; trs.forEach(function(tr){ var r=[]; tr.querySelectorAll('.rk-cell-inp').forEach(function(inp){ r.push(inp.value); }); nr.push(r); }); rows=nr; }
+  function renderGrid(){
+    var g=document.getElementById('rk-grid'); if(!g) return;
+    var head='<tr>'+cols.map(function(c,i){ return '<th><input class="rk-col-inp" value="'+esc(c)+'"><button type="button" class="rk-xcol" data-ci="'+i+'" title="Remove column">×</button></th>'; }).join('')+'<th></th></tr>';
+    var bdy=rows.map(function(r,ri){ return '<tr>'+cols.map(function(c,ci){ return '<td><input class="rk-cell-inp" value="'+esc(r[ci]!=null?r[ci]:'')+'"></td>'; }).join('')+'<td><button type="button" class="rk-xrow" data-ri="'+ri+'" title="Remove row">×</button></td></tr>'; }).join('');
+    g.innerHTML='<div class="rk-tbl-wrap"><table class="rk-tbl rk-tbl-edit"><thead>'+head+'</thead><tbody>'+bdy+'</tbody></table></div><div class="rk-gridbtns"><button type="button" class="btn btn-ghost btn-sm" id="rk-addcol">＋ Column</button><button type="button" class="btn btn-ghost btn-sm" id="rk-addrow">＋ Row</button></div>';
+    document.getElementById('rk-addcol').addEventListener('click',function(){ readGrid(); cols.push('Column'); rows.forEach(function(r){ r.push(''); }); renderGrid(); });
+    document.getElementById('rk-addrow').addEventListener('click',function(){ readGrid(); rows.push(cols.map(function(){return '';})); renderGrid(); });
+    g.querySelectorAll('.rk-xcol').forEach(function(b){ b.addEventListener('click',function(){ readGrid(); var i=parseInt(b.getAttribute('data-ci'),10); if(cols.length>1){ cols.splice(i,1); rows.forEach(function(r){ r.splice(i,1); }); renderGrid(); } }); });
+    g.querySelectorAll('.rk-xrow').forEach(function(b){ b.addEventListener('click',function(){ readGrid(); var i=parseInt(b.getAttribute('data-ri'),10); rows.splice(i,1); if(!rows.length) rows=[cols.map(function(){return '';})]; renderGrid(); }); });
+  }
+  renderGrid();
+  document.getElementById('rk-f-x').addEventListener('click',close);
+  document.getElementById('rk-f-cancel').addEventListener('click',close);
+  document.getElementById('rk-f-save').addEventListener('click',function(){
+    readGrid();
+    var dept=document.getElementById('rk-f-dept').value;
+    var ti=(document.getElementById('rk-f-title').value||'').trim();
+    var note=(document.getElementById('rk-f-note').value||'').trim();
+    if(!ti){ toast('Add a title.','warn'); return; }
+    var data={ cols:cols.map(function(c){ return String(c).trim()||'Column'; }), rows:rows.map(function(r){ return r.map(function(c){ return String(c==null?'':c).trim(); }); }).filter(function(r){ return r.some(function(c){ return c; }); }) };
+    var btn=document.getElementById('rk-f-save'); btn.disabled=true; btn.textContent='Saving…';
+    apiCall('rkSave',{ id:(id||''), type:type, department:dept, title:ti, data:data, note:note }).then(function(res){
+      if(!res||!res.ok){ btn.disabled=false; btn.textContent='Save'; toast('Could not save.','error'); return; }
+      close(); rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); toast('Saved.','success');
+    }).catch(function(e){ btn.disabled=false; btn.textContent='Save'; toast(e.message||'Could not save.','error'); });
+  });
+}
+
+/* ===== Reckoner Phase 2a: content items (processes, links) — Firestore-backed + audit ===== */
+function fmtDT(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; var h=d.getHours(), m=('0'+d.getMinutes()).slice(-2); var ap=h<12?'AM':'PM', hh=((h%12)||12); try{ return d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'})+', '+hh+':'+m+' '+ap; }catch(e){ return d.toISOString().slice(0,16).replace('T',' '); } }
+function rkCanEdit(){ return !!(App.identity && isBoss()); }
+function rkLoadItems(cb){ if(typeof Sync!=='undefined' && !Sync.online()){ App._rkItems=App._rkItems||[]; if(cb)cb(); return; } apiCall('rkList',{}).then(function(res){ App._rkItems=(res&&res.items)||[]; if(cb)cb(); }).catch(function(){ App._rkItems=App._rkItems||[]; if(cb)cb(); }); }
+function rkItemsFor(type){ var vd=rkVisibleDepts(); return (App._rkItems||[]).filter(function(it){ return it.type===type && vd.indexOf(it.department)>-1; }).sort(function(a,b){ return (a.order||0)-(b.order||0) || (a.title||'').localeCompare(b.title||''); }); }
+function rkStamp(it){ var who=it.updatedByName||it.createdByName||''; var when=fmtDT(it.updatedAt||it.createdAt); if(!who) return ''; return '<div class="rk-stamp">Updated by '+esc(who)+(when?' · '+esc(when):'')+(it.note?' · '+esc(it.note):'')+'</div>'; }
+function rkItemCard(it,type){
+  var inner='';
+  if(type==='process'){ var steps=(it.data&&it.data.steps)||[]; inner='<ol class="rk-steps">'+steps.map(function(s){ return '<li>'+esc(s)+'</li>'; }).join('')+'</ol>'; }
+  else if(type==='link'){ var url=(it.data&&it.data.url)||''; inner='<a class="rk-lk" href="'+esc(url)+'" target="_blank" rel="noopener">🔗 '+esc(url)+'</a>'; }
+  var multi=(rkVisibleDepts().length>1);
+  var dchip=multi?('<span class="rk-dchip">'+esc(it.department)+'</span>'):'';
+  var ed=rkCanEdit()?('<div class="rk-iact"><button class="rk-ia" data-rk-edit="'+esc(it.id)+'" data-rk-type="'+esc(type)+'">Edit</button><button class="rk-ia del" data-rk-del="'+esc(it.id)+'">Delete</button></div>'):'';
+  return '<div class="rk-item"><div class="rk-ihead"><div class="rk-ititle">'+dchip+esc(it.title||'(untitled)')+'</div>'+ed+'</div>'+inner+rkStamp(it)+'</div>';
+}
+function rkPaintType(body,type){
+  var items=rkItemsFor(type), label=(type==='process'?'process':'link'), plural=(type==='process'?'processes':'links');
+  var h='';
+  if(rkCanEdit()){ h+='<div class="rk-adrow"><button class="btn btn-primary btn-sm" data-rk-add="'+type+'">＋ Add '+label+'</button></div>'; }
+  if(!items.length){ h+='<div class="rk-empty">No '+plural+' for your department yet.'+(rkCanEdit()?' Add one above.':'')+'</div>'; }
+  else { h+='<div class="rk-ilist">'+items.map(function(it){ return rkItemCard(it,type); }).join('')+'</div>'; }
+  body.innerHTML=h;
+  body.querySelectorAll('[data-rk-add]').forEach(function(b){ b.addEventListener('click', function(){ rkEditForm(b.getAttribute('data-rk-add'), null); }); });
+  body.querySelectorAll('[data-rk-edit]').forEach(function(b){ b.addEventListener('click', function(){ rkEditForm(b.getAttribute('data-rk-type'), b.getAttribute('data-rk-edit')); }); });
+  body.querySelectorAll('[data-rk-del]').forEach(function(b){ b.addEventListener('click', function(){ rkDelItem(b.getAttribute('data-rk-del')); }); });
+}
+function rkEditForm(type,id){
+  var it=id?(App._rkItems||[]).filter(function(x){return x.id===id;})[0]:null;
+  var depts=rkVisibleDepts(), curDept=(it&&it.department)||depts[0]||'';
+  var title=(it&&it.title)||'';
+  var content = type==='link' ? ((it&&it.data&&it.data.url)||'') : (((it&&it.data&&it.data.steps)||[]).join('\n'));
+  var ex=document.getElementById('rk-ov'); if(ex) ex.remove();
+  var ov=document.createElement('div'); ov.id='rk-ov'; ov.className='overlay';
+  var dsel=depts.map(function(d){ return '<option'+(d===curDept?' selected':'')+'>'+esc(d)+'</option>'; }).join('');
+  var fieldLabel = type==='link'?'URL':'Steps (one per line)';
+  var fieldHtml = type==='link'
+    ? '<input id="rk-f-content" class="rk-inp" placeholder="https://..." value="'+esc(content)+'">'
+    : '<textarea id="rk-f-content" class="rk-inp" rows="5" placeholder="One step per line">'+esc(content)+'</textarea>';
+  ov.innerHTML='<div class="modal" style="max-width:480px"><div class="modal-h"><h3>'+(id?'Edit ':'Add ')+(type==='link'?'link':'process')+'</h3><button class="modal-x" id="rk-f-x">&times;</button></div><div class="modal-b">'
+    +'<label class="rk-fl">Department</label><select id="rk-f-dept" class="rk-inp">'+dsel+'</select>'
+    +'<label class="rk-fl">Title'+(type==='link'?' (insurer / portal name)':'')+'</label><input id="rk-f-title" class="rk-inp" value="'+esc(title)+'">'
+    +'<label class="rk-fl">'+fieldLabel+'</label>'+fieldHtml
+    +'<label class="rk-fl">Change note (optional)</label><input id="rk-f-note" class="rk-inp" placeholder="e.g. updated portal link">'
+    +'</div><div class="modal-f"><button class="btn btn-ghost" id="rk-f-cancel">Cancel</button><button class="btn btn-primary" id="rk-f-save">Save</button></div></div>';
+  document.body.appendChild(ov);
+  function close(){ var o=document.getElementById('rk-ov'); if(o) o.remove(); }
+  document.getElementById('rk-f-x').addEventListener('click',close);
+  document.getElementById('rk-f-cancel').addEventListener('click',close);
+  document.getElementById('rk-f-save').addEventListener('click',function(){
+    var dept=document.getElementById('rk-f-dept').value;
+    var ti=(document.getElementById('rk-f-title').value||'').trim();
+    var cv=document.getElementById('rk-f-content').value||'';
+    var note=(document.getElementById('rk-f-note').value||'').trim();
+    if(!ti){ toast('Add a title.','warn'); return; }
+    var data = type==='link' ? {url:cv.trim()} : {steps:cv.split('\n').map(function(s){return s.trim();}).filter(function(s){return s;})};
+    var btn=document.getElementById('rk-f-save'); btn.disabled=true; btn.textContent='Saving…';
+    apiCall('rkSave',{ id:(id||''), type:type, department:dept, title:ti, data:data, note:note }).then(function(res){
+      if(!res||!res.ok){ btn.disabled=false; btn.textContent='Save'; toast('Could not save.','error'); return; }
+      close(); rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); toast('Saved.','success');
+    }).catch(function(e){ btn.disabled=false; btn.textContent='Save'; toast(e.message||'Could not save.','error'); });
+  });
+}
+function rkDelItem(id){
+  if(!confirm('Delete this item? This cannot be undone.')) return;
+  apiCall('rkDelete',{id:id}).then(function(res){ if(res&&res.ok){ rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); toast('Deleted.','info'); } else { toast('Could not delete.','error'); } }).catch(function(e){ toast(e.message||'Could not delete.','error'); });
+}
+
+
 
 /* ================================================================
    DASHBOARD
@@ -7476,6 +7899,8 @@ function openStaff(staffId,name){
       h+='<div class="set-field" style="flex-direction:column;align-items:stretch;gap:8px"><div><div class="set-k">Visible departments</div><div class="set-sub">Tick what this person sees in their tool. None ticked = they see all.</div></div><div class="vis-grid">';
       App.departments.forEach(function(d){ var on=member.allowedDepartments&&member.allowedDepartments.indexOf(d.department)!==-1; h+='<label class="vis-item"><input type="checkbox" class="vis-cb" value="'+esc(d.department)+'" '+(on?'checked':'')+'> '+esc(d.department)+'</label>'; });
       h+='</div><button class="btn btn-primary btn-sm" style="align-self:flex-start" data-action="save-visibility" data-id="'+esc(staffId)+'">Save visibility</button></div>';
+      var _rkOn=(member.reckonerAccess===true);
+      h+='<div class="set-field"><div><div class="set-k">📚 Reckoner access</div><div class="set-sub">Turn the Reckoner on for '+esc(name)+'. Keep it off while a department is still being set up; they will not see it until you turn it on.</div></div><button class="btn btn-sm '+(_rkOn?'btn-success':'btn-ghost')+'" data-action="toggle-reckoner" data-id="'+esc(staffId)+'" data-on="'+(_rkOn?'0':'1')+'">'+(_rkOn?'✓ On · tap to turn off':'Turn on')+'</button></div>';
       h+='<div class="set-field"><div><div class="set-k">🔄 Role switch</div><div class="set-sub">Bring another staffer’s <b>active</b> tasks onto '+esc(name)+'’s plate (move or copy, edit each first). Also gives '+esc(name)+' their department access. Completed tasks stay with whoever finished them.</div></div><button class="btn btn-primary btn-sm" data-action="role-switch" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Switch tasks here</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset this member’s data</div><div class="set-sub">Clears all of '+esc(name)+'’s own tasks &amp; activity. Tasks others assigned to them are kept. Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="reset-member" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Reset</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Delete ALL of '+esc(name)+'’s tasks</div><div class="set-sub">Permanently removes <b>every</b> task on '+esc(name)+'’s plate — including ones others assigned to them (so the assigner loses it too). Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="admin-del-all-tasks" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Delete all</button></div>';
@@ -8206,6 +8631,16 @@ function adminSaveVisibility(id,btn){
   }).catch(function(e){ App._mkBusy=false; if(btn){btn.disabled=false;btn.textContent='Save visibility';} toast(e.message||'Could not save.'); });
 }
 
+function adminToggleReckoner(id,on,btn){
+  if(App._mkBusy) return;
+  App._mkBusy=true; if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  var name=(App._staffView&&App._staffView.name)||'';
+  apiCall('adminUpdateUser',{ userId:id, reckonerAccess:(on==='1') }).then(function(res){
+    App._mkBusy=false;
+    if(!res||!res.ok){ if(btn)btn.disabled=false; toast(res&&res.error?res.error:'Could not update.'); return; }
+    toast(on==='1'?'Reckoner turned on.':'Reckoner turned off.'); reloadStaff_(id,name);
+  }).catch(function(e){ App._mkBusy=false; if(btn)btn.disabled=false; toast(e.message||'Could not update.'); });
+}
 function sharedCard(t){
   var isDone=t.status==='Completed';
   var od=overdueDays(t);
@@ -8989,6 +9424,7 @@ document.addEventListener('click', function(e){
     case 'set-role': var _rs=document.getElementById('role-sel'); adminToggleRole(el.getAttribute('data-id'), _rs?_rs.value:'Staff', el); break;
     case 'toggle-active': adminToggleActive(el.getAttribute('data-id'), el.getAttribute('data-active'), el); break;
     case 'save-visibility': adminSaveVisibility(el.getAttribute('data-id'), el); break;
+    case 'toggle-reckoner': adminToggleReckoner(el.getAttribute('data-id'), el.getAttribute('data-on'), el); break;
     case 'role-switch': openRoleSwitch(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'handover-task': openHandover(el.getAttribute('data-uid')); break;
     case 'reassign-close': closeReassign(); break;
