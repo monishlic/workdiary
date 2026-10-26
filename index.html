@@ -4851,8 +4851,13 @@ var Push = {
     }catch(e){}
   },
   _save:function(token){
-    if(!App.identity || !window.firebase || !firebase.firestore) return; var uid=String(App.identity.employeeId);
-    try{ firebase.firestore().collection('users').doc(uid).set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() }, {merge:true}); }catch(e){}
+    if(!App.identity || !window.firebase || !firebase.firestore || !token) return; var uid=String(App.identity.employeeId);
+    var prev=''; try{ prev=localStorage.getItem('edLastToken')||''; }catch(e){}
+    try{ localStorage.setItem('edLastToken', token); }catch(e){}
+    try{ var ref=firebase.firestore().collection('users').doc(uid);
+      ref.set({ fcmTokens: firebase.firestore.FieldValue.arrayUnion(token), fcmUpdated: nowISO() }, {merge:true});
+      if(prev && prev!==token){ ref.set({ fcmTokens: firebase.firestore.FieldValue.arrayRemove(prev) }, {merge:true}); }
+    }catch(e){}
   },
   _foreground:function(payload){ var n=(payload&&payload.notification)||{}; toast('🔔 '+(n.title||'New notification')+(n.body?(' — '+n.body):''),'info'); try{ if(typeof playNotifSound==='function') playNotifSound(); }catch(e){} if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
   /* On logout: drop THIS device's token from the current user so the next
@@ -5174,7 +5179,7 @@ function fireLocalReminder(r){
   if(r.kind==='note'){ title='🗒️ Slate note reminder'; body=r.message||'A note wanted your attention.'; }
   else if(r.kind==='snooze'){ title='😴 Back on your list'; body=r.message||(r.title||r.clientName||'Task'); }
   else { title='⏰ Reminder: '+(r.title||r.clientName||'Task'); body=(r.message||'')+((r.clientName&&r.title)?' · '+r.clientName:''); }
-  var tag='localrem-'+(r.taskUid||'x')+'-'+(r.atMillis||Date.now());
+  var tag='rem-'+(r.taskUid||'x');
   var opts={ body:body, icon:'icon-192.png?v=3', badge:'icon-192.png?v=3', tag:tag, renotify:true, requireInteraction:true };
   // Show via the service worker when possible (works on mobile too), falling back to a plain
   // Notification on desktop if no SW controls the page. getRegistration() is used instead of
@@ -9272,7 +9277,7 @@ document.addEventListener('click', function(e){
   // Hide combobox suggestions when clicking outside a combo
   if(!e.target.closest('.combo')) hideSuggs();
   // Click the dim backdrop of any modal to close it
-  if(e.target.classList && e.target.classList.contains('overlay') && !e.target.classList.contains('hidden')){ e.target.classList.add('hidden'); return; }
+  if(e.target.classList && e.target.classList.contains('overlay') && !e.target.classList.contains('hidden')){ if(e.target.id==='assign-modal' || e.target.id==='nl-assign-modal') return; e.target.classList.add('hidden'); return; }
   if(!el) return;
   var a=el.getAttribute('data-action');
   switch(a){
