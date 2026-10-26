@@ -3128,6 +3128,46 @@ var FB = (function(){
           if(!b.id) throw new Error('Missing id.');
           return col('reckoner').doc(String(b.id)).delete().then(function(){ return logAudit('Reckoner deleted','','',String(b.id)); }).then(function(){ return {ok:true}; });
         }
+        case 'backupMine': {
+          var _bu=String(me().userId);
+          return Promise.all([
+            col('tasks').where('ownerId','==',_bu).get(),
+            col('notes').where('ownerId','==',_bu).get(),
+            col('leads').where('createdById','==',_bu).get(),
+            col('leads').where('assigneeIds','array-contains',_bu).get()
+          ]).then(function(r){
+            function _arr(qs){ var a=[]; qs.forEach(function(d){ var o=d.data()||{}; o.__id=d.id; a.push(o); }); return a; }
+            var _lm={}; _arr(r[2]).concat(_arr(r[3])).forEach(function(l){ _lm[l.__id]=l; });
+            var _leads=Object.keys(_lm).map(function(k){ return _lm[k]; });
+            return { ok:true, mine:{ tasks:_arr(r[0]), notes:_arr(r[1]), leads:_leads } };
+          });
+        }
+        case 'restoreMine': {
+          var _ru=String(me().userId); var _m=b.mine||{}; var _jobs=[]; var _c={tasks:0,notes:0,leads:0};
+          function _strip(o){ var d={}; for(var k in o){ if(k!=='__id') d[k]=o[k]; } return d; }
+          (Array.isArray(_m.tasks)?_m.tasks:[]).forEach(function(o){ if(String(o.ownerId)!==_ru) return; var id=o.__id||o.uid; if(!id) return; _jobs.push(col('tasks').doc(String(id)).set(_strip(o),{merge:true})); _c.tasks++; });
+          (Array.isArray(_m.notes)?_m.notes:[]).forEach(function(o){ if(String(o.ownerId)!==_ru) return; var id=o.__id||o.id; if(!id) return; _jobs.push(col('notes').doc(String(id)).set(_strip(o),{merge:true})); _c.notes++; });
+          (Array.isArray(_m.leads)?_m.leads:[]).forEach(function(o){ var mine=(String(o.createdById)===_ru)||(Array.isArray(o.assigneeIds)&&o.assigneeIds.map(String).indexOf(_ru)>=0); if(!mine) return; var id=o.__id||o.id; if(!id) return; _jobs.push(col('leads').doc(String(id)).set(_strip(o),{merge:true})); _c.leads++; });
+          return Promise.all(_jobs).then(function(){ try{ logAudit('Restored own backup','','', _c.tasks+' tasks, '+_c.notes+' notes, '+_c.leads+' leads'); }catch(e){} return {ok:true, counts:_c}; });
+        }
+        case 'backupAll': {
+          if(!isAdmin()) throw new Error('Admin access required.');
+          var _COLS=['notes','tasks','leads','users','config','reckoner','audit','comments','chat','dms','notifs','dueReminders'];
+          return Promise.all(_COLS.map(function(c){ return col(c).get().then(function(qs){ var a=[]; qs.forEach(function(d){ var o=d.data()||{}; o.__id=d.id; a.push(o); }); return {c:c,a:a}; }); })).then(function(res){ var out={}; res.forEach(function(x){ out[x.c]=x.a; }); return {ok:true, collections:out}; });
+        }
+        case 'restoreAll': {
+          if(!isAdmin()) throw new Error('Admin access required.');
+          var _COLS2=['notes','tasks','leads','users','config','reckoner','audit','comments','chat','dms','notifs','dueReminders'];
+          var _cols=b.collections||{}; var _jobs2=[]; var _cc={};
+          _COLS2.forEach(function(c){
+            if(!Array.isArray(_cols[c])) return; var arr=_cols[c]; _cc[c]=0;
+            for(var i=0;i<arr.length;i+=400){
+              (function(slice){ var batch=db.batch(); slice.forEach(function(o){ var id=o.__id; if(!id) return; var d={}; for(var k in o){ if(k!=='__id') d[k]=o[k]; } batch.set(col(c).doc(String(id)), d, {merge:true}); _cc[c]++; }); _jobs2.push(batch.commit()); })(arr.slice(i,i+400));
+            }
+          });
+          return Promise.all(_jobs2).then(function(){ try{ logAudit('Restored FULL backup','','', Object.keys(_cc).map(function(k){return k+':'+_cc[k];}).join(' ')); }catch(e){} return {ok:true, counts:_cc}; });
+        }
+
 
           case 'assignLead': {
             var ul=me(); var nowl=nowISO(); var lid=genUid();
@@ -7811,6 +7851,14 @@ function renderSettings(){
   h+='<div class="set-field"><div><div class="set-k">Sync status</div><div class="set-sub">'+st+'</div></div><button class="btn btn-ghost btn-sm" data-action="sync-now">Sync Now</button></div>';
   h+='<div class="set-field"><div><div class="set-k">Last synced</div><div class="set-sub">'+(Sync.lastSyncedAt?esc(fmtDateTime(Sync.lastSyncedAt)):'—')+'</div></div></div>';
   h+='<div class="set-field"><div><div class="set-k">Log out</div><div class="set-sub">End your session and return to login for another account. Your tasks stay saved.</div></div><button class="btn btn-danger" data-action="log-out">'+ico('logout')+' Log out</button></div></div>';
+  h+='<div class="set-sec"><h3>💾 Backup &amp; Restore</h3><div class="set-desc">Your work already syncs to the cloud automatically — logging back in on any device brings everything back. These files are an extra offline copy you can keep or restore from.</div>';
+  h+='<div class="set-field"><div><div class="set-k">Back up my work</div><div class="set-sub">Download a JSON file with your tasks, slate notes and leads.</div></div><button class="btn btn-ghost" data-action="backup-mine">Download</button></div>';
+  h+='<div class="set-field"><div><div class="set-k">Restore my work</div><div class="set-sub">Upload a backup file to bring your tasks, notes and leads back. Nothing is deleted — items are added or updated.</div></div><button class="btn btn-ghost" data-action="restore-mine">Restore…</button></div>';
+  if(App.identity.role==='Admin'){
+    h+='<div class="set-field" style="border-top:1px dashed var(--border);padding-top:14px"><div><div class="set-k">Full diary backup</div><div class="set-sub">Admin only. Downloads <b>everything</b> — every staff member\'s tasks, notes, leads, reckoner, settings and activity.</div></div><button class="btn btn-ghost" data-action="backup-all">Download all</button></div>';
+    h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Restore full backup</div><div class="set-sub">Admin only. Rebuilds the whole diary from a full backup file. Existing items with the same ID are overwritten; nothing is deleted.</div></div><button class="btn btn-danger" data-action="restore-all">Restore all…</button></div>';
+  }
+  h+='</div>';
   h+='<div class="set-sec"><h3>🛠️ Admin</h3><div class="set-desc">Data & categories.</div>';
   if(isBoss()){
     h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Departments</div><div class="set-sub">Only admins add or remove departments. Staff pick from these when assigning (a new category can still be added by staff under a department). Deleting is blocked while a department has open tasks.</div>';
@@ -7821,7 +7869,6 @@ function renderSettings(){
   } else {
     h+='<div class="set-field"><div><div class="set-k">Categories & departments</div><div class="set-sub">'+App.departments.length+' departments · '+App.categoryMaster.length+' categories. Departments are set by your admin; you can add a new category under a department when assigning.</div></div></div>';
   }
-  h+='<div class="set-field"><div><div class="set-k">Export backup</div><div class="set-sub">Download all your tasks as a JSON file.</div></div><button class="btn btn-ghost" data-action="export-data">Export</button></div>';
   if(App.identity.role==='Admin'){ h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset my tasks &amp; activity</div><div class="set-sub">Clears all your own tasks and activity (here and in the cloud) and starts fresh. You stay logged in. Cannot be undone.</div></div><button class="btn btn-danger" data-action="reset-diary">Reset</button></div>'; }
   h+='</div>';
   document.getElementById('content').innerHTML=h;
@@ -9248,6 +9295,49 @@ function exportData(){
   setTimeout(function(){ URL.revokeObjectURL(url); },1000); toast('✓ Backup downloaded','success');
 }
 
+function edPickJson(cb){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json'; inp.style.display='none'; document.body.appendChild(inp);
+  inp.addEventListener('change',function(){ var f=inp.files&&inp.files[0]; if(!f){ try{inp.remove();}catch(e){} return; } var rd=new FileReader(); rd.onload=function(){ var data=null; try{ data=JSON.parse(rd.result); }catch(e){ toast('That file is not valid JSON.','error'); } try{inp.remove();}catch(e){} if(data) cb(data); }; rd.onerror=function(){ toast('Could not read that file.','error'); try{inp.remove();}catch(e){} }; rd.readAsText(f); });
+  inp.click();
+}
+function edBackupMine(){
+  toast('Preparing your backup…','info');
+  apiCall('backupMine',{}).then(function(r){ if(!r||!r.ok){ toast('Could not build backup.','error'); return; }
+    var payload={ kind:'ediary-personal', v:1, exportedAt:nowISO(), identity:App.identity, mine:r.mine };
+    nlDownload('ediary-my-backup-'+fmtDate(nowISO()).replace(/ /g,'-')+'.json', JSON.stringify(payload,null,2), 'application/json');
+    var m=r.mine||{}; toast('✓ Backed up '+((m.tasks||[]).length)+' tasks, '+((m.notes||[]).length)+' notes, '+((m.leads||[]).length)+' leads','success');
+  }).catch(function(e){ toast((e&&e.message)||'Backup failed.','error'); });
+}
+function edRestoreMine(){
+  edPickJson(function(data){
+    var mine=data&&data.mine; if(!mine || (!Array.isArray(mine.tasks)&&!Array.isArray(mine.notes)&&!Array.isArray(mine.leads))){ toast('That is not a personal E-Diary backup file.','error'); return; }
+    openConfirm({ icon:'♻️', title:'Restore your work?', body:'This will add back your tasks, notes and leads from the file. Nothing already in your diary is deleted — matching items are updated. Continue?', okLabel:'Restore', okClass:'btn-primary', onOk:function(){
+      toast('Restoring…','info');
+      apiCall('restoreMine',{ mine:mine }).then(function(r){ if(!r||!r.ok){ toast('Restore failed.','error'); return; } var c=r.counts||{}; toast('✓ Restored '+(c.tasks||0)+' tasks, '+(c.notes||0)+' notes, '+(c.leads||0)+' leads','success'); try{ Sync.full(); }catch(e){} setTimeout(function(){ try{ location.reload(); }catch(e){} }, 1200); }).catch(function(e){ toast((e&&e.message)||'Restore failed.','error'); });
+    }});
+  });
+}
+function edBackupAll(){
+  if(App.identity.role!=='Admin'){ toast('Admins only.','error'); return; }
+  toast('Gathering the whole diary… this can take a moment.','info');
+  apiCall('backupAll',{}).then(function(r){ if(!r||!r.ok){ toast('Could not build full backup.','error'); return; }
+    var payload={ kind:'ediary-full', v:1, exportedAt:nowISO(), by:App.identity, collections:r.collections };
+    nlDownload('ediary-FULL-backup-'+fmtDate(nowISO()).replace(/ /g,'-')+'.json', JSON.stringify(payload), 'application/json');
+    var n=0; var cs=r.collections||{}; Object.keys(cs).forEach(function(k){ n+=(cs[k]||[]).length; }); toast('✓ Full backup downloaded — '+n+' records','success');
+  }).catch(function(e){ toast((e&&e.message)||'Full backup failed.','error'); });
+}
+function edRestoreAll(){
+  if(App.identity.role!=='Admin'){ toast('Admins only.','error'); return; }
+  edPickJson(function(data){
+    if(!data || data.kind!=='ediary-full' || !data.collections){ toast('That is not a full E-Diary backup file.','error'); return; }
+    var n=0; Object.keys(data.collections).forEach(function(k){ if(Array.isArray(data.collections[k])) n+=data.collections[k].length; });
+    openConfirm({ icon:'⚠️', title:'Restore the WHOLE diary?', body:'This rebuilds every staff member\'s data from this file ('+n+' records). Items with the same ID are overwritten with the backup copy. Nothing is deleted. This affects everyone. Continue?', okLabel:'Restore everything', okClass:'btn-danger', onOk:function(){
+      toast('Restoring the full diary…','info');
+      apiCall('restoreAll',{ collections:data.collections }).then(function(r){ if(!r||!r.ok){ toast('Restore failed.','error'); return; } var c=r.counts||{}; var tot=0; Object.keys(c).forEach(function(k){ tot+=c[k]; }); toast('✓ Restored '+tot+' records','success'); setTimeout(function(){ try{ location.reload(); }catch(e){} }, 1500); }).catch(function(e){ toast((e&&e.message)||'Restore failed.','error'); });
+    }});
+  });
+}
+
 /* ================================================================
    MODAL / SIDEBAR HELPERS
    ================================================================ */
@@ -9495,6 +9585,10 @@ document.addEventListener('click', function(e){
     case 'open-avatar-picker': openAvatarPicker(false); break;
     case 'reset-diary': resetDiary(); break;
     case 'export-data': exportData(); break;
+    case 'backup-mine': edBackupMine(); break;
+    case 'restore-mine': edRestoreMine(); break;
+    case 'backup-all': edBackupAll(); break;
+    case 'restore-all': edRestoreAll(); break;
     case 'sync-now': syncNow(); break;
   }
 });
