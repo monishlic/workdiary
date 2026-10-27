@@ -4735,7 +4735,7 @@ function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> New Leads</button>';
-  if(rkHasLit()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
+  if(rkCanSee()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
   h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> My Tasks</button>';
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
@@ -5398,10 +5398,12 @@ var RK_KW=[
  ['Pre and Post Hospitalization','Expenses just before admission and after discharge.','60 days before plus 180 days after — tests, medicines and follow-ups in that window are claimable.'],
  ['Proportionate Deduction','Taking a pricier room than allowed cuts other charges in the same ratio.','Entitled to a 5,000 room but took 10,000 — associated charges are paid at 50%.']
 ];
-function rkCanSee(){ return (App.identity && isBoss()) || canSeeReckoner(); }
+function rkCanSee(){ return canSeeReckoner(); }
 function rkVisibleDepts(){ if(App.identity && isBoss()) return (App.departments||[]).map(function(d){ return d.department; }); return visibleDepartments().map(function(d){ return d.department; }); }
-function rkHasLit(){ if(!rkCanSee()) return false; var vd=rkVisibleDepts(); return RK_SEED.some(function(p){ return p.dept.some(function(x){ return vd.indexOf(x)>-1; }); }); }
-function rkProducts(){ var vd=rkVisibleDepts(); return RK_SEED.filter(function(p){ return p.dept.some(function(x){ return vd.indexOf(x)>-1; }); }); }
+function rkSavedProductDefs(){ return (App._rkItems||[]).filter(function(it){ return it.type==='product' && it.data; }).map(function(it){ var d=Object.assign({}, it.data); if(!d.id) d.id=it.id; if(!Array.isArray(d.dept)) d.dept=(it.department?[it.department]:[]); d._saved=true; d._rkDocId=it.id; return d; }); }
+function rkAllProductDefs(){ var map={}; RK_SEED.forEach(function(p){ map[p.id]=p; }); rkSavedProductDefs().forEach(function(p){ map[p.id]=p; }); var out=[]; for(var k in map) out.push(map[k]); return out; }
+function rkHasLit(){ if(!rkCanSee()) return false; if(App.identity && isBoss()) return true; var vd=rkVisibleDepts(); if(rkAllProductDefs().some(function(p){ return (p.dept||[]).some(function(x){ return vd.indexOf(x)>-1; }); })) return true; return (App._rkItems||[]).some(function(it){ return vd.indexOf(it.department)>-1; }); }
+function rkProducts(){ var vd=rkVisibleDepts(); return rkAllProductDefs().filter(function(p){ return (p.dept||[]).some(function(x){ return vd.indexOf(x)>-1; }); }); }
 function rkTopicFor(q){ q=(q||'').toLowerCase().trim(); if(!q) return null; var t,a,i; for(t in RK_SYN){ if(t.toLowerCase().indexOf(q)>-1) return t; a=RK_SYN[t]; for(i=0;i<a.length;i++){ if(a[i].indexOf(q)>-1 || q.indexOf(a[i])>-1) return t; } } return q; }
 function renderReckoner(){
   App.view='reckoner'; buildSidebar();
@@ -5430,10 +5432,14 @@ function rkPaintBody(){
   if(App._rk.tab==='kw'){ body.innerHTML=RK_KW.map(function(k){ return '<div class="rk-kw"><h4>'+esc(k[0])+'</h4><div class="rk-mean">'+esc(k[1])+'</div><div class="rk-eg">💡 '+esc(k[2])+'</div></div>'; }).join(''); return; }
   var prods=rkProducts();
   var ph='<div class="rk-search"><span class="rk-ic">🔎</span><input id="rk-q" placeholder="Search a spec — room rent, co-pay, bonus, waiting period..." value="'+esc(App._rk.q||'')+'"></div>';
-  ph+='<div class="rk-pills"><button class="rk-pill" data-id="all">All products</button>'+prods.map(function(p){ return '<button class="rk-pill" data-id="'+esc(p.id)+'">'+esc(p.product)+'<span class="rk-ins">'+esc(p.insurer)+'</span></button>'; }).join('')+'</div><div id="rk-out"></div>';
+  ph+='<div class="rk-pills"><button class="rk-pill" data-id="all">All products</button>'+prods.map(function(p){ return '<button class="rk-pill" data-id="'+esc(p.id)+'">'+esc(p.product)+'<span class="rk-ins">'+esc(p.insurer)+'</span></button>'; }).join('')+'</div>';
+  if(rkCanEdit()){ ph+='<div class="rk-adrow" style="margin:4px 0 2px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" data-rk-padd="1">＋ Add / revise a product</button><button class="btn btn-ghost btn-sm" data-rk-pimport="1">📄 Import from PDF</button></div>'; }
+  ph+='<div id="rk-out"></div>';
   body.innerHTML=ph;
   var inp=document.getElementById('rk-q'); if(inp){ inp.addEventListener('input', function(){ App._rk.q=inp.value; rkPaintOut(); }); }
   body.querySelectorAll('.rk-pill').forEach(function(b){ if(b.getAttribute('data-id')===App._rk.prod) b.classList.add('on'); b.addEventListener('click', function(){ App._rk.prod=b.getAttribute('data-id'); body.querySelectorAll('.rk-pill').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on'); rkPaintOut(); }); });
+  var _pa=body.querySelector('[data-rk-padd]'); if(_pa){ _pa.addEventListener('click', function(){ rkProductForm(''); }); }
+  var _pi=body.querySelector('[data-rk-pimport]'); if(_pi){ _pi.addEventListener('click', function(){ rkProductForm('', true); }); }
   rkPaintOut();
 }
 function rkAnsCard(p,topic){ var s=p.specs[topic]; return '<div class="rk-ans"><div class="rk-top">'+esc(p.product)+' · '+esc(p.insurer)+' · UIN '+esc(p.uin||'-')+'</div><div class="rk-field">'+esc(topic)+(s.cond?'<span class="rk-cond">conditional</span>':'')+'</div><div class="rk-val">'+esc(s.v)+'</div><div class="rk-quote">'+esc(s.q)+'</div><div><span class="rk-src">✓ verified '+esc(p.on||'')+' · '+esc(p.by||'')+' · '+esc(p.pdf||'')+' p.'+s.p+'</span></div></div>'; }
@@ -5447,13 +5453,14 @@ function rkPaintOut(){
   }
   var p=null,i; for(i=0;i<prods.length;i++){ if(prods[i].id===App._rk.prod){ p=prods[i]; break; } }
   if(!p){ out.innerHTML=''; return; }
-  if(p.pending || !p.specs){ out.innerHTML='<div class="rk-empty"><b>'+esc(p.product)+'</b> · UIN '+esc(p.uin||'-')+'<br><br>Specs are being entered and verified from its wording.</div>'; return; }
+  if(p.pending || !p.specs){ out.innerHTML=rkProdAdminBar(p)+'<div class="rk-empty"><b>'+esc(p.product)+'</b> · UIN '+esc(p.uin||'-')+'<br><br>Specs are being entered and verified from its wording.'+(rkCanEdit()?' Use \u201cEdit specs\u201d above to add them.':'')+'</div>'; rkBindProdAdmin(out,p); return; }
   var ts=[],k; for(k in p.specs) ts.push(k);
   var ans='';
   if(q){ var m=ts.filter(function(t){ return t===topic || t.toLowerCase().indexOf(q.toLowerCase())>-1; }); if(m.length) ans=rkAnsCard(p,m[0]); }
   var rows=ts.map(function(t){ var s=p.specs[t]; return '<div class="rk-row" data-topic="'+esc(t)+'"><div class="rk-f">'+esc(t)+'</div><div class="rk-v">'+esc(String(s.v).slice(0,64))+'</div><div class="rk-pg">p.'+s.p+'</div></div>'; }).join('');
-  out.innerHTML=ans+'<div class="rk-list">'+rows+'</div>';
+  out.innerHTML=rkProdAdminBar(p)+ans+'<div class="rk-list">'+rows+'</div>';
   out.querySelectorAll('.rk-row').forEach(function(r){ r.addEventListener('click', function(){ App._rk.q=r.getAttribute('data-topic'); var inp=document.getElementById('rk-q'); if(inp) inp.value=App._rk.q; rkPaintOut(); }); });
+  rkBindProdAdmin(out,p);
 }
 /* ===== Reckoner Phase 2b+: Compare, FAQ, Updates ===== */
 function rkPaintCompare(body){
@@ -5519,7 +5526,7 @@ function rkPaintUpdates(body){
   var items=(App._rkItems||[]).filter(function(it){ return vd.indexOf(it.department)>-1; }).slice();
   items.sort(function(a,b){ return String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||'')); });
   if(!items.length){ body.innerHTML='<div class="rk-empty">No changes recorded yet. Edits to processes, links, rates, funds and FAQs show here with who and when.</div>'; return; }
-  var typeLabel={process:'Process',link:'Link',ratechart:'Rate chart',fundlist:'Fund list',faq:'FAQ',spec:'Product'};
+  var typeLabel={process:'Process',link:'Link',ratechart:'Rate chart',fundlist:'Fund list',faq:'FAQ',spec:'Product',product:'Product'};
   body.innerHTML='<div class="rk-upd">'+items.slice(0,60).map(function(it){ var who=it.updatedByName||it.createdByName||''; var when=fmtDT(it.updatedAt||it.createdAt); return '<div class="rk-updrow"><div class="rk-upddot"></div><div><div class="rk-updt"><b>'+esc(it.title||'(untitled)')+'</b> <span class="rk-dchip">'+esc(typeLabel[it.type]||it.type)+'</span> <span style="color:var(--text-muted)">· '+esc(it.department)+'</span></div><div class="rk-updm">'+esc(who)+(when?' · '+esc(when):'')+(it.note?' · '+esc(it.note):'')+'</div></div></div>'; }).join('')+'</div>';
 }
 
@@ -5674,6 +5681,92 @@ function rkDelItem(id){
   if(!confirm('Delete this item? This cannot be undone.')) return;
   apiCall('rkDelete',{id:id}).then(function(res){ if(res&&res.ok){ rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); toast('Deleted.','info'); } else { toast('Could not delete.','error'); } }).catch(function(e){ toast(e.message||'Could not delete.','error'); });
 }
+function rkLoadPdfJs(cb){ if(window.pdfjsLib){ cb(true); return; } var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; s.onload=function(){ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){} cb(!!window.pdfjsLib); }; s.onerror=function(){ cb(false); }; document.head.appendChild(s); }
+function rkParsePdf(bytes, ok, err){ try{ var task=window.pdfjsLib.getDocument({data:bytes}); task.promise.then(function(pdf){ var pages=[]; var n=pdf.numPages; var seq=Promise.resolve(); for(var i=1;i<=n;i++){ (function(pg){ seq=seq.then(function(){ return pdf.getPage(pg).then(function(page){ return page.getTextContent().then(function(tc){ var txt=tc.items.map(function(it){ return it.str; }).join(' ').replace(/\s+/g,' ').trim(); pages.push({page:pg, text:txt}); }); }); }); })(i); } seq.then(function(){ pages.sort(function(a,b){ return a.page-b.page; }); ok(pages); }).catch(function(){ if(err) err(); }); }).catch(function(){ if(err) err(); }); }catch(e){ if(err) err(); } }
+function rkFindSentences(pages, q, limit){ q=(q||'').toLowerCase().trim(); if(!q) return []; var terms=q.split(/\s+/).filter(Boolean); var syn=[]; for(var t in RK_SYN){ if(t.toLowerCase().indexOf(q)>-1 || (RK_SYN[t]||[]).some(function(a){ return a.indexOf(q)>-1 || q.indexOf(a)>-1; })){ syn=syn.concat(RK_SYN[t]); syn.push(t.toLowerCase()); } } var want=terms.concat(syn); var out=[]; pages.forEach(function(pg){ var parts=String(pg.text||'').replace(/([.;:])\s+/g,'$1\u0001').split('\u0001'); parts.forEach(function(sent){ var low=sent.toLowerCase(); var score=0; want.forEach(function(w){ if(w && low.indexOf(w)>-1) score++; }); var hasMain=terms.every(function(w){ return low.indexOf(w)>-1; }) || syn.some(function(w){ return w && low.indexOf(w)>-1; }); if(score>0 && hasMain && sent.length>8 && sent.length<600){ out.push({page:pg.page, text:sent.trim(), score:score}); } }); }); out.sort(function(a,b){ return b.score-a.score || a.text.length-b.text.length; }); var seen={}, dd=[]; out.forEach(function(h){ var k=h.text.slice(0,80); if(!seen[k]){ seen[k]=1; dd.push(h); } }); return dd.slice(0, limit||12); }
+function rkProductForm(pid, autoPdf){
+  var defs=rkAllProductDefs(); var p=pid?defs.filter(function(x){ return x.id===pid; })[0]:null;
+  var allDepts=rkVisibleDepts();
+  var curDepts=(p&&Array.isArray(p.dept)&&p.dept.length)?p.dept.slice():(allDepts.length?[allDepts[0]]:[]);
+  var insurer=(p&&p.insurer)||'', product=(p&&p.product)||'', uin=(p&&p.uin)||'', pdf=(p&&p.pdf)||'';
+  var by=(p&&p.by)||((App.identity&&App.identity.employeeName)||''), on=(p&&p.on)||fmtDate(nowISO());
+  var rows=[]; if(p&&p.specs){ for(var k in p.specs){ var s=p.specs[k]||{}; rows.push({topic:k, v:s.v||'', q:s.q||'', p:(s.p!=null?s.p:''), cond:!!s.cond}); } }
+  var PDF={name:'', pages:[]};
+  var ex=document.getElementById('rk-ov'); if(ex) ex.remove();
+  var ov=document.createElement('div'); ov.id='rk-ov'; ov.className='overlay';
+  var dchecks=allDepts.map(function(d){ return '<label style="display:inline-flex;align-items:center;gap:6px;margin:0 12px 6px 0;font-size:.9rem"><input type="checkbox" class="rk-pd-dept" value="'+esc(d)+'"'+(curDepts.indexOf(d)>-1?' checked':'')+'> '+esc(d)+'</label>'; }).join('');
+  ov.innerHTML='<div class="modal" style="max-width:720px"><div class="modal-h"><h3>'+(pid?'Edit / revise product':'Add product')+'</h3><button class="modal-x" id="rk-f-x">&times;</button></div><div class="modal-b">'
+    +'<label class="rk-fl">Departments that see this product</label><div style="margin:2px 0 10px">'+dchecks+'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+      +'<div style="flex:1;min-width:200px"><label class="rk-fl">Insurer</label><input id="rk-pd-insurer" class="rk-inp" value="'+esc(insurer)+'" placeholder="e.g. Care Health"></div>'
+      +'<div style="flex:1;min-width:200px"><label class="rk-fl">Product name</label><input id="rk-pd-product" class="rk-inp" value="'+esc(product)+'" placeholder="e.g. Care Supreme"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+      +'<div style="flex:1;min-width:160px"><label class="rk-fl">UIN</label><input id="rk-pd-uin" class="rk-inp" value="'+esc(uin)+'" placeholder="UIN from the wording"></div>'
+      +'<div style="flex:1;min-width:160px"><label class="rk-fl">Source document</label><input id="rk-pd-pdf" class="rk-inp" value="'+esc(pdf)+'" placeholder="e.g. Care Supreme wording"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'
+      +'<div style="flex:1;min-width:160px"><label class="rk-fl">Verified by</label><input id="rk-pd-by" class="rk-inp" value="'+esc(by)+'"></div>'
+      +'<div style="flex:1;min-width:160px"><label class="rk-fl">Verified on</label><input id="rk-pd-on" class="rk-inp" value="'+esc(on)+'"></div>'
+    +'</div>'
+    +'<div class="rk-adrow" style="margin:10px 0 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-ghost btn-sm" id="rk-pd-pdfbtn">📄 Load policy wording (PDF)</button><span id="rk-pd-pdfstat" style="font-size:.85rem;color:var(--text-muted)">Optional — pull exact quotes straight from the wording.</span></div>'
+    +'<div id="rk-pd-finder" style="display:none;margin:4px 0 8px;padding:10px;border:1px solid var(--border);border-radius:10px"><label class="rk-fl">Find a spec in the wording</label><input id="rk-pd-find" class="rk-inp" placeholder="e.g. room rent, co-payment, waiting period"><div id="rk-pd-finds" style="margin-top:8px"></div></div>'
+    +'<label class="rk-fl" style="margin-top:12px">Specifications <span style="font-weight:400;color:var(--text-muted)">— value is the plain answer; quote is the exact wording, word-for-word; page is where it sits in the document</span></label>'
+    +'<div id="rk-pd-rows"></div>'
+    +'<label class="rk-fl">Change note (optional)</label><input id="rk-pd-note" class="rk-inp" placeholder="e.g. revised per Oct 2026 wording">'
+    +'</div><div class="modal-f"><button class="btn btn-ghost" id="rk-f-cancel">Cancel</button><button class="btn btn-primary" id="rk-f-save">Save</button></div></div>';
+  document.body.appendChild(ov);
+  function close(){ var o=document.getElementById('rk-ov'); if(o) o.remove(); var pi=document.getElementById('rk-pd-file'); if(pi) pi.remove(); }
+  function readRows(){ var box=document.getElementById('rk-pd-rows'); if(!box) return; var nr=[]; box.querySelectorAll('.rk-pd-row').forEach(function(r){ nr.push({ topic:r.querySelector('.rk-pd-topic').value, v:r.querySelector('.rk-pd-v').value, p:r.querySelector('.rk-pd-p').value, cond:r.querySelector('.rk-pd-cond').checked, q:r.querySelector('.rk-pd-q').value }); }); rows=nr; }
+  function renderRows(){
+    var box=document.getElementById('rk-pd-rows'); if(!box) return;
+    if(!rows.length){ box.innerHTML='<div class="rk-empty" style="margin:6px 0">No specs yet. Add one below.</div>'; }
+    else { box.innerHTML=rows.map(function(r,i){ return '<div class="rk-pd-row" style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px">'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'
+        +'<div style="flex:2;min-width:150px"><label class="rk-fl">Spec name</label><input class="rk-inp rk-pd-topic" value="'+esc(r.topic)+'" placeholder="e.g. Room rent"></div>'
+        +'<div style="flex:2;min-width:150px"><label class="rk-fl">Value (plain answer)</label><input class="rk-inp rk-pd-v" value="'+esc(r.v)+'" placeholder="e.g. No limit."></div>'
+        +'<div style="width:72px"><label class="rk-fl">Page</label><input class="rk-inp rk-pd-p" value="'+esc(r.p)+'" placeholder="p."></div>'
+        +'<label style="display:inline-flex;align-items:center;gap:5px;font-size:.85rem;padding-bottom:9px"><input type="checkbox" class="rk-pd-cond"'+(r.cond?' checked':'')+'> conditional</label>'
+        +'<button type="button" class="rk-ia del rk-pd-x" data-i="'+i+'" style="margin-bottom:4px">Remove</button>'
+      +'</div>'
+      +'<label class="rk-fl" style="margin-top:8px">Exact wording (verbatim quote)</label><textarea class="rk-inp rk-pd-q" rows="2" placeholder="Paste the sentence exactly as written in the policy wording.">'+esc(r.q)+'</textarea>'
+      +'</div>'; }).join(''); }
+    box.querySelectorAll('.rk-pd-x').forEach(function(b){ b.addEventListener('click', function(){ readRows(); rows.splice(parseInt(b.getAttribute('data-i'),10),1); renderRows(); }); });
+  }
+  renderRows();
+  var addBtn=document.createElement('button'); addBtn.type='button'; addBtn.className='btn btn-ghost btn-sm'; addBtn.textContent='＋ Add spec';
+  addBtn.addEventListener('click', function(){ readRows(); rows.push({topic:'',v:'',p:'',cond:false,q:''}); renderRows(); });
+  document.getElementById('rk-pd-rows').insertAdjacentElement('afterend', addBtn);
+  var pdfInp=document.createElement('input'); pdfInp.type='file'; pdfInp.id='rk-pd-file'; pdfInp.accept='application/pdf,.pdf'; pdfInp.style.display='none'; document.body.appendChild(pdfInp);
+  function setStat(t){ var s=document.getElementById('rk-pd-pdfstat'); if(s) s.textContent=t; }
+  function renderFinds(q){ var box=document.getElementById('rk-pd-finds'); if(!box) return; q=(q||'').trim(); if(!q || !PDF.pages.length){ box.innerHTML=''; return; } var hits=rkFindSentences(PDF.pages, q, 12); if(!hits.length){ box.innerHTML='<div class="rk-empty" style="margin:4px 0">No lines matched. Try another word.</div>'; return; } box.innerHTML=hits.map(function(h,i){ return '<div class="rk-find" data-i="'+i+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer"><div style="font-size:.9rem">'+esc(h.text)+'</div><div style="font-size:.78rem;color:var(--text-muted);margin-top:4px">p.'+h.page+' · tap to add as a spec</div></div>'; }).join(''); box.querySelectorAll('.rk-find').forEach(function(el){ el.addEventListener('click', function(){ var h=hits[parseInt(el.getAttribute('data-i'),10)]; readRows(); rows.push({topic:q, v:'', p:h.page, cond:false, q:h.text}); renderRows(); toast('Added — now type the short value for it.','info'); }); }); }
+  pdfInp.addEventListener('change', function(){ var f=pdfInp.files&&pdfInp.files[0]; if(!f) return; setStat('Loading reader…'); rkLoadPdfJs(function(okl){ if(!okl){ setStat('Could not load the PDF reader (check you are online).'); return; } setStat('Reading '+f.name+'…'); var rd=new FileReader(); rd.onload=function(){ rkParsePdf(new Uint8Array(rd.result), function(pages){ PDF.name=f.name; PDF.pages=pages; var srcEl=document.getElementById('rk-pd-pdf'); if(srcEl && !srcEl.value) srcEl.value=f.name.replace(/\.pdf$/i,''); setStat('✓ '+f.name+' — '+pages.length+' page'+(pages.length!==1?'s':'')+' read. Search below, then tap a line to add it.'); var fd=document.getElementById('rk-pd-finder'); if(fd) fd.style.display='block'; var fi=document.getElementById('rk-pd-find'); if(fi) fi.focus(); }, function(){ setStat('Could not read that PDF (it may be a scan with no text).'); }); }; rd.onerror=function(){ setStat('Could not read that file.'); }; rd.readAsArrayBuffer(f); }); });
+  document.getElementById('rk-pd-pdfbtn').addEventListener('click', function(){ pdfInp.click(); });
+  var findInp=document.getElementById('rk-pd-find'); if(findInp){ findInp.addEventListener('input', function(){ renderFinds(findInp.value); }); }
+  document.getElementById('rk-f-x').addEventListener('click',close);
+  document.getElementById('rk-f-cancel').addEventListener('click',close);
+  document.getElementById('rk-f-save').addEventListener('click',function(){
+    readRows();
+    var sel=[]; document.querySelectorAll('.rk-pd-dept:checked').forEach(function(c){ sel.push(c.value); });
+    var prod=(document.getElementById('rk-pd-product').value||'').trim();
+    var ins=(document.getElementById('rk-pd-insurer').value||'').trim();
+    if(!prod){ toast('Add a product name.','warn'); return; }
+    if(!sel.length){ toast('Pick at least one department.','warn'); return; }
+    var specs={}; var n=0; rows.forEach(function(r){ var t=(r.topic||'').trim(); if(!t) return; var o={ v:(r.v||'').trim(), q:(r.q||'').trim() }; var pg=parseInt(r.p,10); if(!isNaN(pg)) o.p=pg; if(r.cond) o.cond=1; specs[t]=o; n++; });
+    var id=pid || ((prod.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'product')+'-'+Date.now().toString(36).slice(-4));
+    var data={ id:id, dept:sel, insurer:ins, product:prod, uin:(document.getElementById('rk-pd-uin').value||'').trim(), pdf:(document.getElementById('rk-pd-pdf').value||'').trim(), by:(document.getElementById('rk-pd-by').value||'').trim(), on:(document.getElementById('rk-pd-on').value||'').trim(), specs:specs, pending:(n?0:1) };
+    var note=(document.getElementById('rk-pd-note').value||'').trim();
+    var btn=document.getElementById('rk-f-save'); btn.disabled=true; btn.textContent='Saving…';
+    apiCall('rkSave',{ id:id, type:'product', department:sel[0]||'', title:prod, data:data, note:note }).then(function(res){
+      if(!res||!res.ok){ btn.disabled=false; btn.textContent='Save'; toast('Could not save.','error'); return; }
+      close(); App._rk.prod=id; rkLoadItems(function(){ if(App.view==='reckoner') rkPaintBody(); }); toast('Saved.','success');
+    }).catch(function(e){ btn.disabled=false; btn.textContent='Save'; toast(e.message||'Could not save.','error'); });
+  });
+  if(autoPdf){ setTimeout(function(){ try{ pdfInp.click(); }catch(e){} }, 60); }
+}
+function rkProdAdminBar(p){ if(!rkCanEdit()||!p) return ''; var del=p._saved?'<button class="btn btn-ghost btn-sm" data-rk-pdel="'+esc(p._rkDocId)+'">🗑 Delete</button>':''; var tag=p._saved?'<span class="rk-dchip">saved</span>':'<span class="rk-dchip">built-in</span>'; return '<div class="rk-adrow" style="margin-bottom:10px;display:flex;align-items:center;gap:8px">'+tag+'<button class="btn btn-ghost btn-sm" data-rk-pedit="'+esc(p.id)+'">✎ Edit specs</button>'+del+'</div>'; }
+function rkBindProdAdmin(out,p){ if(!out) return; var e=out.querySelector('[data-rk-pedit]'); if(e){ e.addEventListener('click', function(){ rkProductForm(p.id); }); } var d=out.querySelector('[data-rk-pdel]'); if(d){ d.addEventListener('click', function(){ rkDelItem(d.getAttribute('data-rk-pdel')); }); } }
+
 
 
 
@@ -7859,6 +7952,11 @@ function renderSettings(){
     h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Restore full backup</div><div class="set-sub">Admin only. Rebuilds the whole diary from a full backup file. Existing items with the same ID are overwritten; nothing is deleted.</div></div><button class="btn btn-danger" data-action="restore-all">Restore all…</button></div>';
   }
   h+='</div>';
+  if(App.identity.role==='Admin'){
+    var _rkMe=(App.auth && App.auth.reckonerAccess===true);
+    h+='<div class="set-sec"><h3>📚 Reckoner</h3><div class="set-desc">The product-knowledge desk. It stays hidden for everyone until it is turned on. Turn it on for yourself here; turn it on for staff from their profile in Teams.</div>';
+    h+='<div class="set-field"><div><div class="set-k">Show the Reckoner for me</div><div class="set-sub">'+(_rkMe?'On — it shows in your sidebar.':'Off — hidden from your sidebar.')+'</div></div><button class="btn btn-sm '+(_rkMe?'btn-success':'btn-ghost')+'" data-action="toggle-my-reckoner" data-on="'+(_rkMe?'0':'1')+'">'+(_rkMe?'✓ On · tap to turn off':'Turn on')+'</button></div></div>';
+  }
   h+='<div class="set-sec"><h3>🛠️ Admin</h3><div class="set-desc">Data & categories.</div>';
   if(isBoss()){
     h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Departments</div><div class="set-sub">Only admins add or remove departments. Staff pick from these when assigning (a new category can still be added by staff under a department). Deleting is blocked while a department has open tasks.</div>';
@@ -8693,6 +8791,13 @@ function adminToggleReckoner(id,on,btn){
     toast(on==='1'?'Reckoner turned on.':'Reckoner turned off.'); reloadStaff_(id,name);
   }).catch(function(e){ App._mkBusy=false; if(btn)btn.disabled=false; toast(e.message||'Could not update.'); });
 }
+function toggleMyReckoner(on){
+  var want=(on==='1'); var myId=String(App.identity.employeeId);
+  apiCall('adminUpdateUser',{ userId:myId, reckonerAccess:want }).then(function(res){
+    if(res&&res.ok){ if(App.auth) App.auth.reckonerAccess=want; try{ buildSidebar(); }catch(e){} if(!want && App.view==='reckoner'){ navigate('dashboard'); } if(App.view==='settings') renderSettings(); toast(want?'Reckoner turned on.':'Reckoner turned off.','success'); }
+    else { toast('Could not update.','error'); }
+  }).catch(function(e){ toast((e&&e.message)||'Could not update.','error'); });
+}
 function sharedCard(t){
   var isDone=t.status==='Completed';
   var od=overdueDays(t);
@@ -9520,6 +9625,7 @@ document.addEventListener('click', function(e){
     case 'toggle-active': adminToggleActive(el.getAttribute('data-id'), el.getAttribute('data-active'), el); break;
     case 'save-visibility': adminSaveVisibility(el.getAttribute('data-id'), el); break;
     case 'toggle-reckoner': adminToggleReckoner(el.getAttribute('data-id'), el.getAttribute('data-on'), el); break;
+    case 'toggle-my-reckoner': toggleMyReckoner(el.getAttribute('data-on')); break;
     case 'role-switch': openRoleSwitch(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'handover-task': openHandover(el.getAttribute('data-uid')); break;
     case 'reassign-close': closeReassign(); break;
