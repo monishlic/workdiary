@@ -6526,6 +6526,10 @@ function renderSlate(){
   // Fetch fresh the moment the Slate opens (catches notes just added from the extension),
   // then a couple of quick follow-ups in case the write is still landing on the server.
   if(!ro && Sync.online()){ Slate.pull(); setTimeout(function(){ if(App.view==='slate'&&!App._slateView&&!slateIsBusy()) Slate.pull(); }, 1500); setTimeout(function(){ if(App.view==='slate'&&!App._slateView&&!slateIsBusy()) Slate.pull(); }, 3200); }
+  if(!ro){
+    if(!App._slateDraftHook){ App._slateDraftHook=true; var _sdh=function(){ try{ if(document.getElementById('slate-input')) slateDraftSave(); }catch(e){} }; document.addEventListener('visibilitychange', function(){ if(document.hidden) _sdh(); }); window.addEventListener('pagehide', _sdh); window.addEventListener('beforeunload', _sdh); }
+    try{ slateDraftRestore(); }catch(e){}
+  }
 }
 function refreshSlateMeta(){
   if(App._slateView) return;
@@ -6632,11 +6636,11 @@ function slateClick(e){
   if(x<4)x=4; if(y<4)y=4;
   spawnNoteInput(x,y);
 }
-function spawnNoteInput(x,y){
+function spawnNoteInput(x,y,draft){
   var ex=document.getElementById('slate-input-wrap'); if(ex){ try{ commitSlateInput(); }catch(_e){ ex.remove(); } }
   var board=document.getElementById('slate-board'); if(!board) return;
   var maxX=Math.max(4, board.clientWidth-256); if(x>maxX)x=maxX; if(x<4)x=4; if(y<4)y=4;
-  var color=Slate.pick();
+  var color=(draft&&draft.color)?draft.color:Slate.pick();
   var w=document.createElement('div'); w.id='slate-input-wrap'; w.className='slate-note slate-input'; w.style.left=x+'px'; w.style.top=y+'px'; w.style.background=color; w.style.setProperty('--rot','0deg');
   w.innerHTML='<textarea id="slate-input" rows="3" placeholder="Type your note…" maxlength="600"></textarea>'
     +'<div class="slate-input-foot"><input type="hidden" id="slate-input-time"><input type="hidden" id="slate-input-day" value="today">'
@@ -6645,9 +6649,11 @@ function spawnNoteInput(x,y){
     +'<div class="si-days" id="slate-day-row" style="display:none"><button type="button" class="si-day on" id="slate-day-today" data-action="slate-day" data-day="today">Today</button><button type="button" class="si-day" id="slate-day-tom" data-action="slate-day" data-day="tomorrow">Tomorrow</button></div>';
   board.appendChild(w);
   var ta=document.getElementById('slate-input'); ta._x=x; ta._y=y; ta._color=color;
+  if(draft){ ta.value=draft.text||''; if(draft.time){ var _t=document.getElementById('slate-input-time'); if(_t) _t.value=draft.time; var _d=document.getElementById('slate-input-day'); if(_d) _d.value=draft.day||'today'; var _lbl=document.getElementById('slate-time-lbl'); if(_lbl){ try{ _lbl.textContent=hhmmFriendly(draft.time); }catch(e){ _lbl.textContent=draft.time; } } var _btn=document.getElementById('slate-time-btn'); if(_btn) _btn.classList.add('on'); try{ slateDayApply(draft.time); if(_d&&draft.day) _d.value=draft.day; }catch(e){} } }
   // Commit only when focus leaves the whole box — and never while the time picker is open.
   var commitIfDone=function(){ setTimeout(function(){ if(EdTime._el) return; var box=document.getElementById('slate-input-wrap'); if(!box) return; if(box.contains(document.activeElement)) return; commitSlateInput(); }, 150); };
   ta.addEventListener('blur', commitIfDone);
+  ta.addEventListener('input', function(){ slateDraftSave(); });
   ta.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); commitSlateInput(); } });
   setTimeout(function(){ ta.focus(); }, 10);
 }
@@ -6681,12 +6687,34 @@ function commitSlateInput(){
   var text=(ta.value||'').trim(), x=ta._x, y=ta._y, color=ta._color;
   var tm=document.getElementById('slate-input-time'); var _dy=document.getElementById('slate-input-day'); var remindAt=(tm && tm.value) ? timeToDayISO(tm.value, (_dy&&_dy.value)||'today') : '';
   var wrap=document.getElementById('slate-input-wrap'); if(wrap) wrap.remove();
+  slateDraftClear();
   if(!text) return;
   var n=Slate.add(text,x,y,color,remindAt);
   appendNote(n);
   if(remindAt){ try{ var d=new Date(remindAt); toast('⏰ Reminder set for '+(('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2))+(d.toDateString()!==new Date().toDateString()?' (tomorrow)':''),'success'); }catch(e){} }
 }
-function cancelSlateInput(){ var wrap=document.getElementById('slate-input-wrap'); if(wrap){ var ta=document.getElementById('slate-input'); if(ta) ta.value=''; wrap.remove(); } }
+function cancelSlateInput(){ slateDraftClear(); var wrap=document.getElementById('slate-input-wrap'); if(wrap){ var ta=document.getElementById('slate-input'); if(ta) ta.value=''; wrap.remove(); } }
+function slateDraftSave(){
+  try{ var ta=document.getElementById('slate-input'); if(!ta) return;
+    var text=ta.value||'';
+    if(!text.trim()){ try{ localStorage.removeItem('edSlateDraft'); }catch(e){} return; }
+    var tm=document.getElementById('slate-input-time'), dy=document.getElementById('slate-input-day');
+    var d={ text:text, x:ta._x, y:ta._y, color:ta._color, time:(tm&&tm.value)||'', day:(dy&&dy.value)||'today', ts:Date.now() };
+    localStorage.setItem('edSlateDraft', JSON.stringify(d));
+  }catch(e){}
+}
+function slateDraftClear(){ try{ localStorage.removeItem('edSlateDraft'); }catch(e){} }
+function slateDraftRestore(){
+  try{
+    if(App._slateView) return;                               // never on a read-only slate
+    if(document.getElementById('slate-input-wrap')) return;   // a compose box is already open
+    var raw=localStorage.getItem('edSlateDraft'); if(!raw) return;
+    var d=JSON.parse(raw); if(!d || !d.text || !d.text.trim()){ slateDraftClear(); return; }
+    if(!document.getElementById('slate-board')) return;
+    var x=(typeof d.x==='number')?d.x:20, y=(typeof d.y==='number')?d.y:20;
+    spawnNoteInput(x, y, d);
+  }catch(e){}
+}
 function attachSlateDnD(){
   var board=document.getElementById('slate-board'); if(!board) return;
   board.querySelectorAll('.slate-note[data-note]').forEach(attachOneNoteDnD);
@@ -6832,14 +6860,73 @@ function slateTidy(){
   toast('✨ Tidied up','success');
 }
 function openArchive(){
-  var archived=(App.slateNotes||[]).filter(function(n){return n.done;});
   var ex=document.getElementById('arch-ov'); if(ex) ex.remove();
+  if(!App._archFilter) App._archFilter={ mode:'all', month:'', from:'', to:'' };
+  var archived=(App.slateNotes||[]).filter(function(n){return n.done;});
+  var pad=function(n){ return (n<10?'0':'')+n; };
+  var months={}; archived.forEach(function(n){ var d=new Date(n.created); if(isNaN(d)) return; var k=d.getFullYear()+'-'+pad(d.getMonth()+1); months[k]=(months[k]||0)+1; });
+  var keys=Object.keys(months).sort(function(a,b){ return a<b?1:-1; });
+  var f=App._archFilter;
+  if(f.mode==='month' && !months[f.month]){ f.mode='all'; f.month=''; }
+  var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var opts='<option value="all">All months</option>';
+  keys.forEach(function(k){ var p=k.split('-'); var lbl=MON[parseInt(p[1],10)-1]+' '+p[0]; opts+='<option value="'+k+'">'+lbl+' ('+months[k]+')</option>'; });
+  opts+='<option value="custom">Custom range…</option>';
   var ov=document.createElement('div'); ov.id='arch-ov'; ov.className='overlay';
-  var body = archived.length ? archived.map(function(n){
-    return '<div class="arch-item"><span class="arch-dot" style="background:'+esc(n.color)+'"></span><div class="arch-main"><div class="arch-text">'+esc(n.text)+'</div><div class="arch-meta">'+esc(fmtDate(n.created))+'</div></div><button class="btn btn-ghost btn-sm" data-action="slate-restore" data-id="'+esc(n.id)+'">Restore</button><button class="btn btn-danger btn-sm" data-action="slate-del" data-id="'+esc(n.id)+'">Delete</button></div>';
-  }).join('') : '<div class="cmdk-empty">No archived notes yet. Tick ✓ on a note to archive it here.</div>';
-  ov.innerHTML='<div class="modal" style="max-width:540px"><div class="modal-h"><h3>🗄 Archived notes</h3><button class="modal-x" data-action="close-arch">&times;</button></div><div class="modal-b" id="arch-body">'+body+'</div></div>';
+  ov.innerHTML='<div class="modal" style="max-width:540px"><div class="modal-h"><h3>🗄 Archived notes</h3><button class="modal-x" data-action="close-arch">&times;</button></div>'
+    +'<div class="modal-b">'
+    +'<div class="arch-filter" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">'
+      +'<label style="font-size:.82rem;color:var(--text-sec)">View</label>'
+      +'<select id="arch-month" class="rk-inp" style="width:auto;min-width:150px">'+opts+'</select>'
+      +'<span id="arch-custom" style="display:none;align-items:center;gap:6px;flex-wrap:wrap">'
+        +'<input type="date" id="arch-from" class="rk-inp" style="width:auto" aria-label="From date">'
+        +'<span style="color:var(--text-muted)">to</span>'
+        +'<input type="date" id="arch-to" class="rk-inp" style="width:auto" aria-label="To date">'
+      +'</span>'
+      +'<span id="arch-tally" style="margin-left:auto;font-size:.8rem;color:var(--text-muted)"></span>'
+    +'</div>'
+    +'<div id="arch-list"></div>'
+    +'</div></div>';
   document.body.appendChild(ov);
+  var sel=document.getElementById('arch-month');
+  if(f.mode==='month' && months[f.month]) sel.value=f.month; else if(f.mode==='custom') sel.value='custom'; else sel.value='all';
+  if(f.mode==='custom'){ document.getElementById('arch-custom').style.display='inline-flex'; if(f.from) document.getElementById('arch-from').value=f.from; if(f.to) document.getElementById('arch-to').value=f.to; }
+  sel.addEventListener('change', function(){
+    var v=sel.value; var cust=document.getElementById('arch-custom');
+    if(v==='all'){ App._archFilter.mode='all'; App._archFilter.month=''; cust.style.display='none'; }
+    else if(v==='custom'){ App._archFilter.mode='custom'; cust.style.display='inline-flex'; }
+    else { App._archFilter.mode='month'; App._archFilter.month=v; cust.style.display='none'; }
+    archPaint();
+  });
+  var onRange=function(){ App._archFilter.mode='custom'; App._archFilter.from=document.getElementById('arch-from').value||''; App._archFilter.to=document.getElementById('arch-to').value||''; archPaint(); };
+  document.getElementById('arch-from').addEventListener('change', onRange);
+  document.getElementById('arch-to').addEventListener('change', onRange);
+  archPaint();
+}
+function archPaint(){
+  var listEl=document.getElementById('arch-list'); if(!listEl) return;
+  var f=App._archFilter||{mode:'all'};
+  var pad=function(n){ return (n<10?'0':'')+n; };
+  var archived=(App.slateNotes||[]).filter(function(n){return n.done;});
+  var total=archived.length;
+  var shown=archived.filter(function(n){
+    var d=new Date(n.created); if(isNaN(d)) return f.mode==='all';
+    if(f.mode==='month'){ return (d.getFullYear()+'-'+pad(d.getMonth()+1))===f.month; }
+    if(f.mode==='custom'){
+      if(!f.from && !f.to) return true;
+      var day=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+      if(f.from && day<f.from) return false;
+      if(f.to && day>f.to) return false;
+      return true;
+    }
+    return true;
+  });
+  shown.sort(function(a,b){ return (new Date(b.created))-(new Date(a.created)); });
+  var body = shown.length ? shown.map(function(n){
+    return '<div class="arch-item"><span class="arch-dot" style="background:'+esc(n.color)+'"></span><div class="arch-main"><div class="arch-text">'+esc(n.text)+'</div><div class="arch-meta">'+esc(fmtDate(n.created))+'</div></div><button class="btn btn-ghost btn-sm" data-action="slate-restore" data-id="'+esc(n.id)+'">Restore</button><button class="btn btn-danger btn-sm" data-action="slate-del" data-id="'+esc(n.id)+'">Delete</button></div>';
+  }).join('') : '<div class="cmdk-empty">'+(total?'No archived notes in this range.':'No archived notes yet. Tick ✓ on a note to archive it here.')+'</div>';
+  listEl.innerHTML=body;
+  var tally=document.getElementById('arch-tally'); if(tally) tally.textContent=(f.mode==='all')?(total+' note'+(total!==1?'s':'')):(shown.length+' of '+total);
 }
 function closeArch(){ var ov=document.getElementById('arch-ov'); if(ov) ov.remove(); }
 function slateRestore(id){ var n=(App.slateNotes||[]).find(function(x){return String(x.id)===id;}); if(!n) return; Slate.restore(n); openArchive(); if(App.view==='slate'&&!App._slateView) renderSlate(); }
