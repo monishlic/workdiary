@@ -1351,6 +1351,40 @@ body.slate-selecting .assistant, body.slate-selecting .chat-fab{ display:none; }
 .chat-from{ font-size:.72rem; font-weight:700; color:var(--accent); margin-bottom:2px; padding-left:4px; }
 .chat-bubble{ display:inline-block; background:#fff; border:1px solid var(--glass-line); padding:8px 12px; border-radius:14px; border-top-left-radius:5px; font-size:.9rem; color:var(--text); line-height:1.4; white-space:pre-wrap; word-break:break-word; text-align:left; }
 .chat-msg.mine .chat-bubble{ background:linear-gradient(135deg,#4f7cff,#7166f0); color:#fff; border-color:transparent; border-radius:14px; border-top-right-radius:5px; }
+.chat-del{ font-style:italic; opacity:.7; }
+.chat-sys{ text-align:center; margin:9px 0; font-size:.76rem; color:var(--text-muted); }
+.chat-quote{ border-left:3px solid var(--accent); background:rgba(120,120,150,.12); border-radius:6px; padding:3px 8px; margin-bottom:4px; font-size:.82rem; color:var(--text-sec); white-space:pre-wrap; word-break:break-word; }
+.chat-msg.mine .chat-quote{ background:rgba(255,255,255,.18); border-left-color:rgba(255,255,255,.7); color:rgba(255,255,255,.92); }
+.chat-qname{ display:block; font-weight:700; color:var(--accent); font-size:.74rem; }
+.chat-msg.mine .chat-qname{ color:rgba(255,255,255,.95); }
+.chat-edited{ font-size:.66rem; color:var(--text-muted); margin-left:5px; }
+.chat-msg.mine .chat-edited{ color:rgba(255,255,255,.72); }
+.chat-rx{ display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
+.chat-row.mine .chat-rx{ justify-content:flex-end; }
+.chat-rxchip{ border:1px solid var(--border); background:var(--bg-card); border-radius:999px; padding:1px 7px; font-size:.75rem; cursor:pointer; }
+.chat-rxchip.mine{ background:var(--accent-soft); border-color:var(--accent); }
+.chat-clearbtn{ margin-left:auto; flex:none; border:1px solid var(--border); background:var(--bg-card); border-radius:8px; padding:3px 9px; cursor:pointer; font-size:.9rem; }
+.chat-replybar, .chat-editbar{ display:flex; align-items:center; gap:6px; font-size:.82rem; }
+#msg-sheet{ display:flex; align-items:flex-end; justify-content:center; }
+.msg-sheet-card{ width:100%; max-width:440px; background:var(--bg-card); border-radius:18px 18px 0 0; padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px)); box-shadow:0 -12px 44px -12px rgba(0,0,0,.45); animation:up .18s ease; }
+.msg-react-row{ display:flex; justify-content:space-around; padding:6px 4px 10px; border-bottom:1px solid var(--border); margin-bottom:6px; }
+.msg-react{ font-size:1.5rem; background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:10px; transition:transform .1s; }
+.msg-react:hover{ background:var(--accent-soft); transform:scale(1.18); }
+.msg-act{ display:block; width:100%; text-align:left; background:none; border:none; padding:12px 14px; font:inherit; font-size:.95rem; color:var(--text); cursor:pointer; border-radius:10px; }
+.msg-act:hover{ background:var(--accent-soft); }
+.msg-act.danger{ color:var(--danger); }
+.msg-act.cancel{ text-align:center; color:var(--text-muted); font-weight:600; }
+.call-ov{ display:flex; align-items:center; justify-content:center; z-index:4000; background:rgba(10,12,20,.86) !important; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.call-card{ text-align:center; color:#fff; padding:34px 24px; max-width:360px; width:90%; }
+.call-av{ display:flex; justify-content:center; margin-bottom:16px; transform:scale(1.5); }
+.call-name{ font-size:1.5rem; font-weight:800; margin-bottom:6px; }
+.call-status{ font-size:1rem; opacity:.85; margin-bottom:36px; letter-spacing:.3px; }
+.call-actions{ display:flex; gap:26px; justify-content:center; align-items:center; }
+.call-btn{ border:none; border-radius:50%; width:64px; height:64px; font-size:1.3rem; cursor:pointer; color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px -8px rgba(0,0,0,.5); }
+.call-btn.accept{ background:#12b76a; }
+.call-btn.decline, .call-btn.hang{ background:#e03131; }
+.call-btn.mute{ background:rgba(255,255,255,.16); border-radius:32px; width:auto; height:52px; padding:0 20px; font-size:.95rem; font-weight:600; }
+.chat-callbtn{ background:none; border:none; font-size:1.15rem; cursor:pointer; padding:4px 8px; line-height:1; flex:none; }
 .chat-time{ font-size:.66rem; color:var(--text-muted); margin-top:3px; padding:0 4px; }
 .chat-taskchip{ display:inline-block; margin-bottom:4px; background:var(--warning-bg); color:var(--warning-dark); border:1px solid rgba(245,158,11,.35); border-radius:9px; padding:3px 9px; font-size:.74rem; font-weight:700; cursor:pointer; }
 .chat-reply{ background:none; border:none; color:var(--text-muted); font-size:.68rem; font-weight:600; cursor:pointer; padding:2px 4px; }
@@ -2843,7 +2877,7 @@ var FB = (function(){
           return col('comments').doc(id).set({ commentId:id, taskUid:String(b.taskUid), authorId:u.userId, authorName:u.name, text:String(b.text), created:cnow })
             .then(function(){ return col('tasks').doc(String(b.taskUid)).set({ lastCommentAt:cnow, lastCommentById:u.userId, lastCommentByName:u.name }, {merge:true}); })
             .then(function(){ return col('tasks').doc(String(b.taskUid)).get(); })
-            .then(function(s){ if(s.exists){ var t=s.data(); var other=String(t.ownerId)===String(u.userId)?t.assignedById:t.ownerId; if(other && String(other)!==String(u.userId)) return addNotif(other, u.name, u.name+' commented on '+t.clientName, t.uid, 'comment'); } })
+            .then(function(s){ if(s.exists){ var t=s.data(); var set={}; var counter=String(t.ownerId)===String(u.userId)?t.assignedById:t.ownerId; if(counter) set[String(counter)]=1; (Array.isArray(t.loop)?t.loop:[]).forEach(function(l){ set[String(l)]=1; }); delete set[String(u.userId)]; return Promise.all(Object.keys(set).map(function(id){ return addNotif(id, u.name, u.name+' commented on '+t.clientName, t.uid, 'comment'); })); } })
             .then(function(){ return {ok:true}; });
         }
         case 'getComments': {
@@ -2856,7 +2890,7 @@ var FB = (function(){
         case 'sendChat': {
           if(!b.channel || !b.text) throw new Error('Missing message.');
           var uc=me(); var mid=newId('M');
-          var msg={ id:mid, channel:String(b.channel), text:String(b.text).slice(0,2000), fromId:uc.userId, fromName:uc.name, taskRef:(b.taskRef||null), created:nowISO() };
+          var msg={ id:mid, channel:String(b.channel), text:String(b.text).slice(0,2000), fromId:uc.userId, fromName:uc.name, taskRef:(b.taskRef||null), replyTo:(b.replyTo||null), created:nowISO() };
           return col('chat').doc(mid).set(msg).then(function(){
             // Smart push: only a message that references a task pings that task's owner + assigner.
             if(b.taskRef && b.taskRef.uid){
@@ -2871,12 +2905,56 @@ var FB = (function(){
           return col('users').doc(String(b.toId)).get().then(function(s){
             var toName=(s.exists?s.data().name:'')||b.toName||'';
             var parties=[String(ud.userId), String(b.toId)].sort();
-            var dm={ id:did, text:String(b.text).slice(0,2000), fromId:ud.userId, fromName:ud.name, toId:String(b.toId), toName:toName, taskRef:(b.taskRef||null), created:nowISO(), parties:parties };
+            var dm={ id:did, text:String(b.text).slice(0,2000), fromId:ud.userId, fromName:ud.name, toId:String(b.toId), toName:toName, taskRef:(b.taskRef||null), replyTo:(b.replyTo||null), created:nowISO(), parties:parties };
             return col('dms').doc(did).set(dm)
               .then(function(){ return addNotif(b.toId, ud.name, '💬 '+ud.name+': '+String(b.text).slice(0,90), (b.taskRef&&b.taskRef.uid)||'', 'chat', 'dm:'+ud.userId); })
               .then(function(){ return {ok:true, dm:dm}; });
           });
         }
+        case 'delMsg': {
+          var _c=(b.kind==='dm')?'dms':'chat'; var _id=String(b.id||''); if(!_id) throw new Error('No message.');
+          var _u=me();
+          return col(_c).doc(_id).get().then(function(s){
+            if(!s.exists) return {ok:false, error:'Message not found.'};
+            var m=s.data();
+            if(String(m.fromId)!==String(_u.userId)) throw new Error('You can only delete your own messages.');
+            return col(_c).doc(_id).set({ deleted:true, deletedBy:_u.userId, deletedByName:_u.name, deletedAt:nowISO(), text:'', taskRef:null, replyTo:null, reactions:{} }, {merge:true}).then(function(){ return {ok:true}; });
+          });
+        }
+        case 'editMsg': {
+          var _ce=(b.kind==='dm')?'dms':'chat'; var _ide=String(b.id||''); var _txt=String(b.text||'').slice(0,2000); if(!_ide||!_txt) throw new Error('Missing.');
+          var _ue=me();
+          return col(_ce).doc(_ide).get().then(function(s){
+            if(!s.exists) return {ok:false};
+            var m=s.data();
+            if(String(m.fromId)!==String(_ue.userId)) throw new Error('You can only edit your own messages.');
+            if(m.deleted) throw new Error('That message was deleted.');
+            return col(_ce).doc(_ide).set({ text:_txt, edited:true, editedAt:nowISO() }, {merge:true}).then(function(){ return {ok:true}; });
+          });
+        }
+        case 'reactMsg': {
+          var _cr=(b.kind==='dm')?'dms':'chat'; var _idr=String(b.id||''); var _emo=String(b.emoji||'').slice(0,8); if(!_idr||!_emo) throw new Error('Missing.');
+          var _ur=me();
+          return col(_cr).doc(_idr).get().then(function(s){
+            if(!s.exists) return {ok:false};
+            var m=s.data(); if(m.deleted) return {ok:false};
+            var rx=(m.reactions&&typeof m.reactions==='object')?m.reactions:{};
+            var arr=Array.isArray(rx[_emo])?rx[_emo].slice():[]; var me2=String(_ur.userId); var ix=arr.map(String).indexOf(me2);
+            if(ix>=0) arr.splice(ix,1); else arr.push(me2);
+            if(arr.length) rx[_emo]=arr; else delete rx[_emo];
+            return col(_cr).doc(_idr).set({ reactions:rx }, {merge:true}).then(function(){ return {ok:true}; });
+          });
+        }
+        case 'clearChan': {
+          if(!isAdmin()) throw new Error('Only an admin can clear a group chat.');
+          var _chan=String(b.channel||''); if(!_chan) throw new Error('No channel.'); var _ua=me();
+          return col('chat').where('channel','==',_chan).get().then(function(qs){
+            var refs=[]; qs.forEach(function(d){ refs.push(d.ref); });
+            var jobs=[]; for(var i=0;i<refs.length;i+=400){ (function(slice){ var batch=db.batch(); slice.forEach(function(r){ batch.delete(r); }); jobs.push(batch.commit()); })(refs.slice(i,i+400)); }
+            return Promise.all(jobs);
+          }).then(function(){ var sid=newId('M'); return col('chat').doc(sid).set({ id:sid, channel:_chan, system:true, text:'🧹 Chat cleared by '+_ua.name, fromId:'system', fromName:'System', created:nowISO() }); }).then(function(){ return logAudit('Cleared group chat','','', _chan); }).then(function(){ return {ok:true}; });
+        }
+
 
         case 'teamMembers': {
           return col('users').get().then(function(qs){
@@ -3262,6 +3340,7 @@ var FB = (function(){
                 upd.stage='executed'; upd.closeOutcome=oc; upd.nextDeadlineAt=''; upd.history=(l.history||[]).concat([{t:now2,type:'done',byId:u2.userId,byName:u2.name,outcome:oc}]);
                 notifyOthers=u2.name+' closed the lead ('+(oc==='negative'?'Negative':'Positive')+'): '+l.clientName;
               } else if(act==='reopen'){
+                if(stage!=='executed' && stage!=='ignored') return {ok:false};
                 var dd2=parseInt(b.durationDays,10)||l.durationDays||15; var due2=new Date(Date.now()+dd2*86400000);
                 upd.stage='inprocess'; upd.everInProcess=true; upd.renewBounded=false; upd.durationDays=dd2; upd.inProcessStartAt=now2; upd.dueAt=due2.toISOString(); upd.dueReminderAt=new Date(due2.getTime()-86400000).toISOString(); upd.dueReminderSent=false; upd.lastActionAt=now2; upd.nextDeadlineAt=new Date(due2.getTime()+86400000).toISOString();
                 upd.closeOutcome=''; upd.ignoredAt=''; upd.lapsedFrom='';
@@ -3288,7 +3367,7 @@ var FB = (function(){
                 var jobs=[]; var recips=(l.assigneeIds||[]).slice(); if(l.createdById && recips.map(String).indexOf(String(l.createdById))<0) recips.push(l.createdById);
                 var _nlPush=function(rid,msg){ try{ Push.send(String(rid), 'New Leads', msg, 'lead-'+l.id+'-'+Date.now()); }catch(e){} };
                 if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)){ jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); _nlPush(rid, notifyOthers); } }); }
-                if(notifyAll){ recips.forEach(function(rid){ jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); _nlPush(rid, notifyAll); }); }
+                if(notifyAll){ recips.forEach(function(rid){ if(String(rid)===String(u2.userId)) return; jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); _nlPush(rid, notifyAll); }); }
                 return Promise.all(jobs);
               }).then(function(){ return {ok:true}; });
             });
@@ -3624,13 +3703,13 @@ var Data = {
     if(!t||!t.repeat) return Promise.resolve();
     var oldDue = t.dueDate ? new Date(t.dueDate) : new Date();
     var nd = nextRepeatDate(oldDue, t.repeat, (t.repeatDay!=null?t.repeatDay:''));
-    if(t.repeatUntil && nd.getTime() > new Date(t.repeatUntil).getTime()) return Promise.resolve();   // series has ended
+    if(t.repeatUntil){ var _lim=new Date(t.repeatUntil); _lim.setHours(23,59,59,999); if(nd.getTime() > _lim.getTime()) return Promise.resolve(); }   // series has ended (compare by day)
     return Data.nextTaskId().then(function(taskId){
       var ts=nowISO();
       var task={ uid:genUid(), taskId:taskId, employeeId:t.employeeId, employeeName:t.employeeName,
         department:t.department, category:t.category, clientName:t.clientName, details:t.details||'',
-        status:'Pending', dueDate: t.dueDate? nd.toISOString():'', followUpDate:'',
-        reminders:shiftReminders(t.reminders, t.dueDate, nd), repeat:t.repeat, repeatDay:(t.repeatDay!=null?t.repeatDay:''), repeatUntil:t.repeatUntil||'', priority:t.priority||'medium', loop:Array.isArray(t.loop)?t.loop:[],
+        status:'Pending', title:t.title||'', dueDate: t.dueDate? nd.toISOString():'', followUpDate:'',
+        reminders:shiftReminders(t.reminders, t.dueDate, nd), checklist:Array.isArray(t.checklist)?t.checklist.map(function(c){ return {text:c.text, done:false}; }):[], links:Array.isArray(t.links)?t.links:[], repeat:t.repeat, repeatDay:(t.repeatDay!=null?t.repeatDay:''), repeatUntil:t.repeatUntil||'', priority:t.priority||'medium', loop:Array.isArray(t.loop)?t.loop:[],
         createdTimestamp:ts, completedTimestamp:'', lastUpdatedTimestamp:ts,
         createdBy:t.createdBy||App.identity.employeeName, completedBy:'', syncStatus:'PENDING_SYNC' };
       if(t.assignedById){ task.assignedById=t.assignedById; task.assignedByName=t.assignedByName; task.createdById=t.createdById; task.createdByName=t.createdByName; }
@@ -3648,7 +3727,7 @@ var Data = {
     var ts=nowISO(); t.status='Pending'; t.completedTimestamp=''; t.completedBy=''; t.lastUpdatedTimestamp=ts;
     pushRemark(t, 'Reopened', remark);
     t.syncStatus='PENDING_SYNC';
-    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'REOPENED','Completed','Pending',remark||'Reopened'); Sync.afterChange(); });
+    return Store.put('tasks',t.uid,t).then(function(){ Data.log(taskId,'REOPENED','Completed','Pending',remark||'Reopened'); try{ dueRemSync(t.uid, (t.ownerId||t.employeeId||App.identity.employeeId), (t.ownerName||t.employeeName||App.identity.employeeName), t.loop, t.title, t.clientName, t.reminders); }catch(e){} Sync.afterChange(); });
   },
   log:function(taskId,action,oldS,newS,note){
     var id='LOG-'+Date.now()+'-'+Math.floor(Math.random()*1000);
@@ -3923,6 +4002,7 @@ var FBLive = {
     }, function(){});
 
     // Team + department chat (one collection, all channels; small office → last 250 msgs)
+    try{ db.collection('calls').where('to','==',uid).onSnapshot(function(qs){ qs.docChanges().forEach(function(ch){ if(ch.type!=='added') return; var d=ch.doc.data(); if(!d || d.status!=='ringing') return; if(typeof Call==='undefined' || Call.cur) return; var age=Date.now()-new Date(d.created||0).getTime(); if(age>60000) return; try{ Call.incoming(d); }catch(e){} }); }); }catch(e){}
     try{ db.collection('chat').orderBy('created').limitToLast(80).onSnapshot(function(qs){
       App.chat=[]; qs.forEach(function(d){ App.chat.push(d.data()); });
       onChatData();
@@ -4041,7 +4121,7 @@ function bootApp(){
   // Set up one-time listeners (prevents stacking on re-login)
   if(!App._booted){
     App._booted = true;
-    window.addEventListener('online', function(){ Sync.updatePill(); if(Sync.online()){ Sync.flush(); FBLive.start(); } });
+    window.addEventListener('online', function(){ Sync.updatePill(); if(Sync.online()){ Sync.flush(); try{ Slate.flushUnsynced(); }catch(e){} FBLive.start(); } });
     window.addEventListener('offline', function(){ Sync.updatePill(); });
     // Push local (offline) changes up whenever the tab regains focus.
     window.addEventListener('focus', function(){ if(Sync.online()) Sync.flush(); });
@@ -5048,7 +5128,7 @@ function dueRemSync(uid, ownerId, ownerName, loop, title, clientName, reminders)
     });
   };
   try{ col.where('taskUid','==',String(uid)).get().then(function(qs){
-    var dels=[]; qs.forEach(function(d){ dels.push(d.ref.delete()); });
+    var dels=[]; qs.forEach(function(d){ var dd=d.data(); if(dd && dd.kind) return; dels.push(d.ref.delete()); });   // leave snooze/note/lead docs (they have a kind) alone
     Promise.all(dels).then(writeAll, writeAll);
   }, writeAll); }catch(e){ writeAll(); }
 }
@@ -6454,6 +6534,7 @@ var Slate = {
   },
   pull:function(){
     if(!Sync.online() || !App.auth) return Promise.resolve();
+    try{ Slate.flushUnsynced(); }catch(e){}
     if(Slate._pulling) return Slate._pulling;   // single-flight: never let two refreshes race and overwrite each other
     var p = apiCall('getMyNotes',{}).then(function(res){
       if(res&&res.ok){
@@ -6476,6 +6557,16 @@ var Slate = {
     }).catch(function(){});
     Slate._pulling = p.then(function(){ Slate._pulling=null; }, function(){ Slate._pulling=null; });
     return p;
+  },
+  flushUnsynced:function(){
+    if(!Sync.online()) return;
+    (App.slateNotes||[]).filter(function(n){ return !n.sid && !n.done && (n.text||'').trim(); }).forEach(function(n){
+      if(n._flushing) return; n._flushing=true;
+      apiCall('saveNote',{text:n.text, color:n.color, x:Math.round(n.x)||0, y:Math.round(n.y)||0, remindAt:n.remindAt||''}).then(function(res){
+        n._flushing=false;
+        if(res&&res.ok){ n.sid=res.id; n.created=res.created||n.created; Slate.saveLocal(); if(n.remindAt){ try{ noteRemSync({ id:res.id, remindAt:n.remindAt, text:n.text }); }catch(e){} } }
+      }).catch(function(){ n._flushing=false; });
+    });
   },
   add:function(text,x,y,color,remindAt){
     if(!App.slateNotes) App.slateNotes=[];
@@ -6842,7 +6933,7 @@ function slateEdit(id){
     if((newRemind||'') !== (n.remindAt||'')){ n.remindAt=newRemind||''; changed=true; }
     if(changed){ n.updated=nowISO(); Slate.saveLocal();
       var noteId = n.sid || n.id;
-      if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid, text:n.text, remindAt:n.remindAt}).catch(function(){});
+      if(n.sid && Sync.online()) Slate._push(n,{id:n.sid, text:n.text, remindAt:n.remindAt});
       try{ noteRemSync({ id:noteId, remindAt:n.remindAt, text:n.text }); }catch(e){}   // empty remindAt clears it
     }
     if(App.view==='slate' && !App._slateView) renderSlate();
@@ -6867,7 +6958,7 @@ function slateRemind(el){
     n.remindAt = hhmm ? timeToNextISO(hhmm) : '';
     n.updated = nowISO(); Slate.saveLocal();
     var noteId = n.sid || n.id;
-    if(n.sid && Sync.online()) apiCall('updateNote',{id:n.sid, remindAt:n.remindAt}).catch(function(){});
+    if(n.sid && Sync.online()) Slate._push(n,{id:n.sid, remindAt:n.remindAt});
     try{ noteRemSync({ id:noteId, remindAt:n.remindAt, text:n.text }); }catch(e){}
     if(App.view==='slate' && !App._slateView) paintSlate(true);
     if(n.remindAt){ try{ var d=new Date(n.remindAt); toast('⏰ Reminder set for '+(('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2))+(d.toDateString()!==new Date().toDateString()?' (tomorrow)':''),'success'); }catch(e){} }
@@ -9340,15 +9431,156 @@ function chatMsgHTML(list, isDM, otherId){
   list.forEach(function(m){
     App._chatMsgMap[m.id]=m;
     var day=dayLabel(m.created); if(day && day!==lastDay){ out+='<div class="chat-daydiv"><span>'+esc(day)+'</span></div>'; lastDay=day; }
+    if(m.system){ out+='<div class="chat-sys">'+esc(m.text||'')+'</div>'; return; }
     var mine=String(m.fromId)===me;
+    if(m.deleted){
+      out+='<div class="chat-row'+(mine?' mine':'')+'">'+(!mine?avatarHTML(m.fromName,'sm',m.fromId):'')+'<div class="chat-col"><div class="chat-msg'+(mine?' mine':'')+'">'+((!mine&&!isDM)?'<div class="chat-from">'+esc(m.fromName||'')+'</div>':'')+'<div class="chat-bubble chat-del">🚫 This message was deleted</div><div class="chat-meta"><span class="chat-time">'+esc(chatTime(m.created))+'</span></div></div></div></div>';
+      return;
+    }
     var ref=(m.taskRef&&m.taskRef.uid)?'<button class="chat-taskchip" data-action="chat-open-taskref" data-id="'+esc(m.id)+'">↪ '+esc(m.taskRef.client||'task')+(m.taskRef.cat?' · '+esc(m.taskRef.cat):'')+'</button>':'';
+    var rep=(m.replyTo&&m.replyTo.text)?'<div class="chat-quote"><span class="chat-qname">'+esc(m.replyTo.fromName||'')+'</span>'+esc(String(m.replyTo.text).slice(0,120))+'</div>':'';
     var tick = (mine && isDM) ? '<span class="chat-tick'+(dmSeen(otherId,m.created)?' seen':'')+'">'+(dmSeen(otherId,m.created)?'✓✓':'✓')+'</span>' : '';
-    var priv=(!mine && !isDM)?'<button class="chat-reply" data-action="chat-reply-private" data-id="'+esc(m.id)+'">↩︎ reply privately</button>':'';
+    var ed = m.edited?'<span class="chat-edited">edited</span>':'';
     out+='<div class="chat-row'+(mine?' mine':'')+'">'+(!mine?avatarHTML(m.fromName,'sm',m.fromId):'')+
-      '<div class="chat-col"><div class="chat-msg'+(mine?' mine':'')+'" data-action="chat-msg-info" data-id="'+esc(m.id)+'" title="Tap for info">'+((!mine&&!isDM)?'<div class="chat-from">'+esc(m.fromName||'')+'</div>':'')+ref+'<div class="chat-bubble">'+esc(m.text)+'</div><div class="chat-meta"><span class="chat-time">'+esc(chatTime(m.created))+'</span>'+tick+'</div></div>'+(priv?'<div class="chat-rowact">'+priv+'</div>':'')+'</div></div>';
+      '<div class="chat-col"><div class="chat-msg'+(mine?' mine':'')+'" data-action="chat-msg-menu" data-id="'+esc(m.id)+'" title="Tap for options">'+((!mine&&!isDM)?'<div class="chat-from">'+esc(m.fromName||'')+'</div>':'')+rep+ref+'<div class="chat-bubble">'+esc(m.text)+'</div><div class="chat-meta"><span class="chat-time">'+esc(chatTime(m.created))+'</span>'+ed+tick+'</div></div>'+chatReactionsHTML(m)+'</div></div>';
   });
   return out;
 }
+function chatReactionsHTML(m){
+  var rx=(m.reactions&&typeof m.reactions==='object')?m.reactions:{};
+  var keys=Object.keys(rx).filter(function(k){ return Array.isArray(rx[k])&&rx[k].length; });
+  if(!keys.length) return '';
+  var me=String(App.identity.employeeId);
+  return '<div class="chat-rx">'+keys.map(function(k){ var mine=rx[k].map(String).indexOf(me)>=0; return '<button type="button" class="chat-rxchip'+(mine?' mine':'')+'" data-action="chat-react" data-id="'+esc(m.id)+'" data-emo="'+esc(k)+'">'+esc(k)+' '+rx[k].length+'</button>'; }).join('')+'</div>';
+}
+function chatMsgKind(){ return (App._chat.tab==='direct')?'dm':'chat'; }
+function openMsgMenu(id){
+  var m=App._chatMsgMap[id]; if(!m || m.deleted || m.system) return;
+  var mine=String(m.fromId)===String(App.identity.employeeId); var isDM=(App._chat.tab==='direct');
+  var ex=document.getElementById('msg-sheet'); if(ex) ex.remove();
+  var ov=document.createElement('div'); ov.id='msg-sheet'; ov.className='overlay';
+  var emojis=['👍','❤️','😂','😮','😢','🙏'];
+  var h='<div class="msg-sheet-card">';
+  h+='<div class="msg-react-row">'+emojis.map(function(e){ return '<button type="button" class="msg-react" data-emo="'+e+'">'+e+'</button>'; }).join('')+'</div>';
+  h+='<button type="button" class="msg-act" data-act="reply">↩︎ Reply</button>';
+  if(!mine && !isDM) h+='<button type="button" class="msg-act" data-act="replypriv">✉ Reply privately</button>';
+  h+='<button type="button" class="msg-act" data-act="copy">📋 Copy</button>';
+  if(mine){ h+='<button type="button" class="msg-act" data-act="edit">✎ Edit</button><button type="button" class="msg-act danger" data-act="delete">🗑 Delete</button>'; }
+  h+='<button type="button" class="msg-act cancel" data-act="cancel">Cancel</button></div>';
+  ov.innerHTML=h; document.body.appendChild(ov);
+  ov.addEventListener('click', function(){ ov.remove(); });
+  var card=ov.querySelector('.msg-sheet-card'); if(card) card.addEventListener('click', function(ev){ ev.stopPropagation(); });
+  ov.querySelectorAll('.msg-react').forEach(function(b){ b.addEventListener('click', function(ev){ ev.stopPropagation(); ov.remove(); chatReact(id, b.getAttribute('data-emo')); }); });
+  ov.querySelectorAll('.msg-act').forEach(function(b){ b.addEventListener('click', function(ev){ ev.stopPropagation(); var a=b.getAttribute('data-act'); ov.remove(); if(a==='reply') chatStartReply(id); else if(a==='replypriv') chatReplyPrivate(id); else if(a==='copy') chatCopy(id); else if(a==='edit') chatEdit(id); else if(a==='delete') chatDelete(id); }); });
+}
+function chatReact(id, emo){ if(!emo) return; apiCall('reactMsg',{kind:chatMsgKind(), id:id, emoji:emo}).catch(function(){}); }
+function chatCopy(id){ var m=App._chatMsgMap[id]; if(!m) return; try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(m.text||'').then(function(){ toast('Copied.','info'); }, function(){ toast('Could not copy.','error'); }); } else { toast('Copy not supported here.','warn'); } }catch(e){ toast('Could not copy.','error'); } }
+function chatDelete(id){ openConfirm({ icon:'🗑️', title:'Delete this message?', body:'It will show as “This message was deleted” for everyone.', okLabel:'Delete', okClass:'btn-danger', onOk:function(){ apiCall('delMsg',{kind:chatMsgKind(), id:id}).then(function(r){ if(!r||!r.ok){ toast((r&&r.error)||'Could not delete.','error'); } }).catch(function(e){ toast(e.message||'Could not delete.','error'); }); } }); }
+function chatEdit(id){ var m=App._chatMsgMap[id]; if(!m) return; App._chatEditing={ id:m.id, kind:chatMsgKind() }; App._chatReplyTo=null; renderChat(); var i=document.getElementById('chat-input'); if(i){ i.value=m.text||''; i.focus(); } }
+function chatStartReply(id){ var m=App._chatMsgMap[id]; if(!m) return; App._chatEditing=null; App._chatReplyTo={ id:m.id, fromName:m.fromName, text:(m.text||'').slice(0,160) }; renderChat(); var i=document.getElementById('chat-input'); if(i) i.focus(); }
+function chatCancelReply(){ App._chatReplyTo=null; renderChat(); }
+function chatCancelEdit(){ App._chatEditing=null; var i=document.getElementById('chat-input'); if(i) i.value=''; renderChat(); }
+function chatClearChannel(){ if(!isAdmin()){ toast('Only an admin can clear the group chat.','warn'); return; } var ch=App._chat.channel; openConfirm({ icon:'🧹', title:'Clear this group chat?', body:'This permanently clears every message in this channel for everyone and leaves a “Chat cleared by you” note. Only an admin can do this.', okLabel:'Clear chat', okClass:'btn-danger', onOk:function(){ apiCall('clearChan',{channel:ch}).then(function(r){ if(r&&r.ok){ toast('Group chat cleared.','info'); } else { toast('Could not clear.','error'); } }).catch(function(e){ toast(e.message||'Could not clear.','error'); }); } }); }
+/* ===== 1-to-1 voice calls (WebRTC + Firestore signalling + free STUN) ===== */
+var Call = {
+  cur:null,
+  cfg:{ iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] },
+  _unsub:null, _ring:null, _vib:null, _dur:null, _timeout:null,
+  supported:function(){ return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.RTCPeerConnection); },
+  db:function(){ return firebase.firestore(); },
+  doc:function(id){ return Call.db().collection('calls').doc(String(id)); },
+  start:function(peerId, peerName){
+    if(!Call.supported()){ toast('Voice calls are not supported on this device/browser.','error'); return; }
+    if(Call.cur){ toast('A call is already in progress.','warn'); return; }
+    if(!peerId || String(peerId)===String(App.identity.employeeId)) return;
+    if(typeof Sync!=='undefined' && Sync.online && !Sync.online()){ toast('You need an internet connection to call.','warn'); return; }
+    navigator.mediaDevices.getUserMedia({audio:true, video:false}).then(function(stream){
+      var id='call-'+Date.now().toString(36)+Math.floor(Math.random()*1e4);
+      var pc=new RTCPeerConnection(Call.cfg); var remote=new MediaStream();
+      Call.cur={ id:id, role:'caller', peerId:String(peerId), peerName:peerName||'', pc:pc, local:stream, remote:remote, status:'calling', muted:false, answered:false, nCallee:0, started:0 };
+      stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+      pc.ontrack=function(ev){ (ev.streams[0]||remote).getTracks().forEach(function(t){ remote.addTrack(t); }); Call._audio(remote); };
+      pc.onicecandidate=function(ev){ if(ev.candidate){ try{ Call.doc(id).set({ callerCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(ev.candidate.toJSON())) },{merge:true}); }catch(e){} } };
+      pc.onconnectionstatechange=function(){ if(!Call.cur||Call.cur.pc!==pc) return; var s=pc.connectionState; if(s==='connected'){ Call._connected(); } else if(s==='failed'){ Call.hangup('Call failed to connect'); } };
+      Call._renderUI();
+      pc.createOffer().then(function(offer){ return pc.setLocalDescription(offer).then(function(){
+        return Call.doc(id).set({ id:id, from:String(App.identity.employeeId), fromName:App.identity.employeeName, to:String(peerId), toName:peerName||'', status:'ringing', offer:{type:offer.type, sdp:offer.sdp}, created:nowISO() });
+      }); }).then(function(){
+        Call._unsub=Call.doc(id).onSnapshot(function(s){ Call._callerSnap(s); });
+        try{ Push.send(String(peerId), '📞 '+App.identity.employeeName+' is calling', 'Open E-Diary to answer', 'call-'+id, { kind:'call', close:30 }); }catch(e){}
+        Call._timeout=setTimeout(function(){ if(Call.cur && Call.cur.status!=='connected'){ Call.hangup('No answer', true); } }, 35000);
+        Call._ringOut();
+      }).catch(function(){ Call._fail('Could not start the call.'); });
+    }).catch(function(){ toast('Microphone permission is needed to make a call.','error'); });
+  },
+  _callerSnap:function(s){ if(!Call.cur || Call.cur.role!=='caller') return; if(!s.exists){ Call.hangup(); return; } var d=s.data(); var pc=Call.cur.pc;
+    if(d.status==='declined'){ Call.hangup('Call declined'); return; }
+    if(d.status==='ended'){ Call.hangup(); return; }
+    if(d.answer && !Call.cur.answered){ Call.cur.answered=true; try{ pc.setRemoteDescription(new RTCSessionDescription(d.answer)); Call._stopRingOut(); Call._status('connecting'); }catch(e){} }
+    var cc=d.calleeCandidates||[]; for(var i=Call.cur.nCallee;i<cc.length;i++){ try{ pc.addIceCandidate(new RTCIceCandidate(JSON.parse(cc[i]))); }catch(e){} } Call.cur.nCallee=cc.length;
+  },
+  incoming:function(d){
+    if(Call.cur){ try{ Call.doc(d.id).set({status:'declined'},{merge:true}); }catch(e){} return; }
+    Call.cur={ id:d.id, role:'callee', peerId:String(d.from), peerName:d.fromName||'', pc:null, local:null, remote:null, status:'incoming', offer:d.offer, muted:false, nCaller:0, started:0 };
+    Call._renderUI(); Call._ringIn();
+    Call._unsub=Call.doc(d.id).onSnapshot(function(s){ if(!Call.cur||Call.cur.role!=='callee') return; if(!s.exists){ Call.hangup(); return; } var dd=s.data(); if((dd.status==='ended'||dd.status==='declined') && Call.cur.status==='incoming'){ Call._end('Call cancelled'); } });
+  },
+  accept:function(){
+    if(!Call.cur || Call.cur.role!=='callee') return; var c=Call.cur;
+    navigator.mediaDevices.getUserMedia({audio:true, video:false}).then(function(stream){
+      var pc=new RTCPeerConnection(Call.cfg); var remote=new MediaStream();
+      c.pc=pc; c.local=stream; c.remote=remote; Call._stopRingIn();
+      stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+      pc.ontrack=function(ev){ (ev.streams[0]||remote).getTracks().forEach(function(t){ remote.addTrack(t); }); Call._audio(remote); };
+      pc.onicecandidate=function(ev){ if(ev.candidate){ try{ Call.doc(c.id).set({ calleeCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(ev.candidate.toJSON())) },{merge:true}); }catch(e){} } };
+      pc.onconnectionstatechange=function(){ if(!Call.cur||Call.cur.pc!==pc) return; var s=pc.connectionState; if(s==='connected'){ Call._connected(); } else if(s==='failed'){ Call.hangup('Call failed to connect'); } };
+      pc.setRemoteDescription(new RTCSessionDescription(c.offer)).then(function(){ return pc.createAnswer(); }).then(function(ans){ return pc.setLocalDescription(ans).then(function(){ return Call.doc(c.id).set({ answer:{type:ans.type, sdp:ans.sdp}, status:'accepted' },{merge:true}); }); }).then(function(){
+        if(Call._unsub){ try{ Call._unsub(); }catch(e){} }
+        Call._unsub=Call.doc(c.id).onSnapshot(function(s){ Call._calleeSnap(s); });
+        c.status='connecting'; Call._renderUI();
+      }).catch(function(){ Call._fail('Could not answer the call.'); });
+    }).catch(function(){ toast('Microphone permission is needed to answer.','error'); Call.decline(); });
+  },
+  _calleeSnap:function(s){ if(!Call.cur || Call.cur.role!=='callee') return; if(!s.exists){ Call.hangup(); return; } var d=s.data(); if(d.status==='ended'){ Call.hangup(); return; } var pc=Call.cur.pc; if(!pc) return; var cc=d.callerCandidates||[]; for(var i=Call.cur.nCaller;i<cc.length;i++){ try{ pc.addIceCandidate(new RTCIceCandidate(JSON.parse(cc[i]))); }catch(e){} } Call.cur.nCaller=cc.length; },
+  decline:function(){ if(!Call.cur) return; try{ Call.doc(Call.cur.id).set({status:'declined'},{merge:true}); }catch(e){} Call._end(); },
+  hangup:function(msg, missed){
+    if(!Call.cur || Call.cur._ending) return; Call.cur._ending=true; var c=Call.cur;
+    try{ Call.doc(c.id).set({status:'ended'},{merge:true}); }catch(e){}
+    try{ if(c.role==='caller'){ var dur=c.started?Math.round((Date.now()-c.started)/1000):0; Call._log(c.peerId, c.peerName, missed?'📞 Missed call (no answer)':(dur? ('📞 Voice call · '+Call._fmt(dur)) : '📞 Call ended')); } }catch(e){}
+    Call._end(msg);
+  },
+  _connected:function(){ if(!Call.cur || Call.cur.status==='connected') return; Call.cur.status='connected'; Call.cur.started=Date.now(); Call._stopRingOut(); Call._stopRingIn(); if(Call._timeout){ clearTimeout(Call._timeout); Call._timeout=null; } Call._renderUI(); Call._dur=setInterval(function(){ var el=document.getElementById('call-status'); if(el && Call.cur && Call.cur.started) el.textContent=Call._fmt(Math.round((Date.now()-Call.cur.started)/1000)); }, 1000); },
+  _status:function(st){ if(!Call.cur) return; Call.cur.status=st; var el=document.getElementById('call-status'); if(el) el.textContent=(st==='connecting'?'Connecting…':st); },
+  _end:function(msg){ var c=Call.cur; Call.cur=null;
+    Call._stopRingIn(); Call._stopRingOut();
+    if(Call._timeout){ clearTimeout(Call._timeout); Call._timeout=null; }
+    if(Call._dur){ clearInterval(Call._dur); Call._dur=null; }
+    if(Call._unsub){ try{ Call._unsub(); }catch(e){} Call._unsub=null; }
+    if(c){ try{ if(c.local) c.local.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} try{ if(c.pc) c.pc.close(); }catch(e){} try{ Call.doc(c.id).delete(); }catch(e){} }
+    var a=document.getElementById('call-audio'); if(a){ try{ a.srcObject=null; }catch(e){} }
+    var ov=document.getElementById('call-ov'); if(ov) ov.remove();
+    if(msg) toast(msg,'info');
+  },
+  toggleMute:function(){ if(!Call.cur||!Call.cur.local) return; Call.cur.muted=!Call.cur.muted; try{ Call.cur.local.getAudioTracks().forEach(function(t){ t.enabled=!Call.cur.muted; }); }catch(e){} var b=document.getElementById('call-mute'); if(b) b.textContent=Call.cur.muted?'🔇 Unmute':'🎙 Mute'; },
+  _audio:function(stream){ var a=document.getElementById('call-audio'); if(!a){ a=document.createElement('audio'); a.id='call-audio'; a.autoplay=true; a.setAttribute('playsinline',''); document.body.appendChild(a); } try{ a.srcObject=stream; }catch(e){} try{ var p=a.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){} },
+  _fmt:function(s){ var m=Math.floor(s/60), ss=s%60; return m+':'+(ss<10?'0':'')+ss; },
+  _fail:function(m){ toast(m,'error'); Call.hangup(); },
+  _log:function(peerId, peerName, text){ try{ var me=App.identity; var did='D-'+Date.now()+'-'+Math.floor(Math.random()*1e5); var parties=[String(me.employeeId), String(peerId)].sort(); firebase.firestore().collection('dms').doc(did).set({ id:did, text:text, fromId:me.employeeId, fromName:me.employeeName, toId:String(peerId), toName:peerName||'', created:nowISO(), parties:parties, call:true }); }catch(e){} },
+  _ringOut:function(){ Call._ring=Call._beeper(420, 0.9, 2.2); },
+  _stopRingOut:function(){ if(Call._ring){ try{ Call._ring(); }catch(e){} Call._ring=null; } },
+  _ringIn:function(){ Call._ring=Call._beeper(540, 0.4, 1.1); try{ if(navigator.vibrate){ Call._vib=setInterval(function(){ try{ navigator.vibrate(500); }catch(e){} }, 1600); } }catch(e){} },
+  _stopRingIn:function(){ if(Call._ring){ try{ Call._ring(); }catch(e){} Call._ring=null; } if(Call._vib){ clearInterval(Call._vib); Call._vib=null; try{ navigator.vibrate(0); }catch(e){} } },
+  _beeper:function(freq, on, period){ try{ var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return function(){}; var ctx=new Ctx(); if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} } var stopped=false; var ping=function(){ if(stopped) return; try{ var o=ctx.createOscillator(), g=ctx.createGain(); o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime+0.05); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+on); o.start(); o.stop(ctx.currentTime+on+0.06); }catch(e){} }; ping(); var iv=setInterval(ping, period*1000); return function(){ stopped=true; clearInterval(iv); try{ ctx.close(); }catch(e){} }; }catch(e){ return function(){}; } },
+  _renderUI:function(){ var c=Call.cur; var ex=document.getElementById('call-ov'); if(ex) ex.remove(); if(!c) return;
+    var ov=document.createElement('div'); ov.id='call-ov'; ov.className='overlay call-ov';
+    var st = c.status==='incoming' ? 'Incoming call…' : (c.status==='calling' ? 'Calling…' : (c.status==='connecting' ? 'Connecting…' : 'Connected'));
+    var acts = (c.status==='incoming')
+      ? '<button class="call-btn decline" data-action="call-decline" title="Decline">✖</button><button class="call-btn accept" data-action="call-accept" title="Answer">📞</button>'
+      : '<button class="call-btn mute" id="call-mute" data-action="call-mute">'+(c.muted?'🔇 Unmute':'🎙 Mute')+'</button><button class="call-btn hang" data-action="call-hangup" title="End">✖ End</button>';
+    ov.innerHTML='<div class="call-card"><div class="call-av">'+avatarHTML(c.peerName||'?','md',c.peerId)+'</div><div class="call-name">'+esc(c.peerName||'Teammate')+'</div><div class="call-status" id="call-status">'+st+'</div><div class="call-actions">'+acts+'</div></div>';
+    document.body.appendChild(ov);
+  }
+};
 function renderChat(){
   var panel=document.getElementById('chat-panel'); if(!panel) return;
   var st=App._chat;
@@ -9359,7 +9591,7 @@ function renderChat(){
   var h;
   if(inDM){
     var pr=presenceOf(st.dm); var op=lastOpenedText(st.dm);
-    h='<div class="chat-topbar dmbar"><button class="chat-back" data-action="chat-back" aria-label="Back">‹</button>'+avatarHTML(other.name,'md',st.dm)+'<div class="dmbar-info"><div class="dmbar-name">'+esc(other.name||'')+'</div><div class="dmbar-sub">'+(pr.online?'<span class="pr-dot on"></span> online':(pr.text?esc(pr.text):'🔒 private'))+(op?' · '+esc(op):'')+'</div></div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
+    h='<div class="chat-topbar dmbar"><button class="chat-back" data-action="chat-back" aria-label="Back">‹</button>'+avatarHTML(other.name,'md',st.dm)+'<div class="dmbar-info"><div class="dmbar-name">'+esc(other.name||'')+'</div><div class="dmbar-sub">'+(pr.online?'<span class="pr-dot on"></span> online':(pr.text?esc(pr.text):'🔒 private'))+(op?' · '+esc(op):'')+'</div></div><button class="chat-callbtn" data-action="call-start" data-id="'+esc(st.dm)+'" data-name="'+esc(other.name||'')+'" title="Voice call">📞</button><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
   } else {
     h='<div class="chat-topbar"><div class="chat-title">💬 Team Chat</div><button class="chat-x" data-action="chat-close" aria-label="Close">&times;</button></div>';
     h+='<div class="chat-tabrow"><button class="chat-tab'+(st.tab==='channels'?' on':'')+'" data-action="chat-tab" data-tab="channels"># Channels</button><button class="chat-tab'+(st.tab==='direct'?' on':'')+'" data-action="chat-tab" data-tab="direct">✉ Direct'+(dmUnreadTotal()?'<span class="chat-dot"></span>':'')+'</button></div>';
@@ -9371,7 +9603,7 @@ function renderChat(){
     var cmem=channelMembers(st.channel); var names=cmem.map(function(m){ return m.name+(String(m.userId)===String(App.identity.employeeId)?' (you)':''); });
     var mv = names.length>4 ? ' moving' : '';
     var track = names.map(function(n){ return '<span class="cmq-name">'+esc(n)+'</span>'; }).join('<span class="cmq-dot">•</span>');
-    h+='<div class="chat-members"><span class="cmq-ico">👥 '+cmem.length+'</span><div class="cmq-vp'+(mv?' masked':'')+'"><div class="cmq-track'+mv+'">'+track+(mv?'<span class="cmq-dot">•</span>'+track:'')+'</div></div></div>';
+    h+='<div class="chat-members"><span class="cmq-ico">👥 '+cmem.length+'</span><div class="cmq-vp'+(mv?' masked':'')+'"><div class="cmq-track'+mv+'">'+track+(mv?'<span class="cmq-dot">•</span>'+track:'')+'</div></div>'+(isAdmin()?'<button class="chat-clearbtn" data-action="chat-clearchan" title="Clear this group chat (admin)">🧹</button>':'')+'</div>';
     h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.chat||[]).filter(function(m){return m.channel===st.channel;}), false)+'</div>';
     showCompose=true;
   } else if(!inDM){
@@ -9388,18 +9620,22 @@ function renderChat(){
   }
   if(showCompose){
     var ref=App._chatRef?'<div class="chat-refbar">↪ '+esc(App._chatRef.client||'task')+(App._chatRef.cat?' · '+esc(App._chatRef.cat):'')+' <button data-action="chat-clear-ref" title="Remove">&times;</button></div>':'';
-    h+='<div class="chat-compose">'+ref+'<div class="chat-inrow"><button class="chat-attach" data-action="chat-refer" title="Refer a task">📎</button><input id="chat-input" placeholder="Type a message…" autocomplete="off" maxlength="2000"><button class="chat-send" data-action="chat-send" title="Send">➤</button></div></div>';
+    var rb=App._chatReplyTo?'<div class="chat-refbar chat-replybar">↩︎ Replying to <b>'+esc(App._chatReplyTo.fromName||'')+'</b>: '+esc(String(App._chatReplyTo.text||'').slice(0,60))+' <button data-action="chat-cancel-reply" title="Cancel">&times;</button></div>':'';
+    var eb=App._chatEditing?'<div class="chat-refbar chat-editbar">✎ Editing message <button data-action="chat-cancel-edit" title="Cancel">&times;</button></div>':'';
+    h+='<div class="chat-compose">'+ref+rb+eb+'<div class="chat-inrow"><button class="chat-attach" data-action="chat-refer" title="Refer a task">📎</button><input id="chat-input" placeholder="Type a message…" autocomplete="off" maxlength="2000"><button class="chat-send" data-action="chat-send" title="Send">➤</button></div></div>';
   }
   panel.innerHTML=h;
   var sc=document.getElementById('chat-scroll'); if(sc) sc.scrollTop=sc.scrollHeight;
 }
 function chatSend(){
   var inp=document.getElementById('chat-input'); if(!inp) return; var text=(inp.value||'').trim(); if(!text) return;
-  var st=App._chat, ref=App._chatRef; inp.value=''; App._chatRef=null;
+  var st=App._chat;
+  if(App._chatEditing){ var _ed=App._chatEditing; App._chatEditing=null; inp.value=''; apiCall('editMsg',{kind:_ed.kind, id:_ed.id, text:text}).then(function(r){ if(!r||!r.ok) toast((r&&r.error)||'Could not edit.','error'); renderChat(); }, function(){ toast('Could not edit.','error'); renderChat(); }); return; }
+  var ref=App._chatRef, reply=App._chatReplyTo; inp.value=''; App._chatRef=null; App._chatReplyTo=null;
   var done=function(){}; var fail=function(){ toast('Message didn’t send — try again.','error'); };
   var me=String(App.identity.employeeId);
-  if(st.tab==='channels'){ apiCall('sendChat',{channel:st.channel,text:text,taskRef:ref}).then(done,fail); }
-  else if(st.dm){ apiCall('sendDM',{toId:st.dm,text:text,taskRef:ref}).then(done,fail);
+  if(st.tab==='channels'){ apiCall('sendChat',{channel:st.channel,text:text,taskRef:ref,replyTo:reply}).then(done,fail); }
+  else if(st.dm){ apiCall('sendDM',{toId:st.dm,text:text,taskRef:ref,replyTo:reply}).then(done,fail);
     // Private DM → 6-second notification to the recipient.
     try{ Push.send(st.dm, 'Message from '+App.identity.employeeName, text, 'dm-'+st.dm, { kind:'dm', meId:st.dm, peerId:me, quick:'1', close:6 }); }catch(e){}
   }
@@ -9722,6 +9958,16 @@ document.addEventListener('click', function(e){
     case 'ref-who': refSetWho(el.getAttribute('data-who')); break;
     case 'chat-open-taskref': openTaskRefFromMsg(el.getAttribute('data-id')); break;
     case 'chat-msg-info': openMsgInfo(el.getAttribute('data-id')); break;
+    case 'chat-msg-menu': openMsgMenu(el.getAttribute('data-id')); break;
+    case 'chat-react': chatReact(el.getAttribute('data-id'), el.getAttribute('data-emo')); break;
+    case 'chat-clearchan': chatClearChannel(); break;
+    case 'call-start': Call.start(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
+    case 'call-accept': Call.accept(); break;
+    case 'call-decline': Call.decline(); break;
+    case 'call-hangup': Call.hangup(); break;
+    case 'call-mute': Call.toggleMute(); break;
+    case 'chat-cancel-reply': chatCancelReply(); break;
+    case 'chat-cancel-edit': chatCancelEdit(); break;
     case 'msginfo-close': { var _mi=document.getElementById('msginfo-modal'); if(_mi) _mi.classList.add('hidden'); break; }
     case 'chat-reply-private': chatReplyPrivate(el.getAttribute('data-id')); break;
     case 'asst-speak': voiceOpen('smart'); break;
