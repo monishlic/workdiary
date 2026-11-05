@@ -352,6 +352,21 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .at-backdrop{ position:fixed; inset:0; z-index:330; background:transparent; }
 .at-pills{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 2px; }
 .at-rows{ margin:8px 0 2px; }
+/* Assign form — grouped, soft-tinted sections with colored labels */
+.at-sec{ border:1px solid var(--border); border-radius:16px; padding:6px 12px; margin:10px 0; }
+.at-sec .at-rows{ margin:0; }
+.at-sec .at-r{ border-top:none; }
+.at-sec .at-r + .at-r{ border-top:1px solid rgba(110,110,140,.16); }
+.at-sec-details{ background:rgba(110,110,140,.05); padding:10px 12px; }
+.at-sec-details .at-field{ background:var(--bg-card); }
+.at-sec-people{ background:rgba(99,91,255,.07); border-color:rgba(99,91,255,.22); }
+.at-sec-people .at-r-l{ color:#6b5cff; }
+.at-sec-timing{ background:rgba(43,130,255,.07); border-color:rgba(43,130,255,.22); }
+.at-sec-timing .at-r-l{ color:#3b82f6; }
+.at-sec-priority{ background:rgba(240,160,0,.08); border-color:rgba(240,160,0,.24); }
+.at-sec-priority .at-r-l{ color:#c98a00; }
+.at-sec-class{ background:rgba(16,165,130,.07); border-color:rgba(16,165,130,.22); }
+.at-sec-class .at-r-l{ color:#12a37a; }
 .at-r{ display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-top:1px solid var(--border); }
 .at-r:first-child{ border-top:none; padding-top:6px; }
 .at-r-l{ flex:0 0 118px; display:flex; align-items:center; gap:6px; font-weight:700; font-size:.84rem; color:var(--text-sec); padding-top:9px; line-height:1.2; }
@@ -1587,6 +1602,20 @@ h1,h2,h3,.cat-title,.dash-hero h2,.hero-eyebrow,.sb-brand,.id-name,.avpick-hero 
 .tcard-act{ display:flex; align-items:center; flex:none; }
 .tcard-act .complete-btn{ width:38px; height:38px; padding:0; border-radius:50%; justify-content:center; }
 .tcard.done{ opacity:.85; } .tcard.done .tcard-client{ color:var(--text-completed); }
+/* --- Task card: tinted, bordered parts + blinking comment badge --- */
+.tcard-client{ color:var(--accent); }
+.tcard.done .tcard-client{ color:var(--text-completed); }
+.tcard-pills .tpill{ border:1px solid rgba(110,110,140,.20); background:rgba(110,110,140,.07); color:var(--text-sec); }
+.tcard-pills .tpill:first-child{ background:var(--accent-soft); color:var(--accent); border-color:rgba(99,91,255,.28); }
+.tcard-pills .tp-by{ background:rgba(99,91,255,.12); border-color:rgba(99,91,255,.28); }
+.tcard-pills .tp-from{ background:rgba(240,160,0,.14); border-color:rgba(240,160,0,.32); }
+.tcard-pills .tp-rep{ background:rgba(16,165,160,.14); border-color:rgba(16,165,160,.32); }
+.tcard-pills .tp-esc{ background:var(--danger-bg); color:var(--danger-dark); border-color:rgba(220,60,60,.30); }
+.tcard.st-overdue .tp-due, .tcard.st-pending .tp-due{ border-color:rgba(110,110,140,.22); }
+.sc-chips .sc-due, .sc-chips .sc-rem, .sc-chips .sc-from{ border:1px solid rgba(110,110,140,.20); }
+.cmt-badge{ position:relative; display:inline-block; margin:0 4px; font-size:.95rem; line-height:1; vertical-align:middle; }
+.cmt-dot{ position:absolute; top:-3px; right:-4px; width:8px; height:8px; border-radius:50%; background:#e03131; box-shadow:0 0 0 2px var(--bg-card,#fff); animation:cmtBlink .9s infinite; }
+@keyframes cmtBlink{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.25; transform:scale(.65); } }
 /* Slate note inline edit + edit pencil */
 .sn-btn.sn-edit{ color:#5b6675; }
 .sn-edit-box{ width:100%; min-height:54px; border:none; background:transparent; font:inherit; font-size:.86rem; color:#2a2a2a; resize:none; outline:none; line-height:1.4; }
@@ -2242,17 +2271,23 @@ textarea.nl-in{min-height:64px;resize:vertical}
     <div class="modal-b at-body">
       <div id="assign-tpl-picker"></div>
 
-      <!-- Title, Client, Description — separate clean fields -->
+      <!-- Details -->
+      <div class="at-sec at-sec-details">
       <input type="text" id="assign-title-input" class="at-field at-title" maxlength="140" placeholder="Task title" autocomplete="off">
       <input type="text" id="assign-client" class="at-field at-client" maxlength="120" placeholder="Client name (optional)" autocomplete="off">
       <textarea id="assign-details" class="at-field at-desc" rows="3" maxlength="2000" placeholder="Add a description…"></textarea>
+      </div>
 
-      <!-- Core fields — clean, always-visible rows -->
-      <div class="at-rows">
+      <!-- People -->
+      <div class="at-sec at-sec-people"><div class="at-rows">
         <div class="at-r">
           <span class="at-r-l">👥 Assigned <span class="req">*</span></span>
           <div class="at-r-c"><div id="assign-to-chips"></div></div>
         </div>
+      </div></div>
+
+      <!-- Timing -->
+      <div class="at-sec at-sec-timing"><div class="at-rows">
         <div class="at-r">
           <span class="at-r-l">📅 Due date <span class="req">*</span></span>
           <div class="at-r-c">
@@ -2266,6 +2301,10 @@ textarea.nl-in{min-height:64px;resize:vertical}
             </div>
           </div>
         </div>
+      </div></div>
+
+      <!-- Priority -->
+      <div class="at-sec at-sec-priority"><div class="at-rows">
         <div class="at-r">
           <span class="at-r-l">🚩 Priority</span>
           <div class="at-r-c">
@@ -2277,6 +2316,10 @@ textarea.nl-in{min-height:64px;resize:vertical}
             </div>
           </div>
         </div>
+      </div></div>
+
+      <!-- Where it goes -->
+      <div class="at-sec at-sec-class"><div class="at-rows">
         <div class="at-r">
           <span class="at-r-l">🏢 Department <span class="req">*</span></span>
           <div class="at-r-c"><select id="assign-dept" class="f-input"></select></div>
@@ -2285,7 +2328,7 @@ textarea.nl-in{min-height:64px;resize:vertical}
           <span class="at-r-l">🏷 Category <span class="req">*</span></span>
           <div class="at-r-c combo"><input type="text" id="assign-cat" class="f-input combo-input" data-combo-type="cat" data-dept-input="assign-dept" data-box="assign-cat-sugg" placeholder="Type or pick a category…" autocomplete="off" maxlength="60"><div id="assign-cat-sugg" class="sugg hidden"></div></div>
         </div>
-      </div>
+      </div></div>
 
       <!-- Add checklist (optional) -->
       <button type="button" class="at-collapse" data-action="at-toggle" data-panel="assign-panel-checklist">＋ Add checklist <span class="at-chev">▾</span></button>
@@ -2663,7 +2706,7 @@ var FB = (function(){
               // by someone else, and never let a routine sync rewrite who assigned or created it.
               if(old && String(old.ownerId)!==String(u.userId)) return;                  // foreign task leaked in -> leave the server copy untouched
               if(!old){ t.ownerId=u.userId; t.ownerName=u.name; }                         // brand-new self task -> the creator owns it
-              else { t.ownerId=old.ownerId; t.ownerName=old.ownerName; t.assignedById=old.assignedById; t.assignedByName=old.assignedByName; t.createdById=old.createdById; t.createdByName=old.createdByName; if(old.reassignedFromId!==undefined){ t.reassignedFromId=old.reassignedFromId; t.reassignedFromName=old.reassignedFromName; } }
+              else { t.ownerId=old.ownerId; t.ownerName=old.ownerName; t.assignedById=old.assignedById; t.assignedByName=old.assignedByName; t.createdById=old.createdById; t.createdByName=old.createdByName; if(old.reassignedFromId!==undefined){ t.reassignedFromId=old.reassignedFromId; t.reassignedFromName=old.reassignedFromName; } if(old.lastCommentAt!==undefined){ t.lastCommentAt=old.lastCommentAt; t.lastCommentById=old.lastCommentById; t.lastCommentByName=old.lastCommentByName; } }
               batch.set(col('tasks').doc(String(t.uid)), t, {merge:false});
               var oldStatus=old?old.status:'';
               var msg='', typ='';
@@ -2795,8 +2838,9 @@ var FB = (function(){
 
         case 'addComment': {
           if(!b.taskUid||!b.text) throw new Error('Missing comment.');
-          var u=me(); var id=newId('C');
-          return col('comments').doc(id).set({ commentId:id, taskUid:String(b.taskUid), authorId:u.userId, authorName:u.name, text:String(b.text), created:nowISO() })
+          var u=me(); var id=newId('C'); var cnow=nowISO();
+          return col('comments').doc(id).set({ commentId:id, taskUid:String(b.taskUid), authorId:u.userId, authorName:u.name, text:String(b.text), created:cnow })
+            .then(function(){ return col('tasks').doc(String(b.taskUid)).set({ lastCommentAt:cnow, lastCommentById:u.userId, lastCommentByName:u.name }, {merge:true}); })
             .then(function(){ return col('tasks').doc(String(b.taskUid)).get(); })
             .then(function(s){ if(s.exists){ var t=s.data(); var other=String(t.ownerId)===String(u.userId)?t.assignedById:t.ownerId; if(other && String(other)!==String(u.userId)) return addNotif(other, u.name, u.name+' commented on '+t.clientName, t.uid, 'comment'); } })
             .then(function(){ return {ok:true}; });
@@ -6248,6 +6292,10 @@ function taskHeadline(t){
   if(ti && cl) return esc(ti)+'<span class="hl-sub"> · '+esc(cl)+'</span>';
   return esc(ti||cl||'Untitled task');
 }
+function taskSeenMap(){ try{ return JSON.parse(localStorage.getItem('edTaskSeen')||'{}')||{}; }catch(e){ return {}; } }
+function markTaskSeen(uid, stamp){ if(!uid) return; try{ var m=taskSeenMap(); m[String(uid)]=String(stamp||''); localStorage.setItem('edTaskSeen', JSON.stringify(m)); }catch(e){} }
+function taskUnseenComment(t){ if(!t||!t.lastCommentAt) return false; var meId=String((App.identity&&App.identity.employeeId)||''); if(String(t.lastCommentById||'')===meId) return false; var seen=taskSeenMap()[String(t.uid||'')]; return seen!==String(t.lastCommentAt); }
+function commentBadge(t){ return taskUnseenComment(t) ? '<span class="cmt-badge" title="New comment">\uD83D\uDCAC<span class="cmt-dot"></span></span>' : ''; }
 function taskCard(t,isDone,showCat){
   var heat=isDone?0:taskHeat(t);
   var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId);
@@ -6257,7 +6305,7 @@ function taskCard(t,isDone,showCat){
   var h='<div class="card tcard st-'+st+(isDone?' done':'')+(heat>=0.08?' hot':'')+'" style="--heat:'+heat.toFixed(2)+'" data-action="open-task" data-id="'+esc(t.taskId)+'">';
   h+='<div class="tcard-l">';
   // Header — title (or client on older tasks) + status
-  h+='<div class="tcard-top"><span class="tcard-client">'+taskHeadline(t)+'</span><span class="tcard-status st-'+st+'">'+stLbl+'</span></div>';
+  h+='<div class="tcard-top"><span class="tcard-client">'+taskHeadline(t)+'</span>'+commentBadge(t)+'<span class="tcard-status st-'+st+'">'+stLbl+'</span></div>';
   // Detail pills — one neat chip per attribute
   h+='<div class="tcard-pills">';
   /* client name now appears in the card headline */
@@ -7550,6 +7598,7 @@ function remarksBlock(t){
 function openTask(taskId, editMode){
   var t=App.tasks.find(function(x){return x.taskId===taskId;});
   if(!t){ toast('Task not found.','error'); return; }
+  try{ markTaskSeen(t.uid, t.lastCommentAt||''); document.querySelectorAll('[data-id="'+t.taskId+'"] .cmt-badge').forEach(function(b){ b.remove(); }); }catch(e){}
   var active=isActive(t);
   var iAssigned = t.assignedById && String(t.assignedById)===String(App.identity.employeeId); // I assigned it (incl. to myself)
   var shared = t.assignedById && !iAssigned;                                                  // someone else assigned it to me
@@ -8889,7 +8938,7 @@ function sharedCard(t){
   var isDone=t.status==='Completed';
   var od=overdueDays(t);
   var h='<div class="card'+(isDone?' done':'')+'" data-action="open-shared" data-uid="'+esc(t.uid)+'">';
-  h+='<div class="card-body"><div class="card-client">'+taskHeadline(t)+'</div>';
+  h+='<div class="card-body"><div class="card-client">'+taskHeadline(t)+commentBadge(t)+'</div>';
   h+='<div class="sc-chips">';
   h+='<span class="sc-who">\uD83D\uDC64 To '+esc(t.ownerName||'\u2014')+'</span>';
   if(isDone){ h+='<span class="sc-due done">\u2713 '+(t.completedTimestamp?('Done '+esc(fmtDate(t.completedTimestamp))):'Done')+'</span>'; }
@@ -8915,6 +8964,7 @@ function openAdminTask(uid){
 /* Editable view for the assigner (Assigned by Me) or an admin (staff profile) */
 function openManagedTask(t){
   var isDone=t.status==='Completed';
+  try{ markTaskSeen(t.uid, t.lastCommentAt||''); document.querySelectorAll('[data-uid="'+t.uid+'"] .cmt-badge').forEach(function(b){ b.remove(); }); }catch(e){}
   var canEdit=String(t.assignedById)===String(App.identity.employeeId);   // ONLY the assigner edits/completes an assigned task
   document.getElementById('det-title').textContent=canEdit?('Manage · '+(t.title||t.clientName)):(t.title||t.clientName);
   var h='<div class="assign-banner" style="background:var(--accent-soft)">&#128204; Assigned to '+esc(t.ownerName)+' · '+esc(t.status)+'</div>';

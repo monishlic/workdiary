@@ -3,7 +3,7 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v117';
+const CACHE = 'workdiary-v120';
 /* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
 const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
@@ -19,10 +19,10 @@ self.addEventListener('push', function(event){
   var tag   = d.tag   || n.tag   || 'ediary';
   event.waitUntil(
     clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
-      // If an app window is focused, it shows its own in-app alert — skip the OS popup
-      // to avoid a duplicate. Otherwise (closed / background) show the lock-screen popup.
+      // We ALWAYS show a notification now. Silently skipping it when a window was focused made
+      // iOS/Safari treat the push as "silent" and throttle/delay later pushes (the ~10-min lag).
+      // When a window is open we instead flash it briefly (~1s) so there is no lingering duplicate.
       var focused = list.some(function(c){ return c.focused === true || c.visibilityState === 'visible'; });
-      if(focused) return;
       // Duration model:
       //   d.close = number of seconds → auto-dismiss after that (e.g. 3 or 6).
       //   no d.close (and not sticky:'0') → "stay until tapped".
@@ -30,6 +30,7 @@ self.addEventListener('push', function(event){
       var closeSecs = parseInt(d.close, 10);
       if(isNaN(closeSecs) && d.sticky === '0') closeSecs = 6;
       var timed = !isNaN(closeSecs) && closeSecs > 0;
+      if(focused){ timed = true; closeSecs = 1; }   // app open -> brief 1-second flash, then auto-dismiss
       var opts = {
         body: body,
         icon: 'icon-192.png?v=3',
