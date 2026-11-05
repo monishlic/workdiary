@@ -4025,6 +4025,7 @@ var FBLive = {
 
     // Team + department chat (one collection, all channels; small office → last 250 msgs)
     try{ db.collection('calls').where('to','==',uid).onSnapshot(function(qs){ qs.docChanges().forEach(function(ch){ if(ch.type!=='added') return; var d=ch.doc.data(); if(!d || d.status!=='ringing') return; if(typeof Call==='undefined' || Call.cur) return; var age=Date.now()-new Date(d.created||0).getTime(); if(age>60000) return; try{ Call.incoming(d); }catch(e){} }); }); }catch(e){}
+    try{ if(typeof Call!=='undefined' && !Call._hidPoll){ Call._hidPoll=setInterval(function(){ try{ if(document.hidden && App.identity && window.firebase && typeof Call!=='undefined' && !Call.cur){ Call.checkIncoming(); } }catch(e){} }, 5000); } }catch(e){}
     try{ if(typeof Call!=='undefined' && !Call._visHook){ Call._visHook=true; document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ Call.checkIncoming(); }catch(e){} } }); window.addEventListener('focus', function(){ try{ Call.checkIncoming(); }catch(e){} }); setTimeout(function(){ try{ Call.checkIncoming(); }catch(e){} }, 1200); } }catch(e){}
     try{ db.collection('chat').orderBy('created').limitToLast(80).onSnapshot(function(qs){
       App.chat=[]; qs.forEach(function(d){ App.chat.push(d.data()); });
@@ -9545,11 +9546,11 @@ var Call = {
       pc.onicecandidate=function(ev){ if(ev.candidate){ try{ Call.doc(id).set({ callerCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(ev.candidate.toJSON())) },{merge:true}); }catch(e){} } };
       pc.onconnectionstatechange=function(){ if(!Call.cur||Call.cur.pc!==pc) return; var s=pc.connectionState; if(s==='connected'){ Call._connected(); } else if(s==='failed'){ Call.hangup('Call failed to connect'); } };
       Call._renderUI();
+      try{ Push.send(String(peerId), (vid?'📹 ':'📞 ')+App.identity.employeeName+(vid?' wants to video call':' is calling'), 'Open E-Diary to answer', 'call-'+id, { kind:'call', close:35 }); }catch(e){}
       pc.createOffer().then(function(offer){ return pc.setLocalDescription(offer).then(function(){
         return Call.doc(id).set({ id:id, from:String(App.identity.employeeId), fromName:App.identity.employeeName, to:String(peerId), toName:peerName||'', status:'ringing', video:vid, offer:{type:offer.type, sdp:offer.sdp}, created:nowISO() });
       }); }).then(function(){
         Call._unsub=Call.doc(id).onSnapshot(function(s){ Call._callerSnap(s); });
-        try{ Push.send(String(peerId), (vid?'📹 ':'📞 ')+App.identity.employeeName+(vid?' wants to video call':' is calling'), 'Open E-Diary to answer', 'call-'+id, { kind:'call', close:35 }); }catch(e){}
         Call._timeout=setTimeout(function(){ if(Call.cur && Call.cur.status!=='connected'){ Call.hangup('No answer', true); } }, 35000);
         Call._ringOut();
       }).catch(function(){ Call._fail('Could not start the call.'); });
