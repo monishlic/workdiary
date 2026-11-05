@@ -2641,6 +2641,7 @@ var FB = (function(){
     if(ready) return ready;
     firebase.initializeApp(cfg);
     db = firebase.firestore();
+    try{ db.settings({ ignoreUndefinedProperties:true }); }catch(e){}
     app = firebase.auth();
     ready = app.signInAnonymously().then(function(){ return true; });
     return ready;
