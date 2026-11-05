@@ -3,7 +3,7 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v127';
+const CACHE = 'workdiary-v130';
 /* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
 const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
@@ -48,6 +48,14 @@ self.addEventListener('push', function(event){
           { action:'okay',     title:'Okay' }
         ];
       }
+      // Incoming call → Answer / Decline straight from the notification.
+      if(d.kind === 'call'){
+        opts.actions = [
+          { action:'call-answer',  title:'📞 Answer' },
+          { action:'call-decline', title:'Decline' }
+        ];
+        opts.requireInteraction = true;
+      }
       return self.registration.showNotification(title, opts).then(function(){
         // Auto-dismiss timed notifications after the requested number of seconds.
         if(timed){
@@ -64,6 +72,25 @@ function focusApp(){
   return clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
     for(var i=0;i<list.length;i++){ if('focus' in list[i]) return list[i].focus(); }
     if(clients.openWindow) return clients.openWindow('./');
+  });
+}
+
+/* Answer/Decline tapped on a call notification. Tell any open tab to act; for Answer
+   bring a tab forward (camera/mic need a visible page) or open one; Decline is silent
+   if a tab is open (it writes the decline), else opens briefly to write it. */
+function routeCall(d, act){
+  var cid = d.callId || (d.tag || '').replace(/^call-/, '');
+  var answer = (act === 'call-answer');
+  var msg = { type:'ediary-call', action: answer ? 'answer' : 'decline', callId: cid };
+  return clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
+    list.forEach(function(c){ try{ c.postMessage(msg); }catch(e){} });
+    if(answer){
+      for(var i=0;i<list.length;i++){ if('focus' in list[i]) return list[i].focus(); }
+      if(clients.openWindow) return clients.openWindow('./?call=' + encodeURIComponent(cid) + '&answer=1');
+    } else {
+      if(list.length) return;
+      if(clients.openWindow) return clients.openWindow('./?call=' + encodeURIComponent(cid) + '&decline=1');
+    }
   });
 }
 
@@ -92,6 +119,10 @@ self.addEventListener('notificationclick', function(event){
   var d = (event.notification && event.notification.data) || {};
   var act = event.action;
   event.notification.close();
+  if(d.kind === 'call' && (act === 'call-answer' || act === 'call-decline')){
+    event.waitUntil(routeCall(d, act));
+    return;
+  }
   if(d.quick === '1' && (act === 'thumbsup' || act === 'okay' || act === 'reply')){
     var text = act === 'thumbsup' ? '👍' : (act === 'okay' ? 'Okay' : (event.reply || ''));
     // Reply tapped with no inline text (e.g. desktop) → open the app to type.
