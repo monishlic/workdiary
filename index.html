@@ -9480,7 +9480,7 @@ function chatEdit(id){ var m=App._chatMsgMap[id]; if(!m) return; App._chatEditin
 function chatStartReply(id){ var m=App._chatMsgMap[id]; if(!m) return; App._chatEditing=null; App._chatReplyTo={ id:m.id, fromName:m.fromName, text:(m.text||'').slice(0,160) }; renderChat(); var i=document.getElementById('chat-input'); if(i) i.focus(); }
 function chatCancelReply(){ App._chatReplyTo=null; renderChat(); }
 function chatCancelEdit(){ App._chatEditing=null; var i=document.getElementById('chat-input'); if(i) i.value=''; renderChat(); }
-function chatClearChannel(){ if(!isAdmin()){ toast('Only an admin can clear the group chat.','warn'); return; } var ch=App._chat.channel; openConfirm({ icon:'🧹', title:'Clear this group chat?', body:'This permanently clears every message in this channel for everyone and leaves a “Chat cleared by you” note. Only an admin can do this.', okLabel:'Clear chat', okClass:'btn-danger', onOk:function(){ apiCall('clearChan',{channel:ch}).then(function(r){ if(r&&r.ok){ toast('Group chat cleared.','info'); } else { toast('Could not clear.','error'); } }).catch(function(e){ toast(e.message||'Could not clear.','error'); }); } }); }
+function chatClearChannel(){ if(!(App.identity&&App.identity.role==='Admin')){ toast('Only an admin can clear the group chat.','warn'); return; } var ch=App._chat.channel; openConfirm({ icon:'🧹', title:'Clear this group chat?', body:'This permanently clears every message in this channel for everyone and leaves a “Chat cleared by you” note. Only an admin can do this.', okLabel:'Clear chat', okClass:'btn-danger', onOk:function(){ apiCall('clearChan',{channel:ch}).then(function(r){ if(r&&r.ok){ toast('Group chat cleared.','info'); } else { toast('Could not clear.','error'); } }).catch(function(e){ toast(e.message||'Could not clear.','error'); }); } }); }
 /* ===== 1-to-1 voice calls (WebRTC + Firestore signalling + free STUN) ===== */
 var Call = {
   cur:null,
@@ -9603,7 +9603,7 @@ function renderChat(){
     var cmem=channelMembers(st.channel); var names=cmem.map(function(m){ return m.name+(String(m.userId)===String(App.identity.employeeId)?' (you)':''); });
     var mv = names.length>4 ? ' moving' : '';
     var track = names.map(function(n){ return '<span class="cmq-name">'+esc(n)+'</span>'; }).join('<span class="cmq-dot">•</span>');
-    h+='<div class="chat-members"><span class="cmq-ico">👥 '+cmem.length+'</span><div class="cmq-vp'+(mv?' masked':'')+'"><div class="cmq-track'+mv+'">'+track+(mv?'<span class="cmq-dot">•</span>'+track:'')+'</div></div>'+(isAdmin()?'<button class="chat-clearbtn" data-action="chat-clearchan" title="Clear this group chat (admin)">🧹</button>':'')+'</div>';
+    h+='<div class="chat-members"><span class="cmq-ico">👥 '+cmem.length+'</span><div class="cmq-vp'+(mv?' masked':'')+'"><div class="cmq-track'+mv+'">'+track+(mv?'<span class="cmq-dot">•</span>'+track:'')+'</div></div>'+((App.identity&&App.identity.role==='Admin')?'<button class="chat-clearbtn" data-action="chat-clearchan" title="Clear this group chat (admin)">🧹</button>':'')+'</div>';
     h+='<div class="chat-body" id="chat-scroll">'+chatMsgHTML((App.chat||[]).filter(function(m){return m.channel===st.channel;}), false)+'</div>';
     showCompose=true;
   } else if(!inDM){
