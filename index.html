@@ -846,7 +846,7 @@ body{ -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; lett
 .modal{ box-shadow:0 24px 70px -14px rgba(11,18,32,.45),0 8px 24px -10px rgba(11,18,32,.3); }
 
 /* Content glides in on each view render */
-.cat-head,.stats,.insights,.dept-grid,.task-list,.set-sec,.audit-list{ animation:viewIn .32s cubic-bezier(.2,.8,.25,1) both; }
+#content.navanim .cat-head,#content.navanim .stats,#content.navanim .insights,#content.navanim .dept-grid,#content.navanim .task-list,#content.navanim .set-sec,#content.navanim .audit-list{ animation:viewIn .32s cubic-bezier(.2,.8,.25,1) both; }
 .stats{ animation-delay:.02s } .dept-grid,.task-list,.audit-list{ animation-delay:.05s }
 @keyframes viewIn{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
 
@@ -950,7 +950,7 @@ body.is-dark .skel::after{ background:linear-gradient(90deg,transparent,rgba(255
 .priority-card .pc-main{ flex:1; min-width:0; }
 .priority-card .pc-client{ font-weight:600; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .priority-card .pc-meta{ font-size:.77rem; color:var(--text-muted); }
-.priority-card .pc-complete{ flex:0 0 auto; width:34px; height:34px; border-radius:50%; border:1.6px solid var(--border); background:transparent; color:var(--success); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .16s; }
+.priority-card .pc-complete{ flex:0 0 auto; width:34px; height:34px; border-radius:50%; border:1.6px solid var(--border); background:transparent; color:var(--success); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .16s,border-color .16s,color .16s,transform .16s; }
 .priority-card .pc-complete:hover{ background:var(--success); color:#fff; border-color:var(--success); transform:scale(1.08); }
 
 /* Focus-now hero card */
@@ -987,7 +987,7 @@ body.is-dark .skel::after{ background:linear-gradient(90deg,transparent,rgba(255
 .confirm-foot .btn{ min-width:128px; justify-content:center; }
 
 /* Header ⌘K button */
-.kbtn{ display:inline-flex; align-items:center; gap:3px; background:var(--bg); border:1px solid var(--border); color:var(--text-muted); border-radius:9px; padding:6px 9px; cursor:pointer; font:inherit; font-size:.78rem; font-weight:600; transition:all .16s; }
+.kbtn{ display:inline-flex; align-items:center; gap:3px; background:var(--bg); border:1px solid var(--border); color:var(--text-muted); border-radius:9px; padding:6px 9px; cursor:pointer; font:inherit; font-size:.78rem; font-weight:600; transition:background .16s,border-color .16s,color .16s,transform .16s,box-shadow .16s; }
 .kbtn:hover{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
 .kbtn .kbtn-ic{ font-size:.9rem; }
 .kbtn kbd{ font-family:inherit; }
@@ -4037,7 +4037,7 @@ var FBLive = {
       if(App.tasks.length!==before){ changed=true; removed=true; }
       if(FBLive.healDupIds()){ changed=true; }
       if(removed) FBLive.rewriteTasks();
-      if(changed){ Sync.err=''; Sync.updatePill(); buildSidebar(); if(App.view!=='slate') refreshView(); }
+      if(changed){ Sync.err=''; Sync.updatePill(); buildSidebarSoon(); if(App.view!=='slate') refreshViewSoon(); }
     }, function(){});
 
     // Tasks I assigned to others
@@ -4100,7 +4100,7 @@ var FBLive = {
       if(myVisChanged || myRoleChanged){ try{ buildSidebar(); refreshView(); }catch(e){} }
       if(App._chat && App._chat.open){ var _ae=document.activeElement; if(!(_ae&&(_ae.tagName==='INPUT'||_ae.tagName==='TEXTAREA'||_ae.isContentEditable))) renderChat(); }   // live read-receipts / presence in the chat
       App._teamCache=null;   // force fresh counts next time Team opens
-      if(App.view==='team') renderTeam();
+      if(App.view==='team') _rerenderSoon('team', renderTeam, 500);
       // First-login ONLY: prompt the planet picker a single time, ever. After this
       // it never auto-opens again (the flag is persisted) — they change it in Settings.
       if(!App._avatarPrompted && App.identity){
@@ -4120,11 +4120,7 @@ var FBLive = {
         App._allTasks=[]; App._adminTaskCache=App._adminTaskCache||{};
         qs.forEach(function(d){ var t=d.data(); if(t.uid){ App._allTasks.push(t); App._adminTaskCache[t.uid]=t; } });
         App._teamCache=null; App._analyticsCache=null; App._staffCache={};
-        if(App.view==='team') renderTeam();
-        else if(App.view==='performance') renderPerformance();
-        else if(App.view==='staff' && App._staffView) openStaff(App._staffView.id, App._staffView.name);
-        else if(App.view==='weekly') renderWeekly();
-        else if(App.view==='search'){ var _si=document.getElementById('search'); if(_si) renderSearch(_si.value); }
+        _rerenderSoon('adminview', function(){ if(App.view==='team') renderTeam(); else if(App.view==='performance') renderPerformance(); else if(App.view==='staff' && App._staffView) openStaff(App._staffView.id, App._staffView.name); else if(App.view==='weekly') renderWeekly(); else if(App.view==='search'){ var _si=document.getElementById('search'); if(_si) renderSearch(_si.value); } }, 500);
       }, function(){});
       // (No live listener on `audit` — it re-read the ENTIRE, ever-growing audit log on every
       //  admin app-load. The Activity Log loads on demand instead via getAudit (last 300 only).)
@@ -4410,7 +4406,7 @@ function nlBuildHTML(leads, who){
    +'.crow+.crow{border-top:1px solid #f0f1f5}'
    +'.clbl{flex:0 0 58px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#8a92a4;padding-top:6px}'
    +'.cpills{display:flex;flex-wrap:wrap;gap:6px;flex:1}'
-   +'.pill{font:600 .8rem/1 inherit;padding:6px 11px;border-radius:999px;border:1.5px solid #d7dae2;background:#fff;color:#6b7280;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .12s}'
+   +'.pill{font:600 .8rem/1 inherit;padding:6px 11px;border-radius:999px;border:1.5px solid #d7dae2;background:#fff;color:#6b7280;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .12s,border-color .12s,color .12s,transform .12s}'
    +'.pill b{font-weight:800}'
    +'.pill.on{border-color:var(--pc,#2563eb);color:#fff;background:var(--pc,#2563eb)}'
    +'.pill.f.on{background:#eef2ff;color:#3a4256;border-color:#aeb8e8}'
@@ -5505,6 +5501,9 @@ function cmdkExec(i){
   closeModal('cmdk');
   setTimeout(function(){ try{ it.run(); }catch(e){} },10);
 }
+function _rerenderSoon(key, fn, ms){ if(!App._rrT) App._rrT={}; clearTimeout(App._rrT[key]); App._rrT[key]=setTimeout(function(){ try{ fn(); }catch(e){} }, ms||300); }
+function refreshViewSoon(){ _rerenderSoon('view', function(){ try{ refreshView(); }catch(e){} }, 220); }
+function buildSidebarSoon(){ _rerenderSoon('sb', function(){ try{ buildSidebar(); }catch(e){} }, 260); }
 function navigate(view,dept,cat){
   try{ if(document.getElementById('slate-input-wrap')) commitSlateInput(); }catch(_e){}
   App._slateView=null;
@@ -5514,6 +5513,7 @@ function navigate(view,dept,cat){
   if(view==='calendar'){ var _cn=new Date(); App._cal={y:_cn.getFullYear(),m:_cn.getMonth()}; App._calSel=toLocalInput(_cn).slice(0,10); }   // always open on the current month
   if(view==='category' && dept){ App.prefs.expanded[dept]=true; Data.savePrefs(); }  // auto-open the dept you enter
   closeSidebar();
+  var _cvC=document.getElementById('content'); if(_cvC){ _cvC.classList.add('navanim'); clearTimeout(App._navAnimT); App._navAnimT=setTimeout(function(){ try{ _cvC.classList.remove('navanim'); }catch(e){} }, 440); }
   withVT(function(){
     buildSidebar();
     if(view==='dashboard') renderDashboard();
