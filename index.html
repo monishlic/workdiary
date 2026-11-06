@@ -5053,6 +5053,7 @@ var PUSH_CONFIG = {
   vapidKey: 'BOd_jdSTgK_bQHFfny_PZMkHC0Xf23bHpc5U-BDhPUdoD3_NLooLxKMw6ZmOdPdBnuJ5wExiPUfFbilWh_c2068',
   senderUrl: 'https://ediary-push.monishlic-8e8.workers.dev/'
 };
+var PUSH_BUILD = '135';   // bump on every deploy — forces a fresh FCM token so push can't go stale after an update
 var Push = {
   _msg:null, _token:'',
   supported:function(){ return ('serviceWorker' in navigator) && ('Notification' in window) && !!(window.firebase && firebase.messaging); },
@@ -5072,10 +5073,18 @@ var Push = {
       if(!this._msg) this._msg=firebase.messaging();
       // Use the app's own sw.js (correct sub-path scope on GitHub Pages project sites).
       navigator.serviceWorker.ready.then(function(reg){
-        return Push._msg.getToken({ vapidKey:PUSH_CONFIG.vapidKey, serviceWorkerRegistration:reg });
-      }).then(function(token){
-        if(!token){ return; } Push._token=token; Push._save(token);
-        try{ Push._msg.onMessage(function(payload){ Push._foreground(payload); }); }catch(e){}
+        return Push._msg.getToken({ vapidKey:PUSH_CONFIG.vapidKey, serviceWorkerRegistration:reg }).then(function(token){
+          if(!token){ return; } Push._token=token; Push._save(token);
+          try{ Push._msg.onMessage(function(payload){ Push._foreground(payload); }); }catch(e){}
+          // After an app/service-worker update the previous FCM token can go stale (FCM invalidates it,
+          // but getToken keeps handing back the cached one). Once per build, force a fresh token so push
+          // keeps working for everyone without anyone having to re-enable it.
+          try{ var tb=''; try{ tb=localStorage.getItem('edTokBuild')||''; }catch(e){} 
+            if(tb!==PUSH_BUILD){ try{ localStorage.setItem('edTokBuild', PUSH_BUILD); }catch(e){}
+              Push._msg.deleteToken().then(function(){ return Push._msg.getToken({ vapidKey:PUSH_CONFIG.vapidKey, serviceWorkerRegistration:reg }); }).then(function(t2){ if(t2){ Push._token=t2; Push._save(t2); } }).catch(function(){});
+            }
+          }catch(e){}
+        });
       }).catch(function(err){ try{ if(Push._diag){ toast('Push registration failed: '+((err&&err.message)||err),'error',7000); } }catch(e){} });
     }catch(e){}
   },
