@@ -834,6 +834,10 @@ body{ -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; lett
 /* Sidebar: lifted, full-width-clickable pills */
 .nav-link{ border-radius:12px; margin:3px 8px; padding:10px 14px; width:calc(100% - 16px); box-sizing:border-box; transition:background .13s,color .13s,transform .14s,box-shadow .18s; }
 .nav-link:hover{ transform:translateY(-1px); box-shadow:0 7px 16px -7px rgba(0,0,0,.45); }
+.nav-add{ padding-top:6px; padding-bottom:7px; padding-left:40px; font-size:.8rem; color:#9fb0c9; margin-top:-2px; }
+.nav-add:hover{ color:#fff; transform:none; box-shadow:none; background:rgba(255,255,255,.05); }
+.nav-add .nav-ico{ display:inline-flex; }
+.nav-add .nav-ico svg{ width:13px; height:13px; }
 .nav-link.active{ background:rgba(255,255,255,.13); color:#fff; box-shadow:0 9px 22px -8px rgba(59,130,246,.6); }
 .dept-header{ box-shadow:0 4px 12px -8px rgba(0,0,0,.5); }
 
@@ -4923,10 +4927,11 @@ function canSeeReckoner(){ return !!(App.auth && App.auth.reckonerAccess===true)
 function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
-  h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> New Leads</button>';
-  if(rkCanSee()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
-  h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> My Tasks</button>';
+  h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> Tasks</button>';
+  h+='<button class="nav-link nav-add" data-action="open-assign" title="Add a task"><span class="nav-ico">'+plusIco()+'</span> Add task</button>';
+  h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> Leads</button>';
+  if(rkCanSee()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
   h+='<button class="nav-link'+(App.view==='calendar'?' active':'')+'" data-action="nav" data-view="calendar"><span class="nav-ico">📅</span> Calendar</button>';
   var _vis=visibleDepartments();
@@ -9567,7 +9572,20 @@ var Call = {
   supportsPip:function(){ return typeof window!=='undefined' && 'documentPictureInPicture' in window; },
   db:function(){ return firebase.firestore(); },
   doc:function(id){ return Call.db().collection('calls').doc(String(id)); },
-  _constraints:function(video){ return { audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true }, video: video ? { width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:24, max:30}, facingMode:'user' } : false }; },
+  _constraints:function(video){ return { audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:false, channelCount:1 }, video: video ? { width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:24, max:30}, facingMode:'user' } : false }; },
+  _mediaErr:function(e, vid){ var n=(e&&(e.name||e.code))||''; var dev=vid?'camera/microphone':'microphone'; var m;
+    if(n==='NotAllowedError'||n==='SecurityError'||n==='PermissionDeniedError'||n==='PermissionDismissedError'){ m='The '+dev+' is blocked for this site. Tap the lock \uD83D\uDD12 (or camera) icon in the address bar \u2192 Allow, then answer again.'; }
+    else if(n==='NotFoundError'||n==='DevicesNotFoundError'||n==='OverconstrainedError'){ m='No '+dev+' was found on this device.'; }
+    else if(n==='NotReadableError'||n==='TrackStartError'||n==='AbortError'){ m='Your '+dev+' is being used by another app. Close it and answer again.'; }
+    else { m='Could not use the '+dev+'. Check this site\u2019s permissions and answer again.'; }
+    var err=new Error(m); err._friendly=m; return err; },
+  _getMedia:function(video){
+    try{ if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ return Promise.reject(Call._mediaErr({name:'NotFoundError'}, video)); } }catch(e){}
+    return navigator.mediaDevices.getUserMedia(Call._constraints(!!video)).then(function(s){ return {stream:s, video:!!video}; }, function(err){
+      if(video){ return navigator.mediaDevices.getUserMedia(Call._constraints(false)).then(function(s){ try{ toast('Camera unavailable \u2014 joining with audio only.','warn'); }catch(e){} return {stream:s, video:false}; }, function(err2){ throw Call._mediaErr(err2, video); }); }
+      throw Call._mediaErr(err, video);
+    });
+  },
   _doc:function(){ return (Call._pip && Call._pip.document) ? Call._pip.document : document; },
   _root:function(){ return (Call._pip && Call._pip.document && Call._pip.document.body) ? Call._pip.document.body : document.body; },
   _el:function(id){ try{ return Call._doc().getElementById(id); }catch(e){ return null; } },
@@ -9581,7 +9599,7 @@ var Call = {
     if(!peerId || String(peerId)===String(App.identity.employeeId)) return;
     if(typeof Sync!=='undefined' && Sync.online && !Sync.online()){ toast('You need an internet connection to call.','warn'); return; }
     var vid=!!video;
-    navigator.mediaDevices.getUserMedia(Call._constraints(vid)).then(function(stream){
+    Call._getMedia(vid).then(function(_mr){ var stream=_mr.stream; vid=_mr.video;
       var id='call-'+Date.now().toString(36)+Math.floor(Math.random()*1e4);
       var pc=new RTCPeerConnection(Call.cfg); var remote=new MediaStream();
       Call.cur={ id:id, role:'caller', peerId:String(peerId), peerName:peerName||'', pc:pc, local:stream, remote:remote, status:'calling', muted:false, video:vid, camOff:false, answered:false, nCallee:0, started:0 };
@@ -9598,7 +9616,7 @@ var Call = {
         Call._timeout=setTimeout(function(){ if(Call.cur && Call.cur.status!=='connected'){ Call.hangup('No answer', true); } }, 35000);
         Call._ringOut();
       }).catch(function(){ Call._fail('Could not start the call.'); });
-    }).catch(function(){ toast(vid?'Camera & microphone permission is needed to video call.':'Microphone permission is needed to make a call.','error'); });
+    }).catch(function(_e){ toast((_e&&_e._friendly)||'Microphone permission is needed to make a call.','error',6000); });
   },
   _callerSnap:function(s){ if(!Call.cur || Call.cur.role!=='caller') return; if(!s.exists){ Call.hangup(); return; } var d=s.data(); var pc=Call.cur.pc;
     if(d.status==='declined'){ Call.hangup('Call declined'); return; }
@@ -9615,8 +9633,9 @@ var Call = {
   accept:function(){
     if(!Call.cur || Call.cur.role!=='callee') return; var c=Call.cur; var vid=!!c.video;
     try{ Call.pop(); }catch(e){}
-    navigator.mediaDevices.getUserMedia(Call._constraints(vid)).then(function(stream){
+    Call._getMedia(vid).then(function(_mr){ var stream=_mr.stream;
       if(!Call.cur || Call.cur!==c){ try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} return; }
+      c.video = c.video && _mr.video;
       var pc=new RTCPeerConnection(Call.cfg); var remote=new MediaStream();
       c.pc=pc; c.local=stream; c.remote=remote; Call._stopRingIn();
       stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
@@ -9628,7 +9647,7 @@ var Call = {
         Call._unsub=Call.doc(c.id).onSnapshot(function(s){ Call._calleeSnap(s); });
         c.status='connecting'; Call._renderUI();
       }).catch(function(){ Call._fail('Could not answer the call.'); });
-    }).catch(function(){ toast(vid?'Camera & microphone permission is needed to answer.':'Microphone permission is needed to answer.','error'); Call.decline(); });
+    }).catch(function(_e){ try{ if(Call._pip) Call.unpop(); }catch(e){} toast((_e&&_e._friendly)||'Microphone permission is needed to answer.','error',6000); });
   },
   _calleeSnap:function(s){ if(!Call.cur || Call.cur.role!=='callee') return; if(!s.exists){ Call.hangup(); return; } var d=s.data(); if(d.status==='ended'){ Call.hangup(); return; } var pc=Call.cur.pc; if(!pc) return; var cc=d.callerCandidates||[]; for(var i=Call.cur.nCaller;i<cc.length;i++){ try{ pc.addIceCandidate(new RTCIceCandidate(JSON.parse(cc[i]))); }catch(e){} } Call.cur.nCaller=cc.length; },
   decline:function(){ if(!Call.cur) return; try{ Call.doc(Call.cur.id).set({status:'declined'},{merge:true}); }catch(e){} Call._end(); },
@@ -9645,7 +9664,8 @@ var Call = {
     Call._dur=setInterval(function(){ var e2=Call._el('call-status'); if(e2 && Call.cur && Call.cur.started) e2.textContent=Call._fmt(Math.round((Date.now()-Call.cur.started)/1000)); }, 1000); },
   _status:function(st){ if(!Call.cur) return; Call.cur.status=st; var el=Call._el('call-status'); if(el) el.textContent=(st==='connecting'?'Connecting…':st); },
   _end:function(msg){ var c=Call.cur; Call.cur=null;
-    Call._stopRingIn(); Call._stopRingOut();
+    Call._silence();
+    try{ if(c && c.id && navigator.serviceWorker && navigator.serviceWorker.getRegistration){ navigator.serviceWorker.getRegistration().then(function(reg){ if(reg && reg.getNotifications){ reg.getNotifications({tag:'call-'+c.id}).then(function(ns){ ns.forEach(function(n){ try{ n.close(); }catch(e){} }); }).catch(function(){}); } }).catch(function(){}); } }catch(e){}
     if(Call._timeout){ clearTimeout(Call._timeout); Call._timeout=null; }
     if(Call._dur){ clearInterval(Call._dur); Call._dur=null; }
     if(Call._unsub){ try{ Call._unsub(); }catch(e){} Call._unsub=null; }
@@ -9689,10 +9709,13 @@ var Call = {
   _fmt:function(s){ var m=Math.floor(s/60), ss=s%60; return m+':'+(ss<10?'0':'')+ss; },
   _fail:function(m){ toast(m,'error'); Call.hangup(); },
   _log:function(peerId, peerName, text){ try{ var me=App.identity; var did='D-'+Date.now()+'-'+Math.floor(Math.random()*1e5); var parties=[String(me.employeeId), String(peerId)].sort(); firebase.firestore().collection('dms').doc(did).set({ id:did, text:text, fromId:me.employeeId, fromName:me.employeeName, toId:String(peerId), toName:peerName||'', created:nowISO(), parties:parties, call:true }); }catch(e){} },
-  _ringOut:function(){ Call._ring=Call._beeper(420, 0.9, 2.2); },
-  _stopRingOut:function(){ if(Call._ring){ try{ Call._ring(); }catch(e){} Call._ring=null; } },
-  _ringIn:function(){ Call._ring=Call._beeper(540, 0.4, 1.1); try{ if(navigator.vibrate){ Call._vib=setInterval(function(){ try{ navigator.vibrate(500); }catch(e){} }, 1600); } }catch(e){} },
-  _stopRingIn:function(){ if(Call._ring){ try{ Call._ring(); }catch(e){} Call._ring=null; } if(Call._vib){ clearInterval(Call._vib); Call._vib=null; try{ navigator.vibrate(0); }catch(e){} } },
+  _rings:[],
+  _silence:function(){ try{ var a=Call._rings||[]; Call._rings=[]; a.forEach(function(s){ try{ s(); }catch(e){} }); }catch(e){} if(Call._vib){ try{ clearInterval(Call._vib); }catch(e){} Call._vib=null; } try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){} },
+  _playRing:function(pattern, period){ try{ var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return function(){}; var ctx=new Ctx(); if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} } var stopped=false; var cycle=function(){ if(stopped) return; var t=ctx.currentTime+0.03; pattern.forEach(function(step){ var f=step[0], dur=step[1]; if(f){ try{ var o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; if(o.frequency&&o.frequency.setValueAtTime) o.frequency.setValueAtTime(f,t); else if(o.frequency) o.frequency.value=f; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.16,t+0.05); g.gain.setValueAtTime(0.16,Math.max(t+0.06,t+dur-0.06)); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.03); }catch(e){} } t+=dur; }); }; cycle(); var iv=setInterval(cycle, period*1000); return function(){ stopped=true; try{ clearInterval(iv); }catch(e){} try{ ctx.close(); }catch(e){} }; }catch(e){ return function(){}; } },
+  _ringOut:function(){ Call._silence(); Call._rings.push(Call._playRing([[440,0.4],[0,0.2],[440,0.4]], 3.0)); },
+  _stopRingOut:function(){ Call._silence(); },
+  _ringIn:function(){ Call._silence(); Call._rings.push(Call._playRing([[523,0.25],[659,0.25],[523,0.25],[659,0.25]], 2.0)); try{ if(navigator.vibrate){ Call._vib=setInterval(function(){ try{ navigator.vibrate([400,180,400]); }catch(e){} }, 2000); } }catch(e){} },
+  _stopRingIn:function(){ Call._silence(); },
   _beeper:function(freq, on, period){ try{ var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return function(){}; var ctx=new Ctx(); if(ctx.state==='suspended'){ try{ ctx.resume(); }catch(e){} } var stopped=false; var ping=function(){ if(stopped) return; try{ var o=ctx.createOscillator(), g=ctx.createGain(); o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime+0.05); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+on); o.start(); o.stop(ctx.currentTime+on+0.06); }catch(e){} }; ping(); var iv=setInterval(ping, period*1000); return function(){ stopped=true; clearInterval(iv); try{ ctx.close(); }catch(e){} }; }catch(e){ return function(){}; } },
   _poptab:function(){ if(!Call.supportsPip()) return ''; return '<button class="call-poptab" data-action="'+(Call._pip?'call-unpop':'call-pop')+'" title="'+(Call._pip?'Dock back':'Pop out')+'">'+(Call._pip?'⤢':'⧉')+'</button>'; },
   _renderUI:function(){ var c=Call.cur; var ex=Call._el('call-ov'); if(ex) ex.remove(); if(!c) return;
@@ -9756,7 +9779,8 @@ var Room = {
   sigCol:function(id){ return Room.db().collection('rooms').doc(String(id)).collection('sig'); },
   ringDoc:function(id){ return Room.db().collection('calls').doc(String(id)); },
   pairId:function(a,b){ return [String(a),String(b)].sort().join('__'); },
-  _gum:function(video){ try{ if(typeof Call!=='undefined' && Call._constraints) return Call._constraints(video); }catch(e){} return { audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}, video: video?{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30},facingMode:'user'}:false }; },
+  _gm:function(video){ if(typeof Call!=='undefined' && Call._getMedia) return Call._getMedia(video); return navigator.mediaDevices.getUserMedia(Room._gum(video)).then(function(s){ return {stream:s, video:!!video}; }); },
+  _gum:function(video){ try{ if(typeof Call!=='undefined' && Call._constraints) return Call._constraints(video); }catch(e){} return { audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false,channelCount:1}, video: video?{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:24,max:30},facingMode:'user'}:false }; },
   _me:function(){ return String(App.identity.employeeId); },
   _meName:function(){ return App.identity.employeeName; },
 
@@ -9767,7 +9791,7 @@ var Room = {
     if(typeof Sync!=='undefined' && Sync.online && !Sync.online()){ toast('You need an internet connection to call.','warn'); return; }
     var vid=!!video; var me=Room._me(); var meName=Room._meName();
     inviteIds=(inviteIds||[]).map(String).filter(function(u){ return u && u!==me; });
-    navigator.mediaDevices.getUserMedia(Room._gum(vid)).then(function(stream){
+    Room._gm(vid).then(function(_mr){ var stream=_mr.stream; vid=_mr.video;
       var id='room-'+Date.now().toString(36)+Math.floor(Math.random()*1e4);
       var joined=nowISO();
       var members={}; members[me]={ name:meName, joined:joined, video:vid, muted:false, camOff:false };
@@ -9778,7 +9802,7 @@ var Room = {
         Room._notifyChannel(notifyIds, vid);
         try{ Room._logChat('📞 '+meName+' started a '+(vid?'video ':'')+'call'); }catch(e){}
       }).catch(function(){ Room._fail('Could not start the call.'); });
-    }).catch(function(){ toast(vid?'Camera & microphone permission is needed.':'Microphone permission is needed.','error'); });
+    }).catch(function(_e){ toast((_e&&_e._friendly)||'Microphone permission is needed.','error',6000); });
   },
 
   /* ---------- ring arrives (from a calls doc with group:true) ---------- */
@@ -9806,7 +9830,7 @@ var Room = {
       var d=s.data(); if(!d || d.status==='ended'){ toast('That call has ended.','info'); return; }
       var members=d.members||{}; if(Object.keys(members).length>=Room.MAX && !members[Room._me()]){ toast('Call is full ('+Room.MAX+').','warn'); return; }
       var vid=!!d.video; var me=Room._me(); var meName=Room._meName();
-      navigator.mediaDevices.getUserMedia(Room._gum(vid)).then(function(stream){
+      Room._gm(vid).then(function(_mr){ var stream=_mr.stream; vid=_mr.video;
         var joined=nowISO();
         Room.cur={ id:roomId, channel:d.channel||'', title:d.title||'Team call', video:vid, me:me, members:Object.assign({}, members), peers:{}, local:stream, muted:false, camOff:false, started:0, _renderedKeys:'', _roomUnsub:null, _sigUnsub:null };
         Room.cur.members[me]={ name:meName, joined:joined, video:vid, muted:false, camOff:false };
@@ -9814,7 +9838,7 @@ var Room = {
         Room.roomDoc(roomId).update(u).catch(function(){ try{ Room.roomDoc(roomId).set({members:Room.cur.members},{merge:true}); }catch(e){} });
         Room._wire();
         var rid=ringId||(roomId+'__'+me); try{ Room.ringDoc(rid).delete(); }catch(e){}
-      }).catch(function(){ toast(vid?'Camera & microphone permission is needed.':'Microphone permission is needed.','error'); });
+      }).catch(function(_e){ toast((_e&&_e._friendly)||'Microphone permission is needed.','error',6000); });
     }).catch(function(){ toast('Could not join the call.','error'); });
   },
   joinById:function(roomId, ringId){ Room.join(roomId, ringId); },
@@ -9939,8 +9963,8 @@ var Room = {
     ov.innerHTML='<div class="call-card"><div class="call-avwrap ringing"><span class="call-pulse"></span><span class="call-pulse p2"></span><div class="call-av"><div class="room-ringico">👥</div></div></div><div class="call-name">'+esc(pd.title||'Team call')+'</div><div class="call-status">'+(pd.video?'Group video call':'Group call')+' · '+esc(pd.fromName||'')+'</div><div class="call-actions"><button class="cbtn cbtn-decline" data-action="room-decline" data-ring="'+esc(pd.ringId)+'"><span class="cbtn-ic">✕</span><span class="cbtn-lbl">Decline</span></button><button class="cbtn cbtn-accept" data-action="room-join" data-room="'+esc(pd.room)+'" data-ring="'+esc(pd.ringId)+'"><span class="cbtn-ic">'+(pd.video?'📹':'📞')+'</span><span class="cbtn-lbl">Join</span></button></div></div>';
     document.body.appendChild(ov);
   },
-  _dismissRing:function(){ Room._pending=null; if(Room._ringTimeout){ clearTimeout(Room._ringTimeout); Room._ringTimeout=null; } if(Room._ringUnsub){ try{ Room._ringUnsub(); }catch(e){} Room._ringUnsub=null; } Room._stopRing(); var ov=document.getElementById('room-ring'); if(ov) ov.remove(); },
-  _ringIn:function(){ try{ if(typeof Call!=='undefined' && Call._beeper){ Room._ringObj=Call._beeper(540,0.4,1.1); } }catch(e){} try{ if(navigator.vibrate){ Room._vib=setInterval(function(){ try{ navigator.vibrate(500); }catch(e){} },1600); } }catch(e){} },
+  _dismissRing:function(){ var _pid=Room._pending&&Room._pending.ringId; Room._pending=null; if(Room._ringTimeout){ clearTimeout(Room._ringTimeout); Room._ringTimeout=null; } if(Room._ringUnsub){ try{ Room._ringUnsub(); }catch(e){} Room._ringUnsub=null; } Room._stopRing(); var ov=document.getElementById('room-ring'); if(ov) ov.remove(); try{ if(_pid && navigator.serviceWorker && navigator.serviceWorker.getRegistration){ navigator.serviceWorker.getRegistration().then(function(reg){ if(reg && reg.getNotifications){ reg.getNotifications({tag:'call-'+_pid}).then(function(ns){ ns.forEach(function(n){ try{ n.close(); }catch(e){} }); }).catch(function(){}); } }).catch(function(){}); } }catch(e){} },
+  _ringIn:function(){ try{ if(typeof Call!=='undefined' && Call._playRing){ Room._ringObj=Call._playRing([[523,0.25],[659,0.25],[523,0.25],[659,0.25]], 2.0); } }catch(e){} try{ if(navigator.vibrate){ Room._vib=setInterval(function(){ try{ navigator.vibrate([400,180,400]); }catch(e){} },2000); } }catch(e){} },
   _stopRing:function(){ if(Room._ringObj){ try{ Room._ringObj(); }catch(e){} Room._ringObj=null; } if(Room._vib){ clearInterval(Room._vib); Room._vib=null; try{ navigator.vibrate(0); }catch(e){} } },
 
   _notifyChannel:function(ids, video){ var c=Room.cur; if(!c) return; var meName=Room._meName(); (ids||[]).map(String).filter(function(u){ return u && u!==c.me && !c.members[u]; }).forEach(function(uid){ try{ Push.send(uid, '📞 '+meName+(video?' started a video call':' started a call'), (c.title||'Team call')+' · tap to join', 'roomjoin-'+c.id, {}); }catch(e){} }); },
