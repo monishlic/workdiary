@@ -3533,7 +3533,7 @@ var LEAD_PROCESSES = {
 var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
-  defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null,
+  defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null, _stRange:'all', _stFilter:'all', _stFrom:'', _stTo:'',
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -8006,6 +8006,17 @@ function mtRangeBounds(range){
   if(range==='custom'){ if(!App._myFrom||!App._myTo) return null; var cs=new Date(App._myFrom+'T00:00:00').getTime(); var ce=new Date(App._myTo+'T00:00:00').getTime()+86400000; return {s:cs,e:ce}; }
   return null; // all time
 }
+function stRangeBounds(range){
+  var now=new Date();
+  var sod=function(d){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(); };
+  if(range==='today'){ var s=sod(now); return {s:s,e:s+86400000}; }
+  if(range==='yesterday'){ var e=sod(now); return {s:e-86400000,e:e}; }
+  if(range==='week'){ var wd=(now.getDay()+6)%7; var mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-wd); return {s:mon.getTime(),e:mon.getTime()+7*86400000}; }
+  if(range==='month'){ return {s:new Date(now.getFullYear(),now.getMonth(),1).getTime(), e:new Date(now.getFullYear(),now.getMonth()+1,1).getTime()}; }
+  if(range==='lastmonth'){ return {s:new Date(now.getFullYear(),now.getMonth()-1,1).getTime(), e:new Date(now.getFullYear(),now.getMonth(),1).getTime()}; }
+  if(range==='custom'){ if(!App._stFrom||!App._stTo) return null; var cs=new Date(App._stFrom+'T00:00:00').getTime(); var ce=new Date(App._stTo+'T00:00:00').getTime()+86400000; return {s:cs,e:ce}; }
+  return null; // all time
+}
 function mtModeBar(active){
   var mine=(App.tasks||[]).filter(function(t){ return !isSnoozed(t); }).length;
   var asg=(App._assignedCache||[]).length;
@@ -8044,11 +8055,26 @@ function renderTaskTeams(){
   App.view='teamtasks'; buildSidebar();
   if(App._tteamStaff){
     var sid=App._tteamStaff; var m=(App.members||[]).find(function(x){ return String(x.userId)===String(sid); }); var nm=(m&&m.name)||'Staff';
-    var list=(App._allTasks||[]).filter(function(t){ return String(t.ownerId)===String(sid) && !t.deleted; });
-    list.sort(function(a,b){ var ac=a.status==='Completed', bc=b.status==='Completed'; if(ac!==bc) return ac?1:-1; var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; return new Date(b.lastUpdatedTimestamp||b.createdTimestamp||0)-new Date(a.lastUpdatedTimestamp||a.createdTimestamp||0); });
+    var f=App._stFilter||'all';
+    var range=App._stRange||'all';
+    var all=(App._allTasks||[]).filter(function(t){ return String(t.ownerId)===String(sid) && !t.deleted; });
+    all.sort(function(a,b){ var ac=a.status==='Completed', bc=b.status==='Completed'; if(ac!==bc) return ac?1:-1; if(!ac){ var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; return new Date(a.createdTimestamp)-new Date(b.createdTimestamp); } return new Date(b.completedTimestamp||0)-new Date(a.completedTimestamp||0); });
+    var bounds=stRangeBounds(range);
+    var ranged = bounds ? all.filter(function(t){ var a=new Date(mtAnchor(t)||0).getTime(); return a>=bounds.s && a<bounds.e; }) : all;
+    var counts={all:ranged.length,overdue:0,pending:0,inprog:0,done:0};
+    ranged.forEach(function(t){ counts[myTaskState(t)]++; });
+    var list = f==='all'? ranged : ranged.filter(function(t){ return myTaskState(t)===f; });
     var h='<div class="cat-head"><div class="cat-title">👥 '+esc(nm)+' · Tasks</div><div class="cat-sub">Every task on '+esc(nm)+'’s plate</div></div>';
     h+='<div class="nl-actions-row"><button class="nl-back" data-action="task-teams-back">← Back to Teams</button></div>';
-    if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">✅</div><div class="empty-t">No tasks</div><div class="empty-s">'+esc(nm)+' has no tasks right now.</div></div>'; }
+    h+='<div class="mt-range"><span class="mt-range-lbl">Range</span>';
+    [['today','Today'],['yesterday','Yesterday'],['week','This week'],['month','This month'],['lastmonth','Last month'],['all','All time'],['custom','Custom…']].forEach(function(c){ h+='<button class="mt-rchip'+(range===c[0]?' on':'')+'" data-action="stask-range" data-r="'+c[0]+'">'+c[1]+'</button>'; });
+    h+='</div>';
+    if(range==='custom'){ h+='<div class="mt-custom"><input type="date" id="st-from" value="'+esc(App._stFrom||'')+'"><span class="mt-cx">to</span><input type="date" id="st-to" value="'+esc(App._stTo||'')+'"><button class="btn btn-primary btn-sm" data-action="stask-custom-apply">Apply</button></div>'; }
+    h+='<div class="mt-filters">';
+    [['all','All'],['overdue','Overdue'],['pending','Pending'],['inprog','In Progress'],['done','Completed']].forEach(function(c){ h+='<button class="mt-chip mt-chip-'+c[0]+(f===c[0]?' on':'')+'" data-action="stask-filter" data-f="'+c[0]+'">'+c[1]+'<span class="mt-c">'+counts[c[0]]+'</span></button>'; });
+    h+='</div>';
+    if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🎉</div><div class="empty-t">Nothing here</div><div class="empty-s">No tasks match this range &amp; filter.</div></div>'; }
+    else if(f==='all'){ var glabel={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}; ['overdue','pending','inprog','done'].forEach(function(st){ var g=list.filter(function(t){ return myTaskState(t)===st; }); if(!g.length) return; h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div><div class="mt-list">'; g.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }); }
     else { h+='<div class="mt-list">'; list.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }
     document.getElementById('content').innerHTML=h; return;
   }
@@ -8113,6 +8139,7 @@ function renderMyTasks(){
 function myTaskFilter(f){ App._myFilter=f; renderMyTasks(); }
 function myTaskRange(r){ App._myRange=r; if(r!=='custom'){ /* keep custom dates for later */ } renderMyTasks(); }
 function myTaskCustomApply(){ var fr=(document.getElementById('mt-from')||{}).value||''; var to=(document.getElementById('mt-to')||{}).value||''; if(!fr||!to){ toast('Pick both a start and end date.','error'); return; } if(fr>to){ var tmp=fr; fr=to; to=tmp; } App._myFrom=fr; App._myTo=to; App._myRange='custom'; renderMyTasks(); }
+function staskCustomApply(){ var fr=(document.getElementById('st-from')||{}).value||''; var to=(document.getElementById('st-to')||{}).value||''; if(!fr||!to){ toast('Pick both a start and end date.','error'); return; } if(fr>to){ var tmp=fr; fr=to; to=tmp; } App._stFrom=fr; App._stTo=to; App._stRange='custom'; renderTaskTeams(); }
 
 /* ===== PERFORMANCE (Leaderboard + Analytics merged) ===== */
 function fmtDur(ms){ if(!ms||ms<0) return '—'; if(ms<3600000) return Math.max(1,Math.round(ms/60000))+'m'; var h=ms/3600000; if(h<48) return Math.round(h)+'h'; return Math.round(h/24)+'d'; }
@@ -10486,6 +10513,9 @@ document.addEventListener('click', function(e){
     case 'reset-key': adminResetKeyUI(el.getAttribute('data-id'), el); break;
     case 'task-staff': App._tteamStaff=el.getAttribute('data-id'); renderTaskTeams(); break;
     case 'task-teams-back': App._tteamStaff=null; renderTaskTeams(); break;
+    case 'stask-filter': App._stFilter=el.getAttribute('data-f'); renderTaskTeams(); break;
+    case 'stask-range': App._stRange=el.getAttribute('data-r'); renderTaskTeams(); break;
+    case 'stask-custom-apply': staskCustomApply(); break;
     case 'set-key': adminSetKeyUI(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'reset-member': adminResetMember(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'admin-del-task': adminDeleteTaskUI(el.getAttribute('data-uid'), el.getAttribute('data-client')); break;
