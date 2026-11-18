@@ -3533,7 +3533,7 @@ var LEAD_PROCESSES = {
 var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
-  defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[],
+  defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null,
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -4948,7 +4948,7 @@ function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
-  h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned'||App.view==='looped'||App.view==='deleted')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> Tasks</button>';
+  h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned'||App.view==='looped'||App.view==='deleted'||App.view==='teamtasks')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> Tasks</button>';
   h+='<button class="nav-link nav-add" data-action="open-assign" title="Add a task"><span class="nav-ico">'+plusIco()+'</span> Add task</button>';
   h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> Leads</button>';
   if(rkCanSee()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
@@ -5566,6 +5566,7 @@ function navigate(view,dept,cat){
     else if(view==='assigned') renderAssignedByMe();
     else if(view==='looped') renderLooped();
     else if(view==='deleted') renderDeleted();
+    else if(view==='teamtasks'){ App._tteamStaff=null; renderTaskTeams(); }
     else if(view==='audit') renderActivityLog();
     else if(view==='calendar') renderCalendar();
     else if(view==='weekly') renderWeekly();
@@ -8015,6 +8016,7 @@ function mtModeBar(active){
     '<button class="mt-mode'+(active==='assigned'?' on':'')+'" data-action="nav" data-view="assigned"><span class="mt-mode-ic">📤</span> Assigned by me'+(asg?'<span class="mt-mode-c">'+asg+'</span>':'')+'</button>'+
     '<button class="mt-mode'+(active==='looped'?' on':'')+'" data-action="nav" data-view="looped"><span class="mt-mode-ic">👁</span> In loop'+(inloop?'<span class="mt-mode-c">'+inloop+'</span>':'')+'</button>'+
     '<button class="mt-mode'+(active==='deleted'?' on':'')+'" data-action="nav" data-view="deleted"><span class="mt-mode-ic">🗑</span> Deleted'+(del?'<span class="mt-mode-c">'+del+'</span>':'')+'</button>'+
+    ((App.identity && typeof isBoss==='function' && isBoss())?'<button class="mt-mode'+(active==='teamtasks'?' on':'')+'" data-action="nav" data-view="teamtasks"><span class="mt-mode-ic">👥</span> Teams</button>':'')+
     '</div>';
 }
 function renderLooped(){
@@ -8036,6 +8038,25 @@ function renderDeleted(){
   h+=mtModeBar('deleted');
   if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🗑</div><div class="empty-t">No deleted tasks</div><div class="empty-s">Tasks removed by a reset will show up here.</div></div>'; }
   else { list.forEach(function(t){ h+='<div style="border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;opacity:.82"><div style="font-weight:700;text-decoration:line-through">'+esc(t.title||t.clientName||'Task')+'</div><div style="font-size:.78rem;color:var(--text-sec);margin-top:3px">'+esc(t.clientName||'')+(t.category?(' · '+esc(t.category)):'')+' · owner: '+esc(t.ownerName||'—')+(t.assignedByName?(' · assigned by '+esc(t.assignedByName)):'')+'</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:5px">🗑 Deleted '+esc(t.deletedAt?new Date(t.deletedAt).toLocaleDateString():'')+(t.deletedBy?(' by '+esc(t.deletedBy)):'')+(t.deletedReason==='reset'?' · profile reset':'')+'</div></div>'; }); }
+  document.getElementById('content').innerHTML=h;
+}
+function renderTaskTeams(){
+  App.view='teamtasks'; buildSidebar();
+  if(App._tteamStaff){
+    var sid=App._tteamStaff; var m=(App.members||[]).find(function(x){ return String(x.userId)===String(sid); }); var nm=(m&&m.name)||'Staff';
+    var list=(App._allTasks||[]).filter(function(t){ return String(t.ownerId)===String(sid) && !t.deleted; });
+    list.sort(function(a,b){ var ac=a.status==='Completed', bc=b.status==='Completed'; if(ac!==bc) return ac?1:-1; var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; return new Date(b.lastUpdatedTimestamp||b.createdTimestamp||0)-new Date(a.lastUpdatedTimestamp||a.createdTimestamp||0); });
+    var h='<div class="cat-head"><div class="cat-title">👥 '+esc(nm)+' · Tasks</div><div class="cat-sub">Every task on '+esc(nm)+'’s plate</div></div>';
+    h+='<div class="nl-actions-row"><button class="nl-back" data-action="task-teams-back">← Back to Teams</button></div>';
+    if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">✅</div><div class="empty-t">No tasks</div><div class="empty-s">'+esc(nm)+' has no tasks right now.</div></div>'; }
+    else { h+='<div class="mt-list">'; list.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }
+    document.getElementById('content').innerHTML=h; return;
+  }
+  var mem=(App.members||[]);
+  var h='<div class="cat-head"><div class="cat-title">Teams · Tasks</div><div class="cat-sub">Pick a person to open their tasks.</div></div>';
+  h+=mtModeBar('teamtasks');
+  h+='<div class="nl-teamgrid">'+mem.map(function(m){ var n=(App._allTasks||[]).filter(function(t){ return String(t.ownerId)===String(m.userId) && !t.deleted && t.status!=='Completed'; }).length; return '<button class="nl-tcard" data-action="task-staff" data-id="'+esc(m.userId)+'"><span class="nl-av">'+esc(nlInitials(m.name).toUpperCase())+'</span><span class="nl-tnm">'+esc(m.name)+'</span><span class="nl-trole">'+(n?(n+' open'):'0 open')+'</span></button>'; }).join('')+'</div>';
+  if(!mem.length) h+='<div class="nl-empty">No team members loaded.</div>';
   document.getElementById('content').innerHTML=h;
 }
 function renderMyTasks(){
@@ -8259,6 +8280,7 @@ function refreshView(){
   else if(App.view==='mytasks') renderMyTasks();
   else if(App.view==='looped') renderLooped();
   else if(App.view==='deleted') renderDeleted();
+  else if(App.view==='teamtasks') renderTaskTeams();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
   else if(App.view==='clients') renderClients();
@@ -10462,6 +10484,8 @@ document.addEventListener('click', function(e){
     case 'edit-managed': var _et=App.tasks.find(function(x){return x.uid===el.getAttribute('data-uid');}); if(_et){ closeModal('detail-modal'); openManagedTask(_et); } break;
     case 'copy-invite': copyKey(App._inviteMsg||'', el); break;
     case 'reset-key': adminResetKeyUI(el.getAttribute('data-id'), el); break;
+    case 'task-staff': App._tteamStaff=el.getAttribute('data-id'); renderTaskTeams(); break;
+    case 'task-teams-back': App._tteamStaff=null; renderTaskTeams(); break;
     case 'set-key': adminSetKeyUI(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'reset-member': adminResetMember(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'admin-del-task': adminDeleteTaskUI(el.getAttribute('data-uid'), el.getAttribute('data-client')); break;
