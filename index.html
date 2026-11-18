@@ -4716,7 +4716,7 @@ function nlSubmitAssign(){
 }
 
 /* ---- lead actions from cards ---- */
-function nlLeadById(id){ var lv=App._leadView||{}; var pools=[App._leads,App._leadsByMe,App._leadsAdmin,lv.abm,lv.staffLeads,lv.biz]; for(var i=0;i<pools.length;i++){ var a=pools[i]; if(a){ for(var j=0;j<a.length;j++){ if(a[j]&&String(a[j].id)===String(id)) return a[j]; } } } }
+function nlLeadById(id){ var lv=App._leadView||{}; var pools=[App._leads,App._loopedLeads,App._leadsByMe,App._leadsAdmin,lv.abm,lv.staffLeads,lv.biz]; for(var i=0;i<pools.length;i++){ var a=pools[i]; if(a){ for(var j=0;j<a.length;j++){ if(a[j]&&String(a[j].id)===String(id)) return a[j]; } } } }
 function nlDo(id, act, extra){
   var p=Object.assign({leadId:id, act:act}, extra||{});
   return apiCall('leadAction',p).then(function(){ if(App.view==='leads') refreshView(); }).catch(function(e){ toast('Action failed. '+((e&&e.message)||''),'err'); });
