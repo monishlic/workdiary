@@ -2618,6 +2618,10 @@ textarea.nl-in{min-height:64px;resize:vertical}
             <div id="nl-a-people" class="nl-people"></div>
           </div>
         </div>
+        <div class="at-r">
+          <span class="at-r-l">👁 Loop in</span>
+          <div class="at-r-c"><div id="nl-a-loop-chips"></div></div>
+        </div>
       </div>
       <div class="nl-hint">Assigned to several → one shared lead they all work; whoever acts moves it for everyone.</div>
     </div>
@@ -3032,6 +3036,11 @@ var FB = (function(){
           if(!b.leadProcesses || typeof b.leadProcesses!=='object') throw new Error('Bad payload.');
           return col('config').doc('app').set({ leadProcesses:b.leadProcesses, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
         }
+        case 'setDefaultLoop': {
+          if(!isAdmin()) throw new Error('Admin access required.');
+          var _dl=Array.isArray(b.defaultLoop)?b.defaultLoop.map(String):[];
+          return col('config').doc('app').set({ defaultLoop:_dl, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
+        }
         case 'mergeDepartment': {
           if(!isAdmin()) throw new Error('Admins only.');
           var mto=String(b.to||''); var fromArr=(Array.isArray(b.fromList)?b.fromList:[String(b.from||'')]).map(String).filter(function(x){return x && x!==mto;}); if(!mto||!fromArr.length) throw new Error('Bad merge.'); var fromSet={}; fromArr.forEach(function(x){fromSet[x]=1;});
@@ -3194,10 +3203,11 @@ var FB = (function(){
         }
         case 'adminResetUser': {
           if(!isAdmin()) throw new Error('Admin access required.');
-          return col('tasks').where('ownerId','==',String(b.userId)).get().then(function(qs){
-            var mine=qs.docs.filter(function(d){ var t=d.data(); return !t.assignedById || String(t.assignedById)===String(b.userId); });
-            return Promise.all(mine.map(function(d){ try{ dueRemClear(String(d.id)); }catch(e){} return d.ref.delete(); })).then(function(){ return logAudit('Reset member data','',b.userId, mine.length+' task(s) cleared'); }).then(function(){ return {ok:true, deleted:mine.length}; });
-          });
+          var _rid=String(b.userId); var _rnow=nowISO(); var _ractor=me();
+          var _pT=col('tasks').where('ownerId','==',_rid).get().then(function(qs){ return Promise.all(qs.docs.map(function(d){ try{ dueRemClear(String(d.id)); }catch(e){} return d.ref.set({ deleted:true, deletedAt:_rnow, deletedBy:(_ractor.name||''), deletedReason:'reset' },{merge:true}); })).then(function(){ return qs.size; }); });
+          var _pN=col('notes').where('ownerId','==',_rid).get().then(function(qs){ return Promise.all(qs.docs.map(function(d){ return d.ref.delete(); })).then(function(){ return qs.size; }); }).catch(function(){ return 0; });
+          var _pL=col('leads').where('assigneeIds','array-contains',_rid).get().then(function(qs){ return Promise.all(qs.docs.map(function(d){ var l=d.data(); var ids=(l.assigneeIds||[]).map(String).filter(function(x){ return x!==_rid; }); if(!ids.length){ return d.ref.delete(); } var asg=(Array.isArray(l.assignees)?l.assignees:[]).filter(function(a){ return String(a.userId)!==_rid; }); var lp=(Array.isArray(l.loop)?l.loop.map(String).filter(function(x){ return x!==_rid; }):[]); return d.ref.set({ assigneeIds:ids, assignees:asg, loop:lp },{merge:true}); })).then(function(){ return qs.size; }); }).catch(function(){ return 0; });
+          return Promise.all([_pT,_pN,_pL]).then(function(r){ return logAudit('Reset member profile','',_rid, r[0]+' tasks, '+r[1]+' notes, '+r[2]+' leads').then(function(){ return {ok:true, deleted:r[0], notes:r[1], leads:r[2]}; }); });
         }
 
         case 'adminDeleteTask': {   // hard-delete one task → gone for BOTH owner and assigner
@@ -3358,7 +3368,7 @@ var FB = (function(){
             if(!b.clientName) throw new Error('Client name is required.');
             if(!aids.length) throw new Error('Pick at least one person.');
             var lead={ id:lid, createdById:ul.userId, createdByName:ul.name, createdByDept:String(b.fromDept||''),
-              assignees:asg.map(function(a){return {userId:String(a.userId),name:String(a.name||'')};}), assigneeIds:aids,
+              assignees:asg.map(function(a){return {userId:String(a.userId),name:String(a.name||'')};}), assigneeIds:aids, loop:(Array.isArray(b.loop)?b.loop.map(String).filter(function(u){ return aids.indexOf(u)<0; }):[]),
               clientName:String(b.clientName), mobile:String(b.mobile||''), description:String(b.description||''),
               department:String(b.department||''), category:String(b.category||''), processType:String(b.processType||b.category||''), checklist:Array.isArray(b.checklist)?b.checklist:[], priority:String(b.priority||'medium'),
               adminUrgent:false, stage:'new', lapsedFrom:null, everInProcess:false, renewBounded:false,
@@ -3423,7 +3433,7 @@ var FB = (function(){
                 upd.history=(l.history||[]).concat([{t:now2,type:'checklist',byId:u2.userId,byName:u2.name,text:String(b.text||'')}]);
               } else { return {ok:false,error:'unknown lead action'}; }
               return col('leads').doc(String(b.leadId)).set(upd,{merge:true}).then(function(){
-                var jobs=[]; var recips=(l.assigneeIds||[]).slice(); if(l.createdById && recips.map(String).indexOf(String(l.createdById))<0) recips.push(l.createdById);
+                var jobs=[]; var recips=(l.assigneeIds||[]).slice(); if(l.createdById && recips.map(String).indexOf(String(l.createdById))<0) recips.push(l.createdById); (Array.isArray(l.loop)?l.loop:[]).forEach(function(lp){ if(recips.map(String).indexOf(String(lp))<0) recips.push(lp); });
                 var _nlPush=function(rid,msg){ try{ Push.send(String(rid), 'New Leads', msg, 'lead-'+l.id+'-'+Date.now()); }catch(e){} };
                 if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)){ jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); _nlPush(rid, notifyOthers); } }); }
                 if(notifyAll){ recips.forEach(function(rid){ if(String(rid)===String(u2.userId)) return; jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); _nlPush(rid, notifyAll); }); }
@@ -3523,6 +3533,7 @@ var LEAD_PROCESSES = {
 var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
+  defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[],
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -4031,7 +4042,7 @@ var FBLive = {
     // My own tasks
     db.collection('tasks').where('ownerId','==',uid).onSnapshot(function(qs){
       var serverUids={}, changed=false, removed=false;
-      qs.forEach(function(d){ var rt=d.data(); if(!rt.uid) return; serverUids[rt.uid]=true;
+      qs.forEach(function(d){ var rt=d.data(); if(!rt.uid) return; if(rt.deleted) return; serverUids[rt.uid]=true;
         var lt=App.tasks.find(function(x){return x.uid===rt.uid;});
         if(!lt){ rt.syncStatus='SYNCED'; App.tasks.push(rt); Store.put('tasks',rt.uid,rt); changed=true; }
         else if(lt.syncStatus==='SYNCED'){ for(var k in rt){ if(rt.hasOwnProperty(k)) lt[k]=rt[k]; } lt.syncStatus='SYNCED'; Store.put('tasks',lt.uid,lt); changed=true; }
@@ -4042,15 +4053,21 @@ var FBLive = {
       if(FBLive.healDupIds()){ changed=true; }
       if(removed) FBLive.rewriteTasks();
       if(changed){ Sync.err=''; Sync.updatePill(); buildSidebarSoon(); if(App.view!=='slate') refreshViewSoon(); }
+      App._deletedOwn=[]; qs.forEach(function(d){ var _r=d.data(); if(_r && _r.uid && _r.deleted) App._deletedOwn.push(_r); }); rebuildDeleted();
     }, function(){});
 
     // Tasks I assigned to others
     db.collection('tasks').where('assignedById','==',uid).onSnapshot(function(qs){
-      var arr=[]; qs.forEach(function(d){ var t=d.data(); if(String(t.ownerId)!==uid) arr.push(t); });
+      var arr=[]; App._deletedAsg=[]; qs.forEach(function(d){ var t=d.data(); if(String(t.ownerId)===uid) return; if(t.deleted){ App._deletedAsg.push(t); return; } arr.push(t); }); rebuildDeleted();
       arr.sort(function(a,c){ return new Date(c.createdTimestamp)-new Date(a.createdTimestamp); });
       App._assignedCache=arr;
       if(App.view==='assigned') renderAssignedByMe();
     }, function(){});
+
+    // Tasks I'm looped into (watcher)
+    try{ db.collection('tasks').where('loop','array-contains',uid).onSnapshot(function(qs){ var la=[]; qs.forEach(function(d){ var t=d.data(); if(t.uid && !t.deleted && String(t.ownerId)!==uid) la.push(t); }); la.sort(function(a,c){ return new Date(c.createdTimestamp)-new Date(a.createdTimestamp); }); App._loopedTasks=la; if(App.view==='looped') _rerenderSoon('looped', renderLooped, 300); }, function(){}); }catch(e){}
+    // Leads I'm looped into
+    try{ db.collection('leads').where('loop','array-contains',uid).onSnapshot(function(qs){ var la=[]; qs.forEach(function(d){ var l=d.data(); if(!l.id) l.id=d.id; la.push(l); }); App._loopedLeads=la; if(App.view==='leads' && App._leadView && App._leadView.tab==='inloop') _rerenderSoon('loopleads', renderLeads, 300); }, function(){}); }catch(e){}
 
     // My notifications — instant bell + desktop pop
     db.collection('notifs').where('forUserId','==',uid).onSnapshot(function(qs){
@@ -4083,6 +4100,7 @@ var FBLive = {
         if(Array.isArray(c.departments) && c.departments.length){ App.departments=c.departments; try{ Store.put('kv','departments',App.departments); }catch(e){} buildSidebar(); if(App.view==='settings') renderSettings(); else if(App.view==='dashboard') renderDashboard(); }
         if(isBoss() && !c.investCatsFixed){ nlHealInvestCats(); }
         if(c.leadProcesses && typeof c.leadProcesses==='object'){ App.leadProcesses=c.leadProcesses; try{ Store.put('kv','leadProcesses',App.leadProcesses); }catch(e){} }
+        App.defaultLoop=Array.isArray(c.defaultLoop)?c.defaultLoop.map(String):[]; try{ Store.put('kv','defaultLoop',App.defaultLoop); }catch(e){} if(App.view==='settings' && document.getElementById('defloop-list')) renderSettings();
       } else if(isBoss()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} }
     }, function(){}); }catch(e){}
 
@@ -4122,7 +4140,7 @@ var FBLive = {
     if(isBoss()){
       db.collection('tasks').onSnapshot(function(qs){
         App._allTasks=[]; App._adminTaskCache=App._adminTaskCache||{};
-        qs.forEach(function(d){ var t=d.data(); if(t.uid){ App._allTasks.push(t); App._adminTaskCache[t.uid]=t; } });
+        qs.forEach(function(d){ var t=d.data(); if(t.uid && !t.deleted){ App._allTasks.push(t); App._adminTaskCache[t.uid]=t; } });
         App._teamCache=null; App._analyticsCache=null; App._staffCache={};
         _rerenderSoon('adminview', function(){ if(App.view==='team') renderTeam(); else if(App.view==='performance') renderPerformance(); else if(App.view==='staff' && App._staffView) openStaff(App._staffView.id, App._staffView.name); else if(App.view==='weekly') renderWeekly(); else if(App.view==='search'){ var _si=document.getElementById('search'); if(_si) renderSearch(_si.value); } }, 500);
       }, function(){});
@@ -4533,8 +4551,8 @@ function nlRenderBoard(){
   var h='<div class="cat-head"><div class="cat-title">New Leads</div><div class="cat-sub">Hand a lead to another department and track it end to end.</div></div>';
   h+='<div class="nl-adminbtns"><button class="nl-admbtn nl-primary" data-action="newlead">＋ Assign a lead</button><button class="nl-admbtn" data-action="nl-abm">📤 Assigned by me</button><button class="nl-admbtn" data-action="nl-processes">⚙ Processes</button>'+(isBoss()?'<button class="nl-admbtn" data-action="nl-biz">📊 Business Dashboard</button><button class="nl-admbtn" data-action="nl-teams">👥 Teams</button>':'')+'<button class="nl-admbtn" data-action="nl-export-html">⬇ HTML</button><button class="nl-admbtn" data-action="nl-export-xls">⬇ Excel</button></div>';
   h+='<div class="nl-dash">'+nlTile('all','All',cnt.all,tab)+nlTile('new','New',cnt.new,tab)+nlTile('ignored','Ignored',cnt.ignored,tab)+nlTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTile('inprocess','In Process',cnt.inprocess,tab)+nlTile('executed','Closed',cnt.executed,tab)+'</div>';
-  h+='<div class="nl-tabbar">'+nlTab('all','All',cnt.all,tab)+nlTab('new','New',cnt.new,tab)+nlTab('ignored','Ignored',cnt.ignored,tab)+nlTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTab('inprocess','In Process',cnt.inprocess,tab)+nlTab('executed','Closed',cnt.executed,tab)+'</div>';
-  var list=all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
+  h+='<div class="nl-tabbar">'+nlTab('all','All',cnt.all,tab)+nlTab('new','New',cnt.new,tab)+nlTab('ignored','Ignored',cnt.ignored,tab)+nlTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTab('inprocess','In Process',cnt.inprocess,tab)+nlTab('executed','Closed',cnt.executed,tab)+nlTab('inloop','In loop',(App._loopedLeads||[]).length,tab)+'</div>';
+  var list = tab==='inloop' ? (App._loopedLeads||[]).slice() : all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
   list.sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); });
   if(!list.length) h+='<div class="nl-empty">No leads here yet. Use <b>＋ Assign a lead</b> or the NL button.</div>';
   else if(tab==='executed'){ h+=nlClosedSplit(list); }
@@ -4612,6 +4630,7 @@ function nlOpenAssign(){
   document.getElementById('nl-a-desc').value='';
   var lbl0=document.getElementById('nl-dept-all-lbl'); if(lbl0) lbl0.textContent=(deps[0]&&deps[0].department)||'department';
   var cb0=document.getElementById('nl-dept-all-cb'); if(cb0) cb0.checked=false;
+  try{ var _me=String(App.identity.employeeId); var _oth=(App.members||[]).filter(function(m){ return String(m.userId)!==_me; }).map(function(m){ return {userId:m.userId, name:m.name, role:(m.role&&m.role!=='Staff'?m.role:'')}; }); var _dl=(App.defaultLoop||[]).map(String).filter(function(u){ return u!==_me; }); Chips.init('nl-a-loop-chips', _oth, {selected:_dl, placeholder:'Add people to loop…'}); }catch(e){}
   nlPaintPr(); nlPaintPeople();
   openModal('nl-assign-modal');
 }
@@ -4691,7 +4710,7 @@ function nlSubmitAssign(){
   var _steps=((nlProcesses()[_dep]||{})[_proc])||[]; var _ckl=_steps.map(function(s){ return {text:String(s), done:false, at:'', by:''}; });
   var payload={ clientName:client, mobile:(document.getElementById('nl-a-mobile').value||'').trim(), description:(document.getElementById('nl-a-desc').value||'').trim(),
     department:_dep, category:_proc, processType:_proc, checklist:_ckl, priority:(App._nlPick.pr||'medium'),
-    fromDept:'', assignees:assignees };
+    fromDept:'', assignees:assignees, loop:(function(){ try{ return (Chips.get('nl-a-loop-chips')||[]).map(String); }catch(e){ return []; } })() };
   App._nlBusy=true;
   apiCall('assignLead',payload).then(function(){ App._nlBusy=false; toast('✓ Lead assigned to '+assignees.length+' '+(assignees.length>1?'people':'person'),'success'); closeModal('nl-assign-modal'); }).catch(function(e){ App._nlBusy=false; toast('Could not assign. '+((e&&e.message)||''),'err'); });
 }
@@ -4928,7 +4947,7 @@ function buildSidebar(){
   var h='';
   h+='<button class="nav-link'+((App.view==='slate'&&!App._slateView)?' active':'')+'" data-action="nav" data-view="slate"><span class="nav-ico">📝</span> Slate</button>';
   h+='<button class="nav-link'+(App.view==='dashboard'?' active':'')+'" data-action="nav" data-view="dashboard"><span class="nav-ico">'+ico('dash')+'</span> Dashboard</button>';
-  h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> Tasks</button>';
+  h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned'||App.view==='looped'||App.view==='deleted')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> Tasks</button>';
   h+='<button class="nav-link nav-add" data-action="open-assign" title="Add a task"><span class="nav-ico">'+plusIco()+'</span> Add task</button>';
   h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> Leads</button>';
   if(rkCanSee()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
@@ -5544,6 +5563,8 @@ function navigate(view,dept,cat){
     else if(view==='team') renderTeam();
     else if(view==='performance'||view==='analytics'||view==='leaderboard') renderPerformance();
     else if(view==='assigned') renderAssignedByMe();
+    else if(view==='looped') renderLooped();
+    else if(view==='deleted') renderDeleted();
     else if(view==='audit') renderActivityLog();
     else if(view==='calendar') renderCalendar();
     else if(view==='weekly') renderWeekly();
@@ -7986,10 +8007,35 @@ function mtRangeBounds(range){
 function mtModeBar(active){
   var mine=(App.tasks||[]).filter(function(t){ return !isSnoozed(t); }).length;
   var asg=(App._assignedCache||[]).length;
+  var inloop=(App._loopedTasks||[]).length;
+  var del=(App._deletedTasks||[]).length;
   return '<div class="mt-modebar">'+
     '<button class="mt-mode'+(active==='mine'?' on':'')+'" data-action="nav" data-view="mytasks"><span class="mt-mode-ic">📋</span> My tasks<span class="mt-mode-c">'+mine+'</span></button>'+
     '<button class="mt-mode'+(active==='assigned'?' on':'')+'" data-action="nav" data-view="assigned"><span class="mt-mode-ic">📤</span> Assigned by me'+(asg?'<span class="mt-mode-c">'+asg+'</span>':'')+'</button>'+
+    '<button class="mt-mode'+(active==='looped'?' on':'')+'" data-action="nav" data-view="looped"><span class="mt-mode-ic">👁</span> In loop'+(inloop?'<span class="mt-mode-c">'+inloop+'</span>':'')+'</button>'+
+    '<button class="mt-mode'+(active==='deleted'?' on':'')+'" data-action="nav" data-view="deleted"><span class="mt-mode-ic">🗑</span> Deleted'+(del?'<span class="mt-mode-c">'+del+'</span>':'')+'</button>'+
     '</div>';
+}
+function renderLooped(){
+  App.view='looped'; buildSidebar();
+  var list=(App._loopedTasks||[]).slice();
+  list.sort(function(a,b){ var ac=a.status==='Completed', bc=b.status==='Completed'; if(ac!==bc) return ac?1:-1; if(!ac){ var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; } return new Date(b.lastUpdatedTimestamp||b.createdTimestamp||0)-new Date(a.lastUpdatedTimestamp||a.createdTimestamp||0); });
+  var h='<div class="cat-head"><div class="cat-title">👁 In loop</div><div class="cat-sub">Tasks you are looped into across the team</div></div>';
+  h+=mtModeBar('looped');
+  if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">👁</div><div class="empty-t">Nothing in your loop yet</div><div class="empty-s">Tasks where you are added to the loop will appear here.</div></div>'; }
+  else { h+='<div class="mt-list">'; list.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }
+  document.getElementById('content').innerHTML=h;
+}
+function rebuildDeleted(){ var own=App._deletedOwn||[]; var seen={}; var out=own.slice(); own.forEach(function(t){ if(t&&t.uid) seen[t.uid]=1; }); (App._deletedAsg||[]).forEach(function(t){ if(t&&t.uid&&!seen[t.uid]) out.push(t); }); App._deletedTasks=out; if(App.view==='deleted') _rerenderSoon('deleted', renderDeleted, 300); }
+function renderDeleted(){
+  App.view='deleted'; buildSidebar();
+  var list=(App._deletedTasks||[]).slice();
+  list.sort(function(a,b){ return new Date(b.deletedAt||0)-new Date(a.deletedAt||0); });
+  var h='<div class="cat-head"><div class="cat-title">🗑 Deleted</div><div class="cat-sub">Tasks removed from active lists (e.g. by a profile reset)</div></div>';
+  h+=mtModeBar('deleted');
+  if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🗑</div><div class="empty-t">No deleted tasks</div><div class="empty-s">Tasks removed by a reset will show up here.</div></div>'; }
+  else { list.forEach(function(t){ h+='<div style="border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;opacity:.82"><div style="font-weight:700;text-decoration:line-through">'+esc(t.title||t.clientName||'Task')+'</div><div style="font-size:.78rem;color:var(--text-sec);margin-top:3px">'+esc(t.clientName||'')+(t.category?(' · '+esc(t.category)):'')+' · owner: '+esc(t.ownerName||'—')+(t.assignedByName?(' · assigned by '+esc(t.assignedByName)):'')+'</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:5px">🗑 Deleted '+esc(t.deletedAt?new Date(t.deletedAt).toLocaleDateString():'')+(t.deletedBy?(' by '+esc(t.deletedBy)):'')+(t.deletedReason==='reset'?' · profile reset':'')+'</div></div>'; }); }
+  document.getElementById('content').innerHTML=h;
 }
 function renderMyTasks(){
   App.view='mytasks'; buildSidebar();
@@ -8210,6 +8256,8 @@ function refreshView(){
   else if(App.view==='leads') renderLeads();
   else if(App.view==='business') renderBusiness();
   else if(App.view==='mytasks') renderMyTasks();
+  else if(App.view==='looped') renderLooped();
+  else if(App.view==='deleted') renderDeleted();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
   else if(App.view==='clients') renderClients();
@@ -8254,6 +8302,9 @@ function renderSettings(){
   h+='<div class="set-field"><div><div class="set-k">Sync status</div><div class="set-sub">'+st+'</div></div><button class="btn btn-ghost btn-sm" data-action="sync-now">Sync Now</button></div>';
   h+='<div class="set-field"><div><div class="set-k">Last synced</div><div class="set-sub">'+(Sync.lastSyncedAt?esc(fmtDateTime(Sync.lastSyncedAt)):'—')+'</div></div></div>';
   h+='<div class="set-field"><div><div class="set-k">Log out</div><div class="set-sub">End your session and return to login for another account. Your tasks stay saved.</div></div><button class="btn btn-danger" data-action="log-out">'+ico('logout')+' Log out</button></div></div>';
+  if(App.identity && App.identity.role==='Admin'){
+    h+='<div class="set-sec"><h3>👁 Default loop</h3><div class="set-desc">Everyone you pick here is added to the loop on every new task and lead, so they stay in the know. Anyone can remove them from a specific task before sending.</div><div id="defloop-list" style="max-height:260px;overflow:auto">'+(App.members||[]).map(function(m){ var on=(App.defaultLoop||[]).map(String).indexOf(String(m.userId))>=0; return '<label class="defloop-row" style="display:flex;align-items:center;gap:10px;padding:8px 2px;cursor:pointer;border-bottom:1px solid var(--border)"><input type="checkbox" data-action="defloop-toggle" data-id="'+esc(m.userId)+'"'+(on?' checked':'')+' style="width:18px;height:18px"><span style="font-weight:600">'+esc(m.name)+'</span>'+(on?'<span style="margin-left:auto;font-size:.72rem;color:var(--accent);font-weight:700">Default</span>':'')+'</label>'; }).join('')+'</div></div>';
+  }
   h+='<div class="set-sec"><h3>💾 Backup &amp; Restore</h3><div class="set-desc">Your work already syncs to the cloud automatically — logging back in on any device brings everything back. These files are an extra offline copy you can keep or restore from.</div>';
   h+='<div class="set-field"><div><div class="set-k">Back up my work</div><div class="set-sub">Download a JSON file with your tasks, slate notes and leads.</div></div><button class="btn btn-ghost" data-action="backup-mine">Download</button></div>';
   h+='<div class="set-field"><div><div class="set-k">Restore my work</div><div class="set-sub">Upload a backup file to bring your tasks, notes and leads back. Nothing is deleted — items are added or updated.</div></div><button class="btn btn-ghost" data-action="restore-mine">Restore…</button></div>';
@@ -8362,7 +8413,7 @@ function openStaff(staffId,name){
       var _rkOn=(member.reckonerAccess===true);
       h+='<div class="set-field"><div><div class="set-k">📚 Reckoner access</div><div class="set-sub">Turn the Reckoner on for '+esc(name)+'. Keep it off while a department is still being set up; they will not see it until you turn it on.</div></div><button class="btn btn-sm '+(_rkOn?'btn-success':'btn-ghost')+'" data-action="toggle-reckoner" data-id="'+esc(staffId)+'" data-on="'+(_rkOn?'0':'1')+'">'+(_rkOn?'✓ On · tap to turn off':'Turn on')+'</button></div>';
       h+='<div class="set-field"><div><div class="set-k">🔄 Role switch</div><div class="set-sub">Bring another staffer’s <b>active</b> tasks onto '+esc(name)+'’s plate (move or copy, edit each first). Also gives '+esc(name)+' their department access. Completed tasks stay with whoever finished them.</div></div><button class="btn btn-primary btn-sm" data-action="role-switch" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Switch tasks here</button></div>';
-      h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset this member’s data</div><div class="set-sub">Clears all of '+esc(name)+'’s own tasks &amp; activity. Tasks others assigned to them are kept. Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="reset-member" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Reset</button></div>';
+      h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Reset this member’s data</div><div class="set-sub">Clears '+esc(name)+'’s tasks, Slate notes &amp; leads — their profile starts blank. Tasks they assigned to others stay with those people; shared leads stay (member just removed). Cleared tasks move to everyone’s Deleted tab. Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="reset-member" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Reset</button></div>';
       h+='<div class="set-field"><div><div class="set-k" style="color:var(--danger)">Delete ALL of '+esc(name)+'’s tasks</div><div class="set-sub">Permanently removes <b>every</b> task on '+esc(name)+'’s plate — including ones others assigned to them (so the assigner loses it too). Cannot be undone.</div></div><button class="btn btn-danger btn-sm" data-action="admin-del-all-tasks" data-id="'+esc(staffId)+'" data-name="'+esc(name)+'">Delete all</button></div>';
       }
       h+='</div>';
@@ -8716,7 +8767,8 @@ function openAssign(dept,cat){
     App.members.forEach(function(m){ if(String(m.userId)!==String(meId)) assignees.push({userId:m.userId, name:m.name, role:m.role||''}); });
     Chips.init('assign-to-chips', assignees, {selected:[], placeholder:'Add staff…'});
     var others=(App.members||[]).filter(function(m){ return String(m.userId)!==String(meId); }).map(function(m){ return {userId:m.userId, name:m.name, role:(m.role&&m.role!=='Staff'?m.role:'')}; });
-    Chips.init('assign-loop-chips', others, {selected:[], placeholder:'Add people to loop…'});
+    var _defLoop=(App.defaultLoop||[]).map(String).filter(function(u){ return u!==String(meId); });
+    Chips.init('assign-loop-chips', others, {selected:_defLoop, placeholder:'Add people to loop…'});
     fillDeptSelect('assign-dept', dept||App.dept||'');
     document.getElementById('assign-cat').value=cat||App.cat||'';
     var _tin=document.getElementById('assign-title-input'); if(_tin) _tin.value='';
@@ -8953,7 +9005,7 @@ function adminResetMember(id,name){
   openConfirm({
     icon:'🗑️',
     title:'Reset '+name+'’s data',
-    body:'This permanently clears all of '+name+'’s own tasks and activity — on their device and in the cloud. Tasks other people assigned to them are kept. This cannot be undone.',
+    body:'This clears '+name+'’s tasks, Slate notes and leads — their profile becomes blank. Tasks they assigned to others are kept for those people; shared leads stay (they are only removed from them). Cleared tasks move to everyone’s Deleted tab. This cannot be undone.',
     okLabel:'Reset '+name, okClass:'btn-danger',
     onOk:function(){ doAdminResetMember_(id,name); }
   });
@@ -8965,7 +9017,7 @@ function doAdminResetMember_(id,name){
   apiCall('adminResetUser',{userId:id}).then(function(res){
     App._mkBusy=false;
     if(!res||!res.ok){ toast(res&&res.error?res.error:'Could not reset.','error'); return; }
-    toast('✓ Reset — '+((res&&res.deleted)||0)+' task(s) cleared for '+name,'success');
+    toast('✓ Reset '+name+' — '+((res&&res.deleted)||0)+' tasks, '+((res&&res.notes)||0)+' notes, '+((res&&res.leads)||0)+' leads cleared','success');
     reloadStaff_(id,name);
   }).catch(function(e){ App._mkBusy=false; toast(e.message||'Could not reset.','error'); });
 }
@@ -9589,13 +9641,13 @@ var Call = {
   _doc:function(){ return (Call._pip && Call._pip.document) ? Call._pip.document : document; },
   _root:function(){ return (Call._pip && Call._pip.document && Call._pip.document.body) ? Call._pip.document.body : document.body; },
   _el:function(id){ try{ return Call._doc().getElementById(id); }catch(e){ return null; } },
-  checkIncoming:function(){ if(Call.cur) return; try{ if(!App.identity||!window.firebase||!firebase.firestore) return; Call.db().collection('calls').where('to','==',String(App.identity.employeeId)).get().then(function(qs){ if(Call.cur) return; var best=null; qs.forEach(function(d){ var x=d.data(); if(x && x.status==='ringing'){ var age=Date.now()-new Date(x.created||0).getTime(); if(age<60000){ if(!x.id) x.id=d.id; best=x; } } }); if(best && !Call.cur){ try{ if(best.group||best.room){ if(typeof Room!=='undefined') Room.incoming(best); } else { Call.incoming(best); } }catch(e){} } }).catch(function(){}); }catch(e){} },
+  checkIncoming:function(){ if(Call.cur || (typeof Room!=='undefined' && (Room.cur||Room._pending))) return; try{ if(!App.identity||!window.firebase||!firebase.firestore) return; Call.db().collection('calls').where('to','==',String(App.identity.employeeId)).get().then(function(qs){ if(Call.cur) return; var best=null; qs.forEach(function(d){ var x=d.data(); if(x && x.status==='ringing'){ var age=Date.now()-new Date(x.created||0).getTime(); if(age<60000){ if(!x.id) x.id=d.id; best=x; } } }); if(best && !Call.cur){ try{ if(best.group||best.room){ if(typeof Room!=='undefined') Room.incoming(best); } else { Call.incoming(best); } }catch(e){} } }).catch(function(){}); }catch(e){} },
   answerById:function(id){ if(!id) return; if(Call.cur){ if(String(Call.cur.id)===String(id) && Call.cur.role==='callee' && Call.cur.status==='incoming'){ Call.accept(); } return; }
     try{ Call.doc(id).get().then(function(s){ if(!s.exists || Call.cur) return; var d=s.data(); if(!d) return; if(!d.id) d.id=id; if(d.status!=='ringing') return; if(d.group||d.room){ if(typeof Room!=='undefined') Room.join(d.room, id); return; } Call.incoming(d); setTimeout(function(){ if(Call.cur && Call.cur.status==='incoming' && String(Call.cur.id)===String(id)) Call.accept(); }, 150); }).catch(function(){}); }catch(e){} },
   declineById:function(id){ if(!id) return; if(typeof Room!=='undefined' && Room._pending && String(Room._pending.ringId)===String(id)){ Room.decline(id); return; } if(Call.cur && String(Call.cur.id)===String(id)){ Call.decline(); return; } try{ Call.doc(id).set({status:'declined'},{merge:true}); }catch(e){} },
   start:function(peerId, peerName, video){
     if(!Call.supported()){ toast('Calls are not supported on this device/browser.','error'); return; }
-    if(Call.cur){ toast('A call is already in progress.','warn'); return; }
+    if(Call.cur || (typeof Room!=='undefined' && (Room.cur||Room._pending))){ toast('A call is already in progress.','warn'); return; }
     if(!peerId || String(peerId)===String(App.identity.employeeId)) return;
     if(typeof Sync!=='undefined' && Sync.online && !Sync.online()){ toast('You need an internet connection to call.','warn'); return; }
     var vid=!!video;
@@ -9608,7 +9660,7 @@ var Call = {
       pc.onicecandidate=function(ev){ if(ev.candidate){ try{ Call.doc(id).set({ callerCandidates: firebase.firestore.FieldValue.arrayUnion(JSON.stringify(ev.candidate.toJSON())) },{merge:true}); }catch(e){} } };
       pc.onconnectionstatechange=function(){ if(!Call.cur||Call.cur.pc!==pc) return; var s=pc.connectionState; if(s==='connected'){ Call._connected(); } else if(s==='failed'){ Call.hangup('Call failed to connect'); } };
       Call._renderUI();
-      try{ Push.send(String(peerId), (vid?'📹 ':'📞 ')+App.identity.employeeName+(vid?' wants to video call':' is calling'), 'Open E-Diary to answer', 'call-'+id, { kind:'call', close:35 }); }catch(e){}
+      try{ Push.send(String(peerId), (vid?'📹 ':'📞 ')+App.identity.employeeName+(vid?' wants to video call':' is calling'), 'Open E-Diary to answer', 'call-'+id, { kind:'call', close:35, ts:Date.now(), callId:id }); }catch(e){}
       pc.createOffer().then(function(offer){ return pc.setLocalDescription(offer).then(function(){
         return Call.doc(id).set({ id:id, from:String(App.identity.employeeId), fromName:App.identity.employeeName, to:String(peerId), toName:peerName||'', status:'ringing', video:vid, offer:{type:offer.type, sdp:offer.sdp}, created:nowISO() });
       }); }).then(function(){
@@ -9625,7 +9677,7 @@ var Call = {
     var cc=d.calleeCandidates||[]; for(var i=Call.cur.nCallee;i<cc.length;i++){ Call._addCand(cc[i]); } Call.cur.nCallee=cc.length;
   },
   incoming:function(d){
-    if(Call.cur){ try{ Call.doc(d.id).set({status:'declined'},{merge:true}); }catch(e){} return; }
+    if(Call.cur || (typeof Room!=='undefined' && (Room.cur||Room._pending))){ try{ Call.doc(d.id).set({status:'declined'},{merge:true}); }catch(e){} return; }
     Call.cur={ id:d.id, role:'callee', peerId:String(d.from), peerName:d.fromName||'', pc:null, local:null, remote:null, status:'incoming', offer:d.offer, video:!!d.video, muted:false, camOff:false, nCaller:0, started:0 };
     Call._renderUI(); Call._ringIn();
     Call._unsub=Call.doc(d.id).onSnapshot(function(s){ if(!Call.cur||Call.cur.role!=='callee') return; if(!s.exists){ Call.hangup(); return; } var dd=s.data(); if((dd.status==='ended'||dd.status==='declined') && Call.cur.status==='incoming'){ Call._end('Call cancelled'); } });
@@ -9867,7 +9919,7 @@ var Room = {
     pc.ontrack=function(ev){ (ev.streams[0]||remote).getTracks().forEach(function(t){ try{ remote.addTrack(t); }catch(e){} }); Room._media(uid); };
     var mineIsA=(String(c.me)<String(uid)); var pid=Room.pairId(c.me, uid);
     pc.onicecandidate=function(ev){ if(ev.candidate){ var o={ a:(mineIsA?String(c.me):String(uid)), b:(mineIsA?String(uid):String(c.me)) }; o[mineIsA?'candsA':'candsB']=firebase.firestore.FieldValue.arrayUnion(JSON.stringify(ev.candidate.toJSON())); try{ Room.sigCol(c.id).doc(pid).set(o,{merge:true}); }catch(e){} } };
-    pc.onconnectionstatechange=function(){ if(!Room.cur || Room.cur.peers[uid]!==p) return; if(pc.connectionState==='failed'){ Room._closePeer(uid); try{ var uu={}; uu['members.'+uid]=firebase.firestore.FieldValue.delete(); Room.roomDoc(Room.cur.id).update(uu); }catch(e){} Room._syncGrid(); } };
+    pc.onconnectionstatechange=function(){ if(!Room.cur || Room.cur.peers[uid]!==p) return; if(pc.connectionState==='failed'){ Room._closePeer(uid); Room._syncGrid(); } };
     return p;
   },
   _initiate:function(uid){ var c=Room.cur; var p=Room._mkPeer(uid); if(!p) return; var pc=p.pc; var pid=Room.pairId(c.me, uid); var mineIsA=(String(c.me)<String(uid));
@@ -9894,7 +9946,7 @@ var Room = {
     ids.forEach(function(uid){ if(c.members[uid]) return; if(cnt>=Room.MAX){ if(!silent) toast('Call is full ('+Room.MAX+').','warn'); return; } cnt++;
       var rid=c.id+'__'+uid;
       try{ Room.ringDoc(rid).set({ id:rid, to:uid, from:c.me, fromName:meName, status:'ringing', group:true, room:c.id, title:c.title, video:c.video, created:nowISO() }); }catch(e){}
-      try{ Push.send(uid, '📞 '+meName+(c.video?' — video call':' — group call'), (c.title||'Team call')+' · tap to join', 'call-'+rid, { kind:'call', close:35, callId:rid }); }catch(e){}
+      try{ Push.send(uid, '📞 '+meName+(c.video?' — video call':' — group call'), (c.title||'Team call')+' · tap to join', 'call-'+rid, { kind:'call', close:35, callId:rid, ts:Date.now() }); }catch(e){}
     });
   },
   openAddPicker:function(opts){ opts=opts||{}; var c=Room.cur; var exclude={}; if(c){ Object.keys(c.members).forEach(function(k){ exclude[k]=1; }); } exclude[Room._me()]=1; if(opts.seedPeer) {}
@@ -10255,6 +10307,7 @@ document.addEventListener('click', function(e){
     case 'cancel-reminder': var rf2=document.getElementById('rem-form'); if(rf2)rf2.style.display='none'; break;
     case 'raise-reminder': submitReminder(el.getAttribute('data-id')); break;
     case 'open-assign': openAssign(el.getAttribute('data-dept'), el.getAttribute('data-cat')); break;
+    case 'defloop-toggle': { var _id=el.getAttribute('data-id'); var _dl=(App.defaultLoop||[]).map(String); var _ix=_dl.indexOf(String(_id)); if(el.checked && _ix<0) _dl.push(String(_id)); else if(!el.checked && _ix>=0) _dl.splice(_ix,1); App.defaultLoop=_dl; apiCall('setDefaultLoop',{defaultLoop:_dl}).then(function(){ toast('✓ Default loop updated','success'); if(App.view==='settings') renderSettings(); }).catch(function(){ toast('Could not save — try again.','error'); }); break; }
     case 'newtask': openAssign('', ''); break;
     case 'newlead': nlOpenAssign(); break;
     case 'nl-tab': App._leadView=App._leadView||{}; App._leadView.tab=el.getAttribute('data-tab'); renderLeads(); break;

@@ -3,7 +3,7 @@
    is the most reliable way to draw web notifications. Lives under /workdiary/
    so it works on GitHub Pages project sites. */
 
-const CACHE = 'workdiary-v138';
+const CACHE = 'workdiary-v143';
 /* Cloudflare Worker that sends pushes AND (new) writes quick replies to Firestore. */
 const PUSH_ENDPOINT = 'https://ediary-push.monishlic-8e8.workers.dev/';
 
@@ -17,6 +17,9 @@ self.addEventListener('push', function(event){
   var title = d.title || n.title || 'E-Diary';
   var body  = d.body  || n.body  || '';
   var tag   = d.tag   || n.tag   || 'ediary';
+  // A call ring is only valid for a short window. If FCM delivered it late (device was
+  // offline/asleep), the call was long since declined/missed — don't ring minutes later.
+  if(d.kind === 'call' && d.ts && (Date.now() - Number(d.ts)) > 60000){ return; }
   event.waitUntil(
     clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
       // If an app window is focused, it shows its own in-app alert — skip the OS popup
@@ -88,8 +91,8 @@ function routeCall(d, act){
       for(var i=0;i<list.length;i++){ if('focus' in list[i]) return list[i].focus(); }
       if(clients.openWindow) return clients.openWindow('./?call=' + encodeURIComponent(cid) + '&answer=1');
     } else {
-      if(list.length) return;
-      if(clients.openWindow) return clients.openWindow('./?call=' + encodeURIComponent(cid) + '&decline=1');
+      if(list.length) return;   // an already-open tab records the decline; never open the app just to decline
+      return fetch(PUSH_ENDPOINT, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ type:'call', action:'decline', callId: cid }) }).catch(function(){});
     }
   });
 }
