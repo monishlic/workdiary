@@ -7792,8 +7792,13 @@ function remarksBlock(t){
   });
   h+='</div>'; return h;
 }
+function taskById(id){
+  var pools=[App.tasks, App._loopedTasks, App._assignedCache, App._allTasks, App._deletedTasks];
+  for(var i=0;i<pools.length;i++){ var p=pools[i]; if(!p) continue; for(var j=0;j<p.length;j++){ if(p[j] && String(p[j].taskId)===String(id)) return p[j]; } }
+  return null;
+}
 function openTask(taskId, editMode){
-  var t=App.tasks.find(function(x){return x.taskId===taskId;});
+  var t=taskById(taskId);
   if(!t){ toast('Task not found.','error'); return; }
   try{ markTaskSeen(t.uid, t.lastCommentAt||''); document.querySelectorAll('[data-id="'+t.taskId+'"] .cmt-badge').forEach(function(b){ b.remove(); }); }catch(e){}
   var active=isActive(t);
@@ -7802,11 +7807,17 @@ function openTask(taskId, editMode){
   // Every task opens as a COMMITTED (read-only) task by default — same as a task a teammate assigns.
   // Only the owner/assigner may edit it, and only after tapping ✏️ Edit (editMode).
   var mine = !t.ownerId || String(t.ownerId)===String(App.identity.employeeId);
-  var canEdit = active && mine && !shared;          // my own personal or self-assigned task
+  // "observer" = this task isn't in my own actionable list (opened from In-loop / Teams / Deleted / admin pools).
+  // It must be strictly read-only: its taskId-based actions (status/complete/snooze/edit) run against App.tasks and
+  // would reject "Task not found." for me — or wrongly mutate someone else's task.
+  var inMine = (App.tasks||[]).some(function(x){ return String(x.taskId)===String(t.taskId); });
+  var observer = !inMine;
+  var canEdit = active && mine && !shared && inMine;          // my own personal or self-assigned task
   var showEdit = !!editMode && canEdit;             // show the editable form only when explicitly requested
   document.getElementById('det-title').textContent=showEdit?'Edit Task':(t.title||t.clientName);
   var h='';
-  if(shared) h+='<div class="assign-banner"><span class="ab-av">'+avatarHTML(t.assignedByName||'?','sm',t.assignedById)+'</span><div class="ab-tx"><div class="ab-t">Assigned by '+esc(t.assignedByName||'a teammate')+'</div><div class="ab-s">You’re the assignee · update status &amp; comment</div></div></div>';
+  if(observer) h+='<div class="assign-banner"><span class="ab-av">👁</span><div class="ab-tx"><div class="ab-t">View only'+(t.assignedByName?' · assigned by '+esc(t.assignedByName):'')+'</div><div class="ab-s">You’re following this task — its owner handles status &amp; edits.</div></div></div>';
+  else if(shared) h+='<div class="assign-banner"><span class="ab-av">'+avatarHTML(t.assignedByName||'?','sm',t.assignedById)+'</span><div class="ab-tx"><div class="ab-t">Assigned by '+esc(t.assignedByName||'a teammate')+'</div><div class="ab-s">You’re the assignee · update status &amp; comment</div></div></div>';
   if(showEdit){
     // Fully editable — name, department, category (move), details
     h+='<div style="margin-bottom:12px"><span class="d-status '+(t.status==='In Progress'?'ip':'pending')+'">'+(t.status==='In Progress'?'&#9881; In Progress':'&#9679; Pending')+'</span></div>';
@@ -7871,14 +7882,18 @@ function openTask(taskId, editMode){
   } else if(active){
     // Committed task — update status & complete. Only the owner/assigner can Edit its details.
     f+='<button class="btn btn-ghost" data-action="close-modal" data-modal="detail-modal">Close</button>';
-    if(canEdit) f+='<button class="btn btn-ghost" data-action="edit-task-inline" data-id="'+esc(t.taskId)+'">✏️ Edit</button>';
-    if(App.identity.role==='Admin') f+='<button class="btn btn-ghost" data-action="handover-task" data-uid="'+esc(t.uid)+'">↪ Hand over</button>';
-    f+='<button class="btn btn-ghost" data-action="open-snooze" data-id="'+esc(t.taskId)+'">'+(isSnoozed(t)?'😴 Snoozed':'😴 Snooze')+'</button>';
-    if(t.status==='In Progress') f+='<button class="btn btn-ghost" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="Pending">Set Pending</button>';
-    else f+='<button class="btn btn-primary" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="In Progress">&#9881; In Progress</button>';
-    f+='<button class="btn btn-success" data-action="complete-from-detail" data-id="'+esc(t.taskId)+'">'+ico('check')+' Complete</button>';
+    if(inMine){
+      if(canEdit) f+='<button class="btn btn-ghost" data-action="edit-task-inline" data-id="'+esc(t.taskId)+'">✏️ Edit</button>';
+      if(App.identity.role==='Admin') f+='<button class="btn btn-ghost" data-action="handover-task" data-uid="'+esc(t.uid)+'">↪ Hand over</button>';
+      f+='<button class="btn btn-ghost" data-action="open-snooze" data-id="'+esc(t.taskId)+'">'+(isSnoozed(t)?'😴 Snoozed':'😴 Snooze')+'</button>';
+      if(t.status==='In Progress') f+='<button class="btn btn-ghost" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="Pending">Set Pending</button>';
+      else f+='<button class="btn btn-primary" data-action="set-status" data-id="'+esc(t.taskId)+'" data-status="In Progress">&#9881; In Progress</button>';
+      f+='<button class="btn btn-success" data-action="complete-from-detail" data-id="'+esc(t.taskId)+'">'+ico('check')+' Complete</button>';
+    } else if(App.identity.role==='Admin' && t.uid){
+      f+='<button class="btn btn-ghost" data-action="handover-task" data-uid="'+esc(t.uid)+'">↪ Hand over</button>';
+    }
   } else {
-    if(App.identity.role==='Admin') f+='<button class="btn btn-ghost" data-action="reopen-task" data-id="'+esc(t.taskId)+'">Reopen</button>';
+    if(App.identity.role==='Admin' && inMine) f+='<button class="btn btn-ghost" data-action="reopen-task" data-id="'+esc(t.taskId)+'">Reopen</button>';
     f+='<button class="btn btn-primary" data-action="close-modal" data-modal="detail-modal">Close</button>';
   }
   document.getElementById('det-foot').innerHTML=f;
@@ -9649,13 +9664,14 @@ function openMsgMenu(id){
   h+='<button type="button" class="msg-act" data-act="reply">↩︎ Reply</button>';
   if(!mine && !isDM) h+='<button type="button" class="msg-act" data-act="replypriv">✉ Reply privately</button>';
   h+='<button type="button" class="msg-act" data-act="copy">📋 Copy</button>';
+  h+='<button type="button" class="msg-act" data-act="info">ⓘ Info</button>';
   if(mine){ h+='<button type="button" class="msg-act" data-act="edit">✎ Edit</button><button type="button" class="msg-act danger" data-act="delete">🗑 Delete</button>'; }
   h+='<button type="button" class="msg-act cancel" data-act="cancel">Cancel</button></div>';
   ov.innerHTML=h; document.body.appendChild(ov);
   ov.addEventListener('click', function(){ ov.remove(); });
   var card=ov.querySelector('.msg-sheet-card'); if(card) card.addEventListener('click', function(ev){ ev.stopPropagation(); });
   ov.querySelectorAll('.msg-react').forEach(function(b){ b.addEventListener('click', function(ev){ ev.stopPropagation(); ov.remove(); chatReact(id, b.getAttribute('data-emo')); }); });
-  ov.querySelectorAll('.msg-act').forEach(function(b){ b.addEventListener('click', function(ev){ ev.stopPropagation(); var a=b.getAttribute('data-act'); ov.remove(); if(a==='reply') chatStartReply(id); else if(a==='replypriv') chatReplyPrivate(id); else if(a==='copy') chatCopy(id); else if(a==='edit') chatEdit(id); else if(a==='delete') chatDelete(id); }); });
+  ov.querySelectorAll('.msg-act').forEach(function(b){ b.addEventListener('click', function(ev){ ev.stopPropagation(); var a=b.getAttribute('data-act'); ov.remove(); if(a==='reply') chatStartReply(id); else if(a==='replypriv') chatReplyPrivate(id); else if(a==='copy') chatCopy(id); else if(a==='info') openMsgInfo(id); else if(a==='edit') chatEdit(id); else if(a==='delete') chatDelete(id); }); });
 }
 function chatReact(id, emo){ if(!emo) return; apiCall('reactMsg',{kind:chatMsgKind(), id:id, emoji:emo}).catch(function(){}); }
 function chatCopy(id){ var m=App._chatMsgMap[id]; if(!m) return; try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(m.text||'').then(function(){ toast('Copied.','info'); }, function(){ toast('Could not copy.','error'); }); } else { toast('Copy not supported here.','warn'); } }catch(e){ toast('Could not copy.','error'); } }
@@ -10520,7 +10536,6 @@ document.addEventListener('click', function(e){
     case 'reset-member': adminResetMember(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
     case 'admin-del-task': adminDeleteTaskUI(el.getAttribute('data-uid'), el.getAttribute('data-client')); break;
     case 'admin-del-all-tasks': adminDeleteAllTasksUI(el.getAttribute('data-id'), el.getAttribute('data-name')); break;
-    case 'toggle-role': adminToggleRole(el.getAttribute('data-id'), el.getAttribute('data-role'), el); break;
     case 'set-role': var _rs=document.getElementById('role-sel'); adminToggleRole(el.getAttribute('data-id'), _rs?_rs.value:'Staff', el); break;
     case 'toggle-active': adminToggleActive(el.getAttribute('data-id'), el.getAttribute('data-active'), el); break;
     case 'save-visibility': adminSaveVisibility(el.getAttribute('data-id'), el); break;
@@ -10539,7 +10554,6 @@ document.addEventListener('click', function(e){
     case 'dept-add-create': deptAddCreate(el); break;
     case 'dept-del': deptDelete(el.getAttribute('data-name')); break;
     case 'merge-mf': nlMergeMF(); break;
-    case 'dash-filter': App.dashFilter=el.getAttribute('data-filter'); renderDashboard(); break;
     case 'mytask-filter': myTaskFilter(el.getAttribute('data-f')); break;
     case 'mytask-range': myTaskRange(el.getAttribute('data-r')); break;
     case 'mytask-custom-apply': myTaskCustomApply(); break;
@@ -10558,7 +10572,6 @@ document.addEventListener('click', function(e){
     case 'pick-pill': pickPill(el); break;
     case 'det-tab': detTab(el.getAttribute('data-tab')); break;
     case 'add-comment': addCommentUI(el.getAttribute('data-uid')); break;
-    case 'admin-act': adminAct(el.getAttribute('data-uid'), el.getAttribute('data-status'), el); break;
     case 'notif-open': closeModal('reminders-modal'); openFromNotif(el.getAttribute('data-uid')); break;
     case 'toggle-sidebar': toggleSidebar(); break;
     case 'pwa-install': pwaInstall(); break;
@@ -10584,13 +10597,9 @@ document.addEventListener('click', function(e){
     case 'complete-from-detail': { var _cfi=el.getAttribute('data-id'),_cfe=el; askRemark({title:'Complete this task',sub:'Add a closing remark before marking it complete.',okLabel:'✓ Complete',ico:'✅'}, function(rk){ completeTask(_cfi, rk, _cfe); }); break; }
     case 'reopen-task': { var _rti=el.getAttribute('data-id'); askRemark({title:'Reopen this task',sub:'Add a remark about why you are reopening it.',okLabel:'Reopen',ico:'↩️'}, function(rk){ reopenTask(_rti, rk); }); break; }
     case 'pick': pickSugg(el.getAttribute('data-input'), parseInt(el.getAttribute('data-idx'),10)); break;
-    case 'toggle-theme': toggleTheme(); break;
     case 'set-theme': setTheme(el.getAttribute('data-theme')); break;
-    case 'set-gender': setGender(el.getAttribute('data-g')); break;
     case 'set-avatar': setAvatar(el.getAttribute('data-id')); break;
-    case 'open-avatar-picker': openAvatarPicker(false); break;
     case 'reset-diary': resetDiary(); break;
-    case 'export-data': exportData(); break;
     case 'backup-mine': edBackupMine(); break;
     case 'restore-mine': edRestoreMine(); break;
     case 'backup-all': edBackupAll(); break;
