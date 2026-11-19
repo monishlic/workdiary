@@ -121,7 +121,7 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .sb-x{display:none;background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1}
 #sb-nav{flex:1;overflow-y:auto;padding:8px 0 14px}
 #sb-nav::-webkit-scrollbar{width:5px}#sb-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.13);border-radius:4px}
-.nav-link{display:flex;align-items:center;gap:11px;padding:9px 18px;color:#cbd5e1;text-decoration:none;font-size:.85rem;font-weight:500;cursor:pointer;transition:background .13s,color .13s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.nav-link{display:flex;align-items:center;gap:11px;padding:9px 18px;color:#cbd5e1;text-decoration:none;font-size:.85rem;font-weight:500;cursor:pointer;transition:background .13s,color .13s;border:none;background:none;width:100%;text-align:left;font-family:inherit;white-space:nowrap;overflow:hidden}
 .nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
 .nav-link.active{background:rgba(59,130,246,.18);color:#93c5fd;font-weight:600;box-shadow:inset 3px 0 0 #3b82f6}
 .nav-ico{width:19px;height:19px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
@@ -1269,7 +1269,7 @@ textarea.rk-inp{ resize:vertical; }
 /* Desktop: collapsed icon rail that expands on hover and closes when the cursor leaves. */
 .nav-ico{ font-size:1.02rem; }
 @media(min-width:861px){
-  #sidebar{ width:74px; z-index:120; transition:width .24s cubic-bezier(.2,.7,.3,1), box-shadow .24s; }
+  #sidebar{ width:74px; z-index:120; transition:width .2s cubic-bezier(.22,.61,.36,1), box-shadow .2s; contain:layout; transform:translateZ(0); will-change:width; }
   #sidebar:hover{ width:var(--sb-width); box-shadow:24px 0 60px -22px rgba(80,72,150,.5); }
   #main{ margin-left:74px; }
   /* Collapsed rail: icons only, full-row click target, labels/badges hidden */
@@ -3434,7 +3434,8 @@ var FB = (function(){
               } else { return {ok:false,error:'unknown lead action'}; }
               return col('leads').doc(String(b.leadId)).set(upd,{merge:true}).then(function(){
                 var jobs=[]; var recips=(l.assigneeIds||[]).slice(); if(l.createdById && recips.map(String).indexOf(String(l.createdById))<0) recips.push(l.createdById); (Array.isArray(l.loop)?l.loop:[]).forEach(function(lp){ if(recips.map(String).indexOf(String(lp))<0) recips.push(lp); });
-                var _nlPush=function(rid,msg){ try{ Push.send(String(rid), 'New Leads', msg, 'lead-'+l.id+'-'+Date.now()); }catch(e){} };
+                var _actSet={}; (l.assigneeIds||[]).forEach(function(x){ _actSet[String(x)]=1; }); if(l.createdById) _actSet[String(l.createdById)]=1;
+                var _nlPush=function(rid,msg){ try{ Push.send(String(rid), 'New Leads', msg, 'lead-'+l.id+'-'+Date.now(), _actSet[String(rid)]?undefined:{close:3}); }catch(e){} };
                 if(notifyOthers){ recips.forEach(function(rid){ if(String(rid)!==String(u2.userId)){ jobs.push(addNotif(rid, u2.name, notifyOthers, l.id, 'lead','leads')); _nlPush(rid, notifyOthers); } }); }
                 if(notifyAll){ recips.forEach(function(rid){ if(String(rid)===String(u2.userId)) return; jobs.push(addNotif(rid, u2.name||'E-Diary', notifyAll, l.id, 'lead','leads')); _nlPush(rid, notifyAll); }); }
                 return Promise.all(jobs);
