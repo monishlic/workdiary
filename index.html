@@ -3041,6 +3041,10 @@ var FB = (function(){
           var _dl=Array.isArray(b.defaultLoop)?b.defaultLoop.map(String):[];
           return col('config').doc('app').set({ defaultLoop:_dl, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
         }
+        case 'setMailsEnabled': {
+          if(!isAdmin()) throw new Error('Admin access required.');
+          return col('config').doc('app').set({ mailsEnabled:!!b.on, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
+        }
         case 'mergeDepartment': {
           if(!isAdmin()) throw new Error('Admins only.');
           var mto=String(b.to||''); var fromArr=(Array.isArray(b.fromList)?b.fromList:[String(b.from||'')]).map(String).filter(function(x){return x && x!==mto;}); if(!mto||!fromArr.length) throw new Error('Bad merge.'); var fromSet={}; fromArr.forEach(function(x){fromSet[x]=1;});
@@ -3535,6 +3539,7 @@ var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
   defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null, _stRange:'all', _stFilter:'all', _stFrom:'', _stTo:'',
+  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false,
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -4078,6 +4083,7 @@ var FBLive = {
       App.reminders=list; updateBell(); FBLive._seeded=true;
     }, function(){});
 
+    try{ if(App.identity && (isBoss() || App._mailsEnabled===true)) startMailsListener(); }catch(e){}
     // Team + department chat (one collection, all channels; small office → last 250 msgs)
     try{ db.collection('calls').where('to','==',uid).onSnapshot(function(qs){ qs.docChanges().forEach(function(ch){ if(ch.type!=='added') return; var d=ch.doc.data(); if(!d || d.status!=='ringing') return; if(typeof Call==='undefined' || Call.cur) return; var age=Date.now()-new Date(d.created||0).getTime(); if(age>60000) return; try{ if(d.group||d.room){ if(typeof Room!=='undefined') Room.incoming(d); } else { Call.incoming(d); } }catch(e){} }); }); }catch(e){}
     try{ if(typeof Call!=='undefined' && !Call._hidPoll){ Call._hidPoll=setInterval(function(){ try{ if(document.hidden && App.identity && window.firebase && typeof Call!=='undefined' && !Call.cur){ Call.checkIncoming(); } }catch(e){} }, 5000); } }catch(e){}
@@ -4102,6 +4108,7 @@ var FBLive = {
         if(isBoss() && !c.investCatsFixed){ nlHealInvestCats(); }
         if(c.leadProcesses && typeof c.leadProcesses==='object'){ App.leadProcesses=c.leadProcesses; try{ Store.put('kv','leadProcesses',App.leadProcesses); }catch(e){} }
         App.defaultLoop=Array.isArray(c.defaultLoop)?c.defaultLoop.map(String):[]; try{ Store.put('kv','defaultLoop',App.defaultLoop); }catch(e){} if(App.view==='settings' && document.getElementById('defloop-list')) renderSettings();
+        var _meOld=(App._mailsEnabled===true); App._mailsEnabled=(c.mailsEnabled===true); if(App._mailsEnabled){ try{ startMailsListener(); }catch(e){} } if(App._mailsEnabled!==_meOld){ try{ buildSidebar(); }catch(e){} if(App.view==='mails') renderMails(); else if(App.view==='settings') renderSettings(); }
       } else if(isBoss()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} }
     }, function(){}); }catch(e){}
 
@@ -4952,6 +4959,7 @@ function buildSidebar(){
   h+='<button class="nav-link'+((App.view==='mytasks'||App.view==='assigned'||App.view==='looped'||App.view==='deleted'||App.view==='teamtasks')?' active':'')+'" data-action="nav" data-view="mytasks"><span class="nav-ico">✅</span> Tasks</button>';
   h+='<button class="nav-link nav-add" data-action="open-assign" title="Add a task"><span class="nav-ico">'+plusIco()+'</span> Add task</button>';
   h+='<button class="nav-link'+(App.view==='leads'?' active':'')+'" data-action="nav" data-view="leads"><span class="nav-ico">🎯</span> Leads</button>';
+  h+='<button class="nav-link'+(App.view==='mails'?' active':'')+'" data-action="nav" data-view="mails"><span class="nav-ico">📬</span> Mails</button>';
   if(rkCanSee()){ h+='<button class="nav-link'+(App.view==='reckoner'?' active':'')+'" data-action="nav" data-view="reckoner"><span class="nav-ico">📚</span> Reckoner</button>'; }
   h+='<button class="nav-link'+(App.view==='board'?' active':'')+'" data-action="nav" data-view="board"><span class="nav-ico">▤</span> Board</button>';
   h+='<button class="nav-link'+(App.view==='calendar'?' active':'')+'" data-action="nav" data-view="calendar"><span class="nav-ico">📅</span> Calendar</button>';
@@ -5568,6 +5576,7 @@ function navigate(view,dept,cat){
     else if(view==='looped') renderLooped();
     else if(view==='deleted') renderDeleted();
     else if(view==='teamtasks'){ App._tteamStaff=null; renderTaskTeams(); }
+    else if(view==='mails') renderMails();
     else if(view==='audit') renderActivityLog();
     else if(view==='calendar') renderCalendar();
     else if(view==='weekly') renderWeekly();
@@ -8101,6 +8110,110 @@ function renderTaskTeams(){
   if(!mem.length) h+='<div class="nl-empty">No team members loaded.</div>';
   document.getElementById('content').innerHTML=h;
 }
+function mailDeptMeta(){ return { gi:['General Insurance','#0f9d58'], life:['Life','#2563eb'], inv:['Investments','#0f9d8f'], claims:['Claims','#e24b4a'], unsorted:['Unsorted','#b26b00'] }; }
+function mailInitials(n){ n=String(n||'?').trim(); var p=n.split(/\s+/); return ((p[0]||'?').charAt(0)+(p[1]?p[1].charAt(0):'')).toUpperCase(); }
+function mailRangeBounds(r){ var now=new Date(); var sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(); if(r==='today') return {s:sod,e:sod+86400000}; if(r==='week'){ var wd=(now.getDay()+6)%7; var mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-wd).getTime(); return {s:mon,e:mon+7*86400000}; } return null; }
+function mailMatchesHandled(m){ var v=App._mailHandled||'unhandled'; if(v==='all') return true; var h=!!m.handled; return v==='handled'?h:!h; }
+function mailFiltered(){ var box=App._mailbox||'all'; var bounds=mailRangeBounds(App._mailRange||'today'); return (App._mails||[]).filter(function(m){ if(box!=='all' && String(m.mailbox||'')!==String(box)) return false; if(bounds){ var t=new Date(m.date||0).getTime(); if(!(t>=bounds.s && t<bounds.e)) return false; } if(!mailMatchesHandled(m)) return false; return true; }); }
+function mailRow(m){ var meta=mailDeptMeta(); var dk=m.dept||'unsorted'; var dm=meta[dk]||meta.unsorted; var col=dm[1]; var when=''; try{ when=fmtDateTime(m.date); }catch(e){ when=esc(m.date||''); }
+  var h='<div class="mw-mail'+(dk==='unsorted'?' uns':'')+'" style="--bar:'+col+'">';
+  h+='<div class="mw-av" style="background:'+col+'">'+esc(mailInitials(m.from))+'</div>';
+  h+='<div class="mw-body">';
+  h+='<div class="mw-r1"><span class="mw-from">'+esc(m.from||'Unknown')+'</span><span class="mw-email">'+esc(m.fromEmail||'')+'</span><span class="mw-time">'+esc(when)+'</span></div>';
+  h+='<div class="mw-subj">'+esc(m.subject||'(no subject)')+'</div>';
+  if(m.preview) h+='<div class="mw-snip">'+esc(m.preview)+'</div>';
+  if(dk==='unsorted'){
+    h+='<div class="mw-assign"><span class="mw-lab">Send to:</span><select class="mw-sel" data-id="'+esc(m.id)+'"><option value="">Choose\u2026</option><option value="gi">General Insurance</option><option value="life">Life Insurance</option><option value="inv">Investments</option><option value="claims">Claims</option></select><button class="mw-teach" data-action="mail-assign" data-id="'+esc(m.id)+'">Teach &amp; route</button>';
+    if(m.why) h+='<span class="mw-note">\u26a0 '+esc(m.why)+'</span>';
+    h+='</div>';
+  } else {
+    h+='<div class="mw-r3"><span class="mw-dchip" style="background:'+col+'">'+esc(dm[0])+(m.confidence?' \u00b7 '+Math.round(m.confidence)+'%':'')+'</span>';
+    if(m.refTag) h+='<span class="mw-ref">'+esc(m.refTag)+'</span>';
+    if(m.threadCount>1) h+='<span class="mw-thread">\u27f2 '+m.threadCount+'-mail thread</span>';
+    if(m.why) h+='<span class="mw-why">'+esc(m.why)+'</span>';
+    h+='<div class="mw-acts">'+(m.gmailUrl?'<a class="mw-lnk" href="'+esc(m.gmailUrl)+'" target="_blank" rel="noopener noreferrer">Open in Gmail \u2197</a>':'')+'<button class="mw-done'+(m.handled?' on':'')+'" data-action="mail-handled" data-id="'+esc(m.id)+'">'+(m.handled?'\u2713 Handled':'Mark handled')+'</button></div>';
+    h+='</div>';
+  }
+  h+='</div></div>'; return h;
+}
+function mailsStyle(){ return '<style>'
++'.mw-boxes{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}'
++'.mw-boxbtn{background:var(--bg-card,#fff);border:1px solid var(--border,#eceef3);border-radius:10px;padding:7px 13px;font-weight:600;color:var(--text,#14151a);cursor:pointer;font:inherit;font-size:.84rem}'
++'.mw-boxbtn.on{background:var(--accent,#635bff);color:#fff;border-color:var(--accent,#635bff)}'
++'.mw-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}'
++'.mw-tab{display:flex;align-items:center;gap:7px;background:var(--bg-card,#fff);border:1px solid var(--border,#eceef3);border-radius:11px;padding:8px 13px;font-weight:600;color:var(--text,#394150);cursor:pointer;font:inherit;font-size:.84rem}'
++'.mw-tab.on{background:var(--text,#14151a);color:var(--bg,#fff);border-color:var(--text,#14151a)}'
++'.mw-tab.uns{background:#fff7e6;border-color:#f2d9a8;color:#b26b00}'
++'.mw-sw{width:9px;height:9px;border-radius:50%}'
++'.mw-c{background:rgba(125,125,140,.18);border-radius:20px;font-size:.72rem;font-weight:800;padding:1px 8px}'
++'.mw-tab.on .mw-c{background:rgba(255,255,255,.22)}'
++'.mw-tb{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}'
++'.mw-chip{background:var(--bg-card,#fff);border:1px solid var(--border,#eceef3);border-radius:18px;padding:5px 12px;font-size:.8rem;font-weight:600;color:var(--text,#475065);cursor:pointer;font:inherit}'
++'.mw-chip.on{background:var(--accent-soft,#eef0ff);border-color:var(--accent,#d6d8ff);color:var(--accent,#635bff)}'
++'.mw-sep{width:10px;display:inline-block}'
++'.mw-list{display:flex;flex-direction:column;gap:10px}'
++'.mw-mail{display:flex;gap:13px;background:var(--bg-card,#fff);border:1px solid var(--border,#eceef3);border-left:5px solid var(--bar,#cbd5e1);border-radius:13px;padding:13px 15px}'
++'.mw-mail.uns{border-left-color:#b26b00}'
++'.mw-av{width:40px;height:40px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:.9rem}'
++'.mw-body{flex:1;min-width:0}'
++'.mw-r1{display:flex;align-items:center;gap:8px}'
++'.mw-from{font-weight:700}'
++'.mw-email{color:var(--text-muted,#6b7280);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
++'.mw-time{margin-left:auto;color:var(--text-muted,#6b7280);font-size:.8rem;white-space:nowrap}'
++'.mw-subj{font-weight:700;margin:4px 0 2px}'
++'.mw-snip{color:var(--text-muted,#565e6d);font-size:.88rem;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
++'.mw-r3{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}'
++'.mw-dchip{font-size:.76rem;font-weight:800;padding:3px 10px;border-radius:18px;color:#fff}'
++'.mw-ref{font-size:.74rem;font-weight:700;color:#3730a3;background:#eef0ff;border-radius:16px;padding:3px 9px}'
++'.mw-thread{font-size:.74rem;color:var(--text-muted,#6b7280)}'
++'.mw-why{font-size:.74rem;color:var(--text-muted,#6b7280);background:var(--bg-soft,#f4f5f8);border-radius:16px;padding:3px 9px}'
++'.mw-acts{margin-left:auto;display:flex;align-items:center;gap:8px}'
++'.mw-lnk{color:var(--accent,#635bff);font-weight:700;font-size:.8rem;text-decoration:none;white-space:nowrap}'
++'.mw-done{font-size:.8rem;font-weight:700;color:#0f9d58;background:#e8f7ee;border:none;border-radius:16px;padding:4px 11px;cursor:pointer;font:inherit}'
++'.mw-done.on{background:#0f9d58;color:#fff}'
++'.mw-assign{display:flex;align-items:center;gap:8px;margin-top:10px;border:1px dashed #f2d9a8;border-radius:10px;padding:9px 11px;flex-wrap:wrap}'
++'.mw-lab{font-size:.8rem;color:#b26b00;font-weight:700}'
++'.mw-sel{border:1px solid var(--border,#eceef3);border-radius:8px;padding:6px 10px;font:inherit;font-weight:600;color:var(--text,#14151a);background:var(--bg-card,#fff)}'
++'.mw-teach{background:#b26b00;color:#fff;border:none;border-radius:8px;padding:7px 13px;font-weight:700;cursor:pointer;font:inherit}'
++'.mw-note{font-size:.76rem;color:#b26b00;margin-left:auto}'
++'</style>'; }
+function startMailsListener(){ try{ if(FBLive._mailsOn) return; if(!window.firebase||!firebase.firestore) return; FBLive._mailsOn=true; firebase.firestore().collection('mails').onSnapshot(function(qs){ var a=[]; qs.forEach(function(d){ var m=d.data(); if(!m.id) m.id=d.id; a.push(m); }); App._mails=a; if(App.view==='mails'){ try{ renderMails(); }catch(e){} } }, function(){}); }catch(e){} }
+function mailsEnableToggle(on){ var want=(on==='1'); apiCall('setMailsEnabled',{on:want}).then(function(res){ if(res&&res.ok){ App._mailsEnabled=want; try{ if(want) startMailsListener(); }catch(e){} try{ buildSidebar(); }catch(e){} if(App.view==='settings') renderSettings(); toast(want?'Mails turned on for all staff.':'Mails restricted to admins.','success'); } else { toast('Could not update.','error'); } }).catch(function(e){ toast((e&&e.message)||'Could not update.','error'); }); }
+function renderMails(){
+  App.view='mails'; buildSidebar();
+  var _canUse=(App.identity && typeof isBoss==='function' && isBoss()) || App._mailsEnabled===true;
+  if(!_canUse){ document.getElementById('content').innerHTML=mailsStyle()+'<div class="cat-head"><div class="cat-title">📬 Mails</div><div class="cat-sub">Shared inbox, auto-sorted by department</div></div><div class="empty" style="padding:40px"><div class="empty-ico">🚧</div><div class="empty-t">Coming soon</div><div class="empty-s">This section is being set up. Your admin will switch it on once it’s ready.</div></div>'; return; }
+  var meta=mailDeptMeta();
+  var all=(App._mails||[]);
+  var inBox=(App._mailbox==='all')?all:all.filter(function(m){ return String(m.mailbox||'')===String(App._mailbox); });
+  var counts={all:inBox.length,gi:0,life:0,inv:0,claims:0,unsorted:0};
+  inBox.forEach(function(m){ var dk=m.dept||'unsorted'; if(counts[dk]===undefined) dk='unsorted'; counts[dk]++; });
+  var list=mailFiltered().filter(function(m){ var tab=App._mailTab||'all'; return tab==='all'?true:(String(m.dept||'unsorted')===tab); });
+  list.sort(function(a,b){ return new Date(b.date||0)-new Date(a.date||0); });
+  var h=mailsStyle();
+  h+='<div class="cat-head"><div class="cat-title">\ud83d\udcec Mails</div><div class="cat-sub">Shared inbox, auto-sorted by department'+((App._mailSync&&App._mailSync.at)?(' \u00b7 synced '+esc(App._mailSync.at)):'')+'</div></div>';
+  if((App._mailboxes||[]).length>1){ h+='<div class="mw-boxes"><button class="mw-boxbtn'+((App._mailbox==='all')?' on':'')+'" data-action="mail-box" data-box="all">All inboxes</button>'; (App._mailboxes||[]).forEach(function(b){ h+='<button class="mw-boxbtn'+((App._mailbox===b.id)?' on':'')+'" data-action="mail-box" data-box="'+esc(b.id)+'">'+esc(b.name||b.id)+'</button>'; }); h+='</div>'; }
+  h+='<div class="mw-tabs">';
+  [['all','All'],['gi','General Insurance'],['life','Life'],['inv','Investments'],['claims','Claims'],['unsorted','Unsorted']].forEach(function(c){ var m2=meta[c[0]]; var sw=m2?('<span class="mw-sw" style="background:'+m2[1]+'"></span>'):''; h+='<button class="mw-tab'+((App._mailTab||'all')===c[0]?' on':'')+(c[0]==='unsorted'?' uns':'')+'" data-action="mail-tab" data-tab="'+c[0]+'">'+(c[0]==='unsorted'?'\u26a0 ':sw)+esc(c[1])+'<span class="mw-c">'+counts[c[0]]+'</span></button>'; });
+  h+='</div>';
+  h+='<div class="mw-tb">';
+  [['today','Today'],['week','This week'],['all','All time']].forEach(function(r){ h+='<button class="mw-chip'+((App._mailRange||'today')===r[0]?' on':'')+'" data-action="mail-range" data-r="'+r[0]+'">'+r[1]+'</button>'; });
+  h+='<span class="mw-sep"></span>';
+  [['unhandled','Unhandled'],['handled','Handled'],['all','All']].forEach(function(r){ h+='<button class="mw-chip'+((App._mailHandled||'unhandled')===r[0]?' on':'')+'" data-action="mail-hfilter" data-h="'+r[0]+'">'+r[1]+'</button>'; });
+  h+='</div>';
+  if(!all.length){ h+='<div class="empty" style="padding:30px"><div class="empty-ico">\ud83d\udCeD</div><div class="empty-t">Mail sync isn\u2019t connected yet</div><div class="empty-s">Once your Gmail is linked, sorted mail lands here automatically \u2014 nothing to do right now.</div></div>'; }
+  else if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">\u2705</div><div class="empty-t">Nothing here</div><div class="empty-s">No mail matches this tab and filter.</div></div>'; }
+  else { h+='<div class="mw-list">'; list.forEach(function(m){ h+=mailRow(m); }); h+='</div>'; }
+  document.getElementById('content').innerHTML=h;
+}
+function mailBox(id){ App._mailbox=id; renderMails(); }
+function mailTab(t){ App._mailTab=t; renderMails(); }
+function mailRange(r){ App._mailRange=r; renderMails(); }
+function mailHFilter(v){ App._mailHandled=v; renderMails(); }
+function mailToggleHandled(id){ var m=(App._mails||[]).find(function(x){ return String(x.id)===String(id); }); if(!m) return; var nv=!m.handled; m.handled=nv; renderMails(); try{ if(window.firebase&&firebase.firestore) firebase.firestore().collection('mails').doc(String(id)).set({handled:nv, handledBy:(App.identity&&App.identity.employeeName)||'', handledAt:nowISO()},{merge:true}); }catch(e){} }
+function mailAssign(id){ var sel=document.querySelector('.mw-sel[data-id="'+id+'"]'); var dept=sel?sel.value:''; if(!dept){ toast('Pick a department first.','error'); return; } var m=(App._mails||[]).find(function(x){ return String(x.id)===String(id); }); if(m){ m.dept=dept; m.why=''; } renderMails();
+  try{ if(window.firebase&&firebase.firestore){ firebase.firestore().collection('mails').doc(String(id)).set({dept:dept, sortedBy:(App.identity&&App.identity.employeeName)||'', sortedAt:nowISO()},{merge:true}); if(m){ var key=String(m.fromEmail||'').toLowerCase(); if(key) firebase.firestore().collection('mailRules').doc(key.replace(/[^a-z0-9@._-]/g,'_')).set({ match:key, dept:dept, by:(App.identity&&App.identity.employeeName)||'', at:nowISO() },{merge:true}); } } }catch(e){}
+  toast('Routed \u2014 the tool will remember this sender.','success'); }
 function renderMyTasks(){
   App.view='mytasks'; buildSidebar();
   var f=App._myFilter||'all';
@@ -8324,6 +8437,7 @@ function refreshView(){
   else if(App.view==='looped') renderLooped();
   else if(App.view==='deleted') renderDeleted();
   else if(App.view==='teamtasks') renderTaskTeams();
+  else if(App.view==='mails') renderMails();
   else if(App.view==='slate' && !App._slateView) renderSlate();
   else if(App.view==='board') renderBoard();
   else if(App.view==='clients') renderClients();
@@ -8381,6 +8495,8 @@ function renderSettings(){
   h+='</div>';
   if(App.identity.role==='Admin'){
     var _rkMe=(App.auth && App.auth.reckonerAccess===true);
+    h+='<div class="set-sec"><h3>📬 Mails</h3><div class="set-desc">The shared-inbox desk is still being set up. While it is off, staff see “Coming soon” and only admins can open and build it. Turn it on for everyone when it’s ready.</div>';
+    h+='<div class="set-field"><div><div class="set-k">Mails for all staff</div><div class="set-sub">'+(App._mailsEnabled?'On — every staff member can open and use Mails.':'Off — only admins can access Mails; staff see “Coming soon”.')+'</div></div><button class="btn btn-sm '+(App._mailsEnabled?'btn-success':'btn-ghost')+'" data-action="mail-enable-all" data-on="'+(App._mailsEnabled?'0':'1')+'">'+(App._mailsEnabled?'✓ On · tap to turn off':'Turn on for all')+'</button></div></div>';
     h+='<div class="set-sec"><h3>📚 Reckoner</h3><div class="set-desc">The product-knowledge desk. It stays hidden for everyone until it is turned on. Turn it on for yourself here; turn it on for staff from their profile in Teams.</div>';
     h+='<div class="set-field"><div><div class="set-k">Show the Reckoner for me</div><div class="set-sub">'+(_rkMe?'On — it shows in your sidebar.':'Off — hidden from your sidebar.')+'</div></div><button class="btn btn-sm '+(_rkMe?'btn-success':'btn-ghost')+'" data-action="toggle-my-reckoner" data-on="'+(_rkMe?'0':'1')+'">'+(_rkMe?'✓ On · tap to turn off':'Turn on')+'</button></div></div>';
   }
@@ -10530,6 +10646,13 @@ document.addEventListener('click', function(e){
     case 'reset-key': adminResetKeyUI(el.getAttribute('data-id'), el); break;
     case 'task-staff': App._tteamStaff=el.getAttribute('data-id'); renderTaskTeams(); break;
     case 'task-teams-back': App._tteamStaff=null; renderTaskTeams(); break;
+    case 'mail-box': mailBox(el.getAttribute('data-box')); break;
+    case 'mail-tab': mailTab(el.getAttribute('data-tab')); break;
+    case 'mail-range': mailRange(el.getAttribute('data-r')); break;
+    case 'mail-hfilter': mailHFilter(el.getAttribute('data-h')); break;
+    case 'mail-handled': mailToggleHandled(el.getAttribute('data-id')); break;
+    case 'mail-assign': mailAssign(el.getAttribute('data-id')); break;
+    case 'mail-enable-all': mailsEnableToggle(el.getAttribute('data-on')); break;
     case 'stask-filter': App._stFilter=el.getAttribute('data-f'); renderTaskTeams(); break;
     case 'stask-range': App._stRange=el.getAttribute('data-r'); renderTaskTeams(); break;
     case 'stask-custom-apply': staskCustomApply(); break;
