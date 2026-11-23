@@ -2740,8 +2740,26 @@ var FB = (function(){
     db = firebase.firestore();
     try{ db.settings({ ignoreUndefinedProperties:true }); }catch(e){}
     app = firebase.auth();
-    ready = app.signInAnonymously().then(function(){ return true; });
+    // Real auth: wait for any persisted (real) session to restore. No anonymous sign-in.
+    ready = new Promise(function(res){ var done=false; function fin(){ if(done) return; done=true; res(true); }
+      try{ var unsub=app.onAuthStateChanged(function(){ try{ if(unsub) unsub(); }catch(e){} fin(); }); }catch(e){ fin(); }
+      setTimeout(fin, 5000);
+    });
     return ready;
+  }
+  function mintAndSignIn(key){
+    if(!key) return Promise.reject(new Error('Invalid or inactive access key.'));
+    return fetch(PUSH_CONFIG.senderUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ type:'authMint', key:String(key) }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(!j||!j.ok||!j.token) throw new Error((j&&j.error)||'Invalid or inactive access key.'); return app.signInWithCustomToken(j.token).then(function(){ return j.user; }); });
+  }
+  function ensureSession(){
+    return init().then(function(){
+      if(app && app.currentUser) return true;
+      var key=(App.auth && App.auth.key)||null;
+      if(key) return mintAndSignIn(key).then(function(){ return true; });
+      return Promise.reject(new Error('login-required'));
+    });
   }
   function col(n){ return db.collection(n); }
   function nowISO(){ return new Date().toISOString(); }
@@ -2781,7 +2799,8 @@ var FB = (function(){
   // Router — mirrors the old backend actions, returns the same {ok,...} shapes.
   function call(action, b){
     b = b || {};
-    return init().then(function(){
+    if(action==='login'){ return init().then(function(){ return mintAndSignIn(b.key); }).then(function(user){ return { ok:true, user:user }; }); }
+    return ensureSession().then(function(){
       switch(action){
 
         case 'login': {
@@ -3485,7 +3504,7 @@ var FB = (function(){
       var clash=false; qs.forEach(function(d){ if(String(d.id)!==String(exceptId||'')) clash=true; }); return !clash;
     });
   }
-  return { init:init, call:call, db:function(){return db;}, col:col };
+  return { init:init, call:call, db:function(){return db;}, col:col, ensureSession:ensureSession, signOut:function(){ try{ return app?app.signOut():Promise.resolve(); }catch(e){ return Promise.resolve(); } } };
 })();
 
 /* ================================================================
@@ -3922,7 +3941,7 @@ function init(){
     App._notifSeen = r[5] || {}; App._notifSeeded = !!r[5];
     applyTheme();
     if(!App.auth){ showLogin(); }
-    else { App.identity={employeeId:App.auth.userId, employeeName:App.auth.name, role:App.auth.role}; return Data.loadAll().then(bootApp); }
+    else { App.identity={employeeId:App.auth.userId, employeeName:App.auth.name, role:App.auth.role}; return FB.ensureSession().then(function(){ return Data.loadAll(); }).then(bootApp).catch(function(e){ var msg=(e&&e.message)||''; if(/login-required|access key|token|inactive/i.test(msg)){ App.auth=null; try{ Store.put('kv','auth',null); }catch(_e){} showLogin(); } else { showFatal_(e); } }); }
   }).catch(showFatal_);
 }
 function showFatal_(e){ document.getElementById('loading').innerHTML='<div style="text-align:center;color:#dc2626;max-width:360px;padding:20px"><div style="font-size:2rem">⚠</div><div style="font-weight:600;margin:8px 0">Could not open the diary</div><div style="font-size:.85rem;color:#64748b">'+esc(e&&e.message?e.message:e)+'</div></div>'; }
@@ -3996,6 +4015,7 @@ function logout(){
     okLabel:'Log out', okClass:'btn-danger',
     onOk:function(){
       var done=false; var fin=function(){ if(done) return; done=true; Store.put('kv','auth',null).then(function(){ location.reload(); }, function(){ location.reload(); }); };
+      try{ FB.signOut(); }catch(e){}
       try{ Push.unregister().then(fin, fin); }catch(e){ fin(); }
       setTimeout(fin, 1500);   // don't hang the logout if token cleanup is slow
     }
