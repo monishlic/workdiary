@@ -5214,7 +5214,7 @@ var Push = {
     if(!PUSH_CONFIG.senderUrl || !toUserId || !window.firebase || !firebase.firestore) return;
     try{ firebase.firestore().collection('users').doc(String(toUserId)).get().then(function(d){
       var u=d.exists?d.data():{}; var tokens=(u&&u.fcmTokens)||[]; if(!tokens.length) return;
-      var payload={ tokens:tokens, title:title, body:body, tag:tag||'ediary' };
+      var payload={ tokens:tokens, uid:String(toUserId), title:title, body:body, tag:tag||'ediary' };
       if(data && typeof data==='object'){ for(var k in data){ if(data[k]!=null) payload[k]=String(data[k]); } }
       var post=function(idTok){ payload.idToken=idTok||''; fetch(PUSH_CONFIG.senderUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }).catch(function(){}); };
       try{ var cu=firebase.auth().currentUser; if(cu&&cu.getIdToken){ cu.getIdToken().then(post, function(){ post(''); }); } else post(''); }catch(e){ post(''); }
