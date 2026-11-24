@@ -766,6 +766,7 @@ button,input,select,textarea,optgroup{font-family:inherit}
 .filter-chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 /* Persistent unread banner */
 #notif-banner{display:none;align-items:center;gap:10px;background:linear-gradient(135deg,#b45309,#d97706);color:#fff;padding:10px 18px;font-size:.85rem;font-weight:600;cursor:pointer}
+#maint-banner{display:none;align-items:center;justify-content:center;gap:8px;background:repeating-linear-gradient(45deg,#334155,#334155 14px,#3b475c 14px,#3b475c 28px);color:#fff;padding:9px 40px;font-size:.84rem;font-weight:700;text-align:center;letter-spacing:.01em}
 #notif-banner .nb-x{margin-left:auto;background:rgba(255,255,255,.2);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:.9rem;line-height:1}
 #notif-banner .nb-x:hover{background:rgba(255,255,255,.35)}
 
@@ -2310,6 +2311,7 @@ textarea.nl-in{min-height:64px;resize:vertical}
     </button>
     <div class="id-pill"><div class="id-avatar" id="id-avatar"></div><span class="id-name" id="id-name"></span></div>
   </header>
+  <div id="maint-banner"></div>
   <div id="notif-banner" data-action="open-reminders"></div>
   <div id="content"></div>
 </main>
@@ -3064,6 +3066,12 @@ var FB = (function(){
           if(!isAdmin()) throw new Error('Admin access required.');
           return col('config').doc('app').set({ mailsEnabled:!!b.on, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
         }
+        case 'setMaintenance': {
+          if(!isAdmin()) throw new Error('Admin access required.');
+          var _mp={ maintenance:!!b.on, updated:nowISO() };
+          if(b.msg!==undefined) _mp.maintenanceMsg=String(b.msg||'');
+          return col('config').doc('app').set(_mp,{merge:true}).then(function(){ return {ok:true}; });
+        }
         case 'mergeDepartment': {
           if(!isAdmin()) throw new Error('Admins only.');
           var mto=String(b.to||''); var fromArr=(Array.isArray(b.fromList)?b.fromList:[String(b.from||'')]).map(String).filter(function(x){return x && x!==mto;}); if(!mto||!fromArr.length) throw new Error('Bad merge.'); var fromSet={}; fromArr.forEach(function(x){fromSet[x]=1;});
@@ -3558,7 +3566,7 @@ var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
   defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null, _stRange:'all', _stFilter:'all', _stFrom:'', _stTo:'',
-  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false,
+  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'',
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -4129,6 +4137,7 @@ var FBLive = {
         if(c.leadProcesses && typeof c.leadProcesses==='object'){ App.leadProcesses=c.leadProcesses; try{ Store.put('kv','leadProcesses',App.leadProcesses); }catch(e){} }
         App.defaultLoop=Array.isArray(c.defaultLoop)?c.defaultLoop.map(String):[]; try{ Store.put('kv','defaultLoop',App.defaultLoop); }catch(e){} if(App.view==='settings' && document.getElementById('defloop-list')) renderSettings();
         var _meOld=(App._mailsEnabled===true); App._mailsEnabled=(c.mailsEnabled===true); if(App._mailsEnabled){ try{ startMailsListener(); }catch(e){} } if(App._mailsEnabled!==_meOld){ try{ buildSidebar(); }catch(e){} if(App.view==='mails') renderMails(); else if(App.view==='settings') renderSettings(); }
+        App._maintenance=(c.maintenance===true); App._maintenanceMsg=(c.maintenanceMsg||''); try{ applyMaintenance(); }catch(e){}
       } else if(isBoss()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} }
     }, function(){}); }catch(e){}
 
@@ -8198,6 +8207,28 @@ function mailsStyle(){ return '<style>'
 +'.mw-note{font-size:.76rem;color:#b26b00;margin-left:auto}'
 +'</style>'; }
 function startMailsListener(){ try{ if(FBLive._mailsOn) return; if(!window.firebase||!firebase.firestore) return; FBLive._mailsOn=true; firebase.firestore().collection('mails').onSnapshot(function(qs){ var a=[]; qs.forEach(function(d){ var m=d.data(); if(!m.id) m.id=d.id; a.push(m); }); App._mails=a; if(App.view==='mails'){ try{ renderMails(); }catch(e){} } }, function(){}); }catch(e){} }
+function applyMaintenance(){
+  var bar=document.getElementById('maint-banner'); if(!bar) return;
+  if(App._maintenance===true){
+    var def='🛠 The tool is under maintenance — you may notice slight delays in notifications or syncing. Your data is safe. Thanks for your patience.';
+    var msg=(App._maintenanceMsg&&String(App._maintenanceMsg).trim())?App._maintenanceMsg:def;
+    bar.textContent=msg; bar.style.display='flex';
+  } else { bar.style.display='none'; }
+}
+function maintToggle(on){
+  var want=(on==='1'); var _el=document.getElementById('maint-msg'); var _msg=_el?_el.value:undefined;
+  apiCall('setMaintenance',{on:want, msg:_msg}).then(function(res){
+    if(res&&res.ok){ App._maintenance=want; if(_msg!==undefined) App._maintenanceMsg=_msg; applyMaintenance(); if(App.view==='settings') renderSettings(); toast(want?'Maintenance banner ON for everyone.':'Maintenance banner off.','success'); }
+    else { toast('Could not update.','error'); }
+  }).catch(function(e){ toast((e&&e.message)||'Could not update.','error'); });
+}
+function maintSaveMsg(){
+  var _el=document.getElementById('maint-msg'); var _msg=_el?_el.value:'';
+  apiCall('setMaintenance',{on:App._maintenance, msg:_msg}).then(function(res){
+    if(res&&res.ok){ App._maintenanceMsg=_msg; applyMaintenance(); toast('Message saved.','success'); }
+    else { toast('Could not save.','error'); }
+  }).catch(function(e){ toast((e&&e.message)||'Could not save.','error'); });
+}
 function mailsEnableToggle(on){ var want=(on==='1'); apiCall('setMailsEnabled',{on:want}).then(function(res){ if(res&&res.ok){ App._mailsEnabled=want; try{ if(want) startMailsListener(); }catch(e){} try{ buildSidebar(); }catch(e){} if(App.view==='settings') renderSettings(); toast(want?'Mails turned on for all staff.':'Mails restricted to admins.','success'); } else { toast('Could not update.','error'); } }).catch(function(e){ toast((e&&e.message)||'Could not update.','error'); }); }
 function renderMails(){
   App.view='mails'; buildSidebar();
@@ -8515,6 +8546,9 @@ function renderSettings(){
   h+='</div>';
   if(App.identity.role==='Admin'){
     var _rkMe=(App.auth && App.auth.reckonerAccess===true);
+    h+='<div class="set-sec"><h3>🛠 Maintenance mode</h3><div class="set-desc">Turn this on while you’re updating the tool. Everyone sees a banner that there may be brief delays in notifications or syncing — nothing stops working, it just sets expectations so staff don’t think something is broken.</div>';
+    h+='<div class="set-field"><div><div class="set-k">Maintenance banner</div><div class="set-sub">'+(App._maintenance?'On — every staff member sees the banner now.':'Off — no banner is shown.')+'</div></div><button class="btn btn-sm '+(App._maintenance?'btn-success':'btn-ghost')+'" data-action="maint-toggle" data-on="'+(App._maintenance?'0':'1')+'">'+(App._maintenance?'✓ On · tap to turn off':'Turn on')+'</button></div>';
+    h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Banner message</div><div class="set-sub">Leave blank to use the default wording.</div><input type="text" id="maint-msg" class="f-input" style="margin-top:8px" maxlength="180" value="'+esc(App._maintenanceMsg||'')+'" placeholder="Under maintenance — you may notice slight delays in notifications or syncing. Your data is safe."></div><button class="btn btn-ghost btn-sm" data-action="maint-save-msg" style="margin-top:8px;margin-left:10px">Save message</button></div></div>';
     h+='<div class="set-sec"><h3>📬 Mails</h3><div class="set-desc">The shared-inbox desk is still being set up. While it is off, staff see “Coming soon” and only admins can open and build it. Turn it on for everyone when it’s ready.</div>';
     h+='<div class="set-field"><div><div class="set-k">Mails for all staff</div><div class="set-sub">'+(App._mailsEnabled?'On — every staff member can open and use Mails.':'Off — only admins can access Mails; staff see “Coming soon”.')+'</div></div><button class="btn btn-sm '+(App._mailsEnabled?'btn-success':'btn-ghost')+'" data-action="mail-enable-all" data-on="'+(App._mailsEnabled?'0':'1')+'">'+(App._mailsEnabled?'✓ On · tap to turn off':'Turn on for all')+'</button></div></div>';
     h+='<div class="set-sec"><h3>📚 Reckoner</h3><div class="set-desc">The product-knowledge desk. It stays hidden for everyone until it is turned on. Turn it on for yourself here; turn it on for staff from their profile in Teams.</div>';
@@ -10673,6 +10707,8 @@ document.addEventListener('click', function(e){
     case 'mail-handled': mailToggleHandled(el.getAttribute('data-id')); break;
     case 'mail-assign': mailAssign(el.getAttribute('data-id')); break;
     case 'mail-enable-all': mailsEnableToggle(el.getAttribute('data-on')); break;
+    case 'maint-toggle': maintToggle(el.getAttribute('data-on')); break;
+    case 'maint-save-msg': maintSaveMsg(); break;
     case 'stask-filter': App._stFilter=el.getAttribute('data-f'); renderTaskTeams(); break;
     case 'stask-range': App._stRange=el.getAttribute('data-r'); renderTaskTeams(); break;
     case 'stask-custom-apply': staskCustomApply(); break;
