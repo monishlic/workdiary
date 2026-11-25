@@ -3066,6 +3066,12 @@ var FB = (function(){
           if(!isAdmin()) throw new Error('Admin access required.');
           return col('config').doc('app').set({ mailsEnabled:!!b.on, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
         }
+        case 'setMailSchedule': {
+          if(!isAdmin()) throw new Error('Admin access required.');
+          var _msch=Array.isArray(b.schedule)?b.schedule.map(String).filter(function(t){return /^([01]?\d|2[0-3]):[0-5]\d$/.test(t);}):[];
+          _msch=_msch.map(function(t){return t.length===4?('0'+t):t;}).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+          return col('config').doc('app').set({ mailSchedule:_msch, updated:nowISO() },{merge:true}).then(function(){ return {ok:true}; });
+        }
         case 'setMaintenance': {
           if(!isAdmin()) throw new Error('Admin access required.');
           var _mp={ maintenance:!!b.on, updated:nowISO() };
@@ -3566,7 +3572,7 @@ var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
   defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null, _stRange:'all', _stFilter:'all', _stFrom:'', _stTo:'',
-  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'', _mailOpen:null,
+  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'', _mailOpen:null, _mailSchedule:null, _mailSchedSeeded:false,
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -4137,6 +4143,7 @@ var FBLive = {
         if(c.leadProcesses && typeof c.leadProcesses==='object'){ App.leadProcesses=c.leadProcesses; try{ Store.put('kv','leadProcesses',App.leadProcesses); }catch(e){} }
         App.defaultLoop=Array.isArray(c.defaultLoop)?c.defaultLoop.map(String):[]; try{ Store.put('kv','defaultLoop',App.defaultLoop); }catch(e){} if(App.view==='settings' && document.getElementById('defloop-list')) renderSettings();
         var _meOld=(App._mailsEnabled===true); App._mailsEnabled=(c.mailsEnabled===true); if(App._mailsEnabled){ try{ startMailsListener(); }catch(e){} } if(App._mailsEnabled!==_meOld){ try{ buildSidebar(); }catch(e){} if(App.view==='mails') renderMails(); else if(App.view==='settings') renderSettings(); }
+        App._mailSchedule=Array.isArray(c.mailSchedule)?c.mailSchedule.map(String):(App._mailSchedule||['10:30','14:00','17:30']); try{ if(c.mailSchedule===undefined && typeof isBoss==='function' && isBoss() && !App._mailSchedSeeded){ App._mailSchedSeeded=true; apiCall('setMailSchedule',{schedule:['10:30','14:00','17:30']}); } }catch(e){} if(App.view==='settings' && document.getElementById('mailsched-add')) renderSettings();
         App._maintenance=(c.maintenance===true); App._maintenanceMsg=(c.maintenanceMsg||''); try{ applyMaintenance(); }catch(e){}
       } else if(isBoss()){ try{ apiCall('saveDepartments',{departments:App.departments}); }catch(e){} }
     }, function(){}); }catch(e){}
@@ -8262,6 +8269,9 @@ function maintSaveMsg(){
   }).catch(function(e){ toast((e&&e.message)||'Could not save.','error'); });
 }
 function mailsEnableToggle(on){ var want=(on==='1'); apiCall('setMailsEnabled',{on:want}).then(function(res){ if(res&&res.ok){ App._mailsEnabled=want; try{ if(want) startMailsListener(); }catch(e){} try{ buildSidebar(); }catch(e){} if(App.view==='settings') renderSettings(); toast(want?'Mails turned on for all staff.':'Mails restricted to admins.','success'); } else { toast('Could not update.','error'); } }).catch(function(e){ toast((e&&e.message)||'Could not update.','error'); }); }
+function mailFmt12(t){ var p=String(t||'').split(':'); var hh=Number(p[0]||0); var mm=(p[1]||'00'); var ap=hh<12?'AM':'PM'; var h12=hh%12; if(h12===0)h12=12; return h12+':'+mm+' '+ap; }
+function mailSchedAdd(){ var el=document.getElementById('mailsched-add'); var v=el?el.value:''; if(!/^\d{1,2}:\d{2}$/.test(v)){ toast('Pick a time first.','error'); return; } if(v.length===4) v='0'+v; var list=(App._mailSchedule||[]).slice(); if(list.indexOf(v)>=0){ toast('That time is already set.','info'); return; } list.push(v); list.sort(); apiCall('setMailSchedule',{schedule:list}).then(function(res){ if(res&&res.ok){ App._mailSchedule=list; if(App.view==='settings') renderSettings(); toast('Added '+mailFmt12(v)+' — the inbox will be swept then.','success'); } else toast('Could not save.','error'); }).catch(function(e){ toast((e&&e.message)||'Could not save.','error'); }); }
+function mailSchedRemove(t){ var list=(App._mailSchedule||[]).filter(function(x){return x!==t;}); apiCall('setMailSchedule',{schedule:list}).then(function(res){ if(res&&res.ok){ App._mailSchedule=list; if(App.view==='settings') renderSettings(); toast('Removed '+mailFmt12(t)+'.','success'); } else toast('Could not save.','error'); }).catch(function(e){ toast((e&&e.message)||'Could not save.','error'); }); }
 function renderMails(){
   App.view='mails'; buildSidebar();
   var _canUse=(App.identity && typeof isBoss==='function' && isBoss()) || App._mailsEnabled===true;
@@ -8584,7 +8594,16 @@ function renderSettings(){
     h+='<div class="set-field"><div><div class="set-k">Maintenance banner</div><div class="set-sub">'+(App._maintenance?'On — every staff member sees the banner now.':'Off — no banner is shown.')+'</div></div><button class="btn btn-sm '+(App._maintenance?'btn-success':'btn-ghost')+'" data-action="maint-toggle" data-on="'+(App._maintenance?'0':'1')+'">'+(App._maintenance?'✓ On · tap to turn off':'Turn on')+'</button></div>';
     h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Banner message</div><div class="set-sub">Leave blank to use the default wording.</div><input type="text" id="maint-msg" class="f-input" style="margin-top:8px" maxlength="180" value="'+esc(App._maintenanceMsg||'')+'" placeholder="Under maintenance — you may notice slight delays in notifications or syncing. Your data is safe."></div><button class="btn btn-ghost btn-sm" data-action="maint-save-msg" style="margin-top:8px;margin-left:10px">Save message</button></div></div>';
     h+='<div class="set-sec"><h3>📬 Mails</h3><div class="set-desc">The shared-inbox desk is still being set up. While it is off, staff see “Coming soon” and only admins can open and build it. Turn it on for everyone when it’s ready.</div>';
-    h+='<div class="set-field"><div><div class="set-k">Mails for all staff</div><div class="set-sub">'+(App._mailsEnabled?'On — every staff member can open and use Mails.':'Off — only admins can access Mails; staff see “Coming soon”.')+'</div></div><button class="btn btn-sm '+(App._mailsEnabled?'btn-success':'btn-ghost')+'" data-action="mail-enable-all" data-on="'+(App._mailsEnabled?'0':'1')+'">'+(App._mailsEnabled?'✓ On · tap to turn off':'Turn on for all')+'</button></div></div>';
+    h+='<div class="set-field"><div><div class="set-k">Mails for all staff</div><div class="set-sub">'+(App._mailsEnabled?'On — every staff member can open and use Mails.':'Off — only admins can access Mails; staff see “Coming soon”.')+'</div></div><button class="btn btn-sm '+(App._mailsEnabled?'btn-success':'btn-ghost')+'" data-action="mail-enable-all" data-on="'+(App._mailsEnabled?'0':'1')+'">'+(App._mailsEnabled?'✓ On · tap to turn off':'Turn on for all')+'</button></div>';
+    h+='<div class="set-field" style="align-items:flex-start"><div style="flex:1"><div class="set-k">Auto-check schedule (IST)</div><div class="set-sub">The shared inbox is swept at these times every day. Add or remove times — changes apply on their own within about 10 minutes, with no re-setup.</div>';
+    var _msch=(App._mailSchedule&&App._mailSchedule.length)?App._mailSchedule.slice():[];
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">';
+    if(_msch.length){ _msch.forEach(function(_t){ h+='<span style="display:inline-flex;align-items:center;gap:6px;background:#eef0ff;color:#4338ca;border-radius:14px;padding:4px 10px;font-weight:700;font-size:.8rem">'+esc(mailFmt12(_t))+' <b data-action="mail-sched-rm" data-t="'+esc(_t)+'" title="Remove" style="cursor:pointer;font-size:1rem;line-height:1">\u00d7</b></span>'; }); }
+    else { h+='<span class="set-sub">No times set — the inbox is swept on every check (about every 10 minutes).</span>'; }
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap"><input type="time" id="mailsched-add" class="f-input" style="max-width:150px"><button class="btn btn-ghost btn-sm" data-action="mail-sched-add">+ Add time</button></div>';
+    h+='</div></div>';
+    h+='</div>';
     h+='<div class="set-sec"><h3>📚 Reckoner</h3><div class="set-desc">The product-knowledge desk. It stays hidden for everyone until it is turned on. Turn it on for yourself here; turn it on for staff from their profile in Teams.</div>';
     h+='<div class="set-field"><div><div class="set-k">Show the Reckoner for me</div><div class="set-sub">'+(_rkMe?'On — it shows in your sidebar.':'Off — hidden from your sidebar.')+'</div></div><button class="btn btn-sm '+(_rkMe?'btn-success':'btn-ghost')+'" data-action="toggle-my-reckoner" data-on="'+(_rkMe?'0':'1')+'">'+(_rkMe?'✓ On · tap to turn off':'Turn on')+'</button></div></div>';
   }
@@ -10745,6 +10764,8 @@ document.addEventListener('click', function(e){
     case 'mail-createtask': mailCreateTask(el.getAttribute('data-id')); break;
     case 'mail-clear': mailClearAll(); break;
     case 'mail-enable-all': mailsEnableToggle(el.getAttribute('data-on')); break;
+    case 'mail-sched-add': mailSchedAdd(); break;
+    case 'mail-sched-rm': mailSchedRemove(el.getAttribute('data-t')); break;
     case 'maint-toggle': maintToggle(el.getAttribute('data-on')); break;
     case 'maint-save-msg': maintSaveMsg(); break;
     case 'stask-filter': App._stFilter=el.getAttribute('data-f'); renderTaskTeams(); break;
