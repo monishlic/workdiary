@@ -8166,6 +8166,16 @@ function mailRow(m){
   h+='<span class="mw2-time">'+esc(mailTime(m.date))+'</span>';
   h+='</div>'; return h;
 }
+function mailCleanBody(t){
+  var s=String(t||'');
+  s=s.replace(/<https?:\/\/[^>\s]+>/g,'');                         // drop angle-bracket tracking/href URLs
+  s=s.replace(/\[image:[^\]]*\]/gi,'');                            // drop [image: logo] placeholders
+  s=s.replace(/https?:\/\/[a-z0-9.-]*awstrack\.me\/\S+/gi,'');   // drop any stray tracking redirects
+  s=s.replace(/https?:\/\/[a-z0-9.-]*\.r\.[a-z0-9.-]*\/\S+/gi,''); // drop other redirect hosts
+  s=s.replace(/[ \t]+\n/g,'\n');                                   // trailing spaces per line
+  s=s.replace(/\n{3,}/g,'\n\n');                                   // collapse big gaps
+  return s.trim();
+}
 function mailReadingView(m){
   var meta=mailDeptMeta(); var dk=m.dept||'unsorted'; var dm=meta[dk]||meta.unsorted; var col=dm[1];
   var when=''; try{ when=fmtDateTime(m.date); }catch(e){ when=esc(m.date||''); }
@@ -8173,7 +8183,7 @@ function mailReadingView(m){
   h+='<button class="mw2-back" data-action="mail-back">\u2190 Back to list</button>';
   h+='<div class="mw2-rsub">'+esc(m.subject||'(no subject)')+' <span class="mw2-tag" style="background:'+col+'">'+esc(dk==='unsorted'?'Unsorted':dm[0])+(m.confidence?' \u00b7 '+Math.round(m.confidence)+'%':'')+'</span></div>';
   h+='<div class="mw2-rhead"><span class="mw2-av" style="background:'+col+'">'+esc(mailInitials(m.from))+'</span><div class="mw2-rwho"><div class="mw2-rfrom">'+esc(m.from||'Unknown')+' <span class="mw2-remail">'+esc(m.fromEmail||'')+'</span></div><div class="mw2-rmeta">'+esc(when)+(m.why?' \u00b7 <span class="mw2-why">'+esc(m.why)+'</span>':'')+'</div></div></div>';
-  h+='<div class="mw2-rbody">'+(m.body?esc(m.body):'<span class="mw2-nobody">No stored text for this mail \u2014 open it in Gmail for the full content.</span>')+'</div>';
+  h+='<div class="mw2-rbody">'+(m.body?esc(mailCleanBody(m.body)):'<span class="mw2-nobody">No stored text for this mail \u2014 open it in Gmail for the full content.</span>')+'</div>';
   h+='<div class="mw2-racts">';
   if(m.gmailUrl) h+='<a class="mw2-btn p" href="'+esc(m.gmailUrl)+'" target="_blank" rel="noopener noreferrer">Open in Gmail \u2197</a>';
   h+='<button class="mw2-btn g" data-action="mail-handled" data-id="'+esc(m.id)+'">'+(m.handled?'\u2713 Handled':'Mark handled')+'</button>';
