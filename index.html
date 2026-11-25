@@ -8176,6 +8176,20 @@ function mailReadingView(m){
 }
 function mailOpen(id){ App._mailOpen=id; mailMarkRead(id); renderMails(); }
 function mailBack(){ App._mailOpen=null; renderMails(); }
+function mailClearAll(){
+  if(!(App.identity && typeof isBoss==='function' && isBoss())) return;
+  openConfirm({ icon:'\ud83d\uddd1\ufe0f', title:'Clear all mails', body:'Removes every stored mail from this section so it can re-sync fresh. Your Gmail is NOT touched \u2014 the next sync re-pulls and re-sorts. Continue?', okLabel:'Clear all', okClass:'btn-danger', onOk:function(){
+    try{
+      if(!(window.firebase&&firebase.firestore)){ toast('Offline.','error'); return; }
+      var db=firebase.firestore(); var ids=(App._mails||[]).map(function(m){ return String(m.id); }); if(!ids.length){ toast('Already empty.','info'); return; }
+      toast('Clearing '+ids.length+' mail(s)\u2026','info');
+      (function go(i){ if(i>=ids.length){ App._mails=[]; App._mailOpen=null; renderMails(); toast('\u2713 Cleared. Run the collector to re-sync.','success'); return; }
+        var batch=db.batch(); ids.slice(i,i+400).forEach(function(id){ batch.delete(db.collection('mails').doc(id)); });
+        batch.commit().then(function(){ go(i+400); }, function(){ go(i+400); });
+      })(0);
+    }catch(e){ toast('Could not clear.','error'); }
+  }});
+}
 function mailCreateTask(id){ try{ openAssign('',''); toast('New task \u2014 add the details for this mail.','info'); }catch(e){} }
 function mailsStyle(){ return '<style>'
 +'.mw2-cols{display:flex;gap:14px;align-items:flex-start}'
@@ -8269,6 +8283,7 @@ function renderMails(){
   [['unhandled','Unhandled'],['all','All'],['handled','Handled']].forEach(function(r){ h+='<button class="mw2-chip'+((App._mailHandled||'unhandled')===r[0]?' on':'')+'" data-action="mail-hfilter" data-h="'+r[0]+'">'+r[1]+'</button>'; });
   h+='<span class="mw2-sp"></span>';
   [['today','Today'],['week','This week'],['all','All time']].forEach(function(r){ h+='<button class="mw2-chip'+((App._mailRange||'today')===r[0]?' on':'')+'" data-action="mail-range" data-r="'+r[0]+'">'+r[1]+'</button>'; });
+  if(App.identity && typeof isBoss==='function' && isBoss()){ h+='<span style="margin-left:auto"></span><button class="mw2-chip" data-action="mail-clear" style="color:#b91c1c;border-color:#f3c0c0">\ud83d\uddd1 Clear all</button>'; }
   h+='</div>';
   if(!all.length){ h+='<div class="empty" style="padding:30px"><div class="empty-ico">\ud83d\udCeD</div><div class="empty-t">Mail sync isn\u2019t connected yet</div><div class="empty-s">Once your Gmail is linked, sorted mail lands here.</div></div>'; }
   else if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">\u2705</div><div class="empty-t">Nothing here</div><div class="empty-s">No mail in this view.</div></div>'; }
@@ -10728,6 +10743,7 @@ document.addEventListener('click', function(e){
     case 'mail-open': mailOpen(el.getAttribute('data-id')); break;
     case 'mail-back': mailBack(); break;
     case 'mail-createtask': mailCreateTask(el.getAttribute('data-id')); break;
+    case 'mail-clear': mailClearAll(); break;
     case 'mail-enable-all': mailsEnableToggle(el.getAttribute('data-on')); break;
     case 'maint-toggle': maintToggle(el.getAttribute('data-on')); break;
     case 'maint-save-msg': maintSaveMsg(); break;
