@@ -3572,7 +3572,7 @@ var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
   defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null, _stRange:'all', _stFilter:'all', _stFrom:'', _stTo:'',
-  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'', _mailOpen:null, _mailSchedule:null, _mailSchedSeeded:false,
+  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'', _mailOpen:null, _mailSchedule:null, _mailSchedSeeded:false, _mailImg:{},
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -8156,13 +8156,13 @@ function mailReadMap(){ try{ return JSON.parse(localStorage.getItem('edMailRead'
 function mailMarkRead(id){ try{ var m=mailReadMap(); m[String(id)]=1; localStorage.setItem('edMailRead',JSON.stringify(m)); }catch(e){} }
 function mailIsRead(m){ return !!(mailReadMap()[String(m.id)] || m.handled); }
 function mailRow(m){
-  var meta=mailDeptMeta(); var dk=m.dept||'unsorted'; var dm=meta[dk]||meta.unsorted; var col=dm[1];
+  var meta=mailDeptMeta(); var dk=m.dept||'unsorted'; var dm=meta[dk]||meta.unsorted; var col=dm[1]; var acol=mailAvatarColor(m.fromEmail||m.from);
   var unread=!mailIsRead(m);
   var h='<div class="mw2-row'+(unread?' unread':' read')+'" data-action="mail-open" data-id="'+esc(m.id)+'">';
-  h+='<span class="mw2-av" style="background:'+col+'">'+esc(mailInitials(m.from))+'</span>';
+  h+='<span class="mw2-av" style="background:'+acol+'">'+esc(mailInitials(m.from))+'</span>';
   h+='<span class="mw2-who">'+(unread?'<span class="mw2-dot"></span>':'')+esc(m.from||'Unknown')+'</span>';
   h+='<span class="mw2-mid"><span class="mw2-subj">'+esc(m.subject||'(no subject)')+'</span>'+(m.preview?'<span class="mw2-snip"> \u2014 '+esc(m.preview)+'</span>':'')+'</span>';
-  h+='<span class="mw2-tag" style="background:'+col+'">'+esc(dk==='unsorted'?'Unsorted':dm[0])+'</span>';
+  h+='<span class="mw2-tag" style="color:'+col+';border:1.5px solid '+col+';background:#fff">'+esc(dk==='unsorted'?'Unsorted':dm[0])+'</span>';
   h+='<span class="mw2-time">'+esc(mailTime(m.date))+'</span>';
   h+='</div>'; return h;
 }
@@ -8176,14 +8176,37 @@ function mailCleanBody(t){
   s=s.replace(/\n{3,}/g,'\n\n');                                   // collapse big gaps
   return s.trim();
 }
+function mailAvatarColor(seed){ seed=String(seed||'?'); var h=0; for(var i=0;i<seed.length;i++){ h=(h*31+seed.charCodeAt(i))>>>0; } var pal=['#e24b4a','#2563eb','#0f9d58','#8b5cf6','#0f9d8f','#d97706','#db2777','#4f46e5','#0891b2','#ca8a04','#16a34a','#dc2626','#7c3aed','#0d9488','#f97316']; return pal[h%pal.length]; }
+function mailSrcAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function mailSanitizeHtml(html, showImages){
+  var s=String(html||'');
+  s=s.replace(/<script[\s\S]*?<\/script>/gi,'');
+  s=s.replace(/<\/?(iframe|object|embed|form|meta|link|base)\b[^>]*>/gi,'');
+  s=s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi,'').replace(/\son[a-z]+\s*=\s*'[^']*'/gi,'').replace(/\son[a-z]+\s*=\s*[^\s>]+/gi,'');
+  s=s.replace(/javascript:/gi,'#');
+  if(!showImages){ s=s.replace(/(<img\b[^>]*?)\ssrc=/gi,'$1 data-xsrc=').replace(/(<[^>]*?)\ssrcset=/gi,'$1 data-xsrcset='); }
+  s=s.replace(/<a\b/gi,'<a target="_blank" rel="noopener noreferrer nofollow" ');
+  return '<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>html,body{margin:0;padding:10px 12px;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1b22;font-size:14px;line-height:1.5;word-break:break-word}img{max-width:100%!important;height:auto!important}table{max-width:100%!important}*{max-width:100%}</style></head><body>'+s+'</body></html>';
+}
+function mailBodyHtml(m){
+  if(m.html && String(m.html).trim()){
+    var show=!!(App._mailImg&&App._mailImg[String(m.id)]);
+    var src=mailSanitizeHtml(String(m.html), show);
+    var bar = show? '' : '<div class="mw2-imgbar">\ud83d\udee1 Images are blocked to protect privacy. <button class="mw2-imgbtn" data-action="mail-showimg" data-id="'+esc(m.id)+'">Show images</button></div>';
+    return bar+'<iframe class="mw2-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="'+mailSrcAttr(src)+'"></iframe>';
+  }
+  if(m.body) return '<div class="mw2-rbody">'+esc(mailCleanBody(m.body))+'</div>';
+  return '<div class="mw2-rbody"><span class="mw2-nobody">No stored text for this mail \u2014 open it in Gmail for the full content.</span></div>';
+}
+function mailShowImages(id){ App._mailImg=App._mailImg||{}; App._mailImg[String(id)]=true; if(App.view==='mails') renderMails(); }
 function mailReadingView(m){
-  var meta=mailDeptMeta(); var dk=m.dept||'unsorted'; var dm=meta[dk]||meta.unsorted; var col=dm[1];
+  var meta=mailDeptMeta(); var dk=m.dept||'unsorted'; var dm=meta[dk]||meta.unsorted; var col=dm[1]; var acol=mailAvatarColor(m.fromEmail||m.from);
   var when=''; try{ when=fmtDateTime(m.date); }catch(e){ when=esc(m.date||''); }
   var h='<div class="mw2-read">';
   h+='<button class="mw2-back" data-action="mail-back">\u2190 Back to list</button>';
-  h+='<div class="mw2-rsub">'+esc(m.subject||'(no subject)')+' <span class="mw2-tag" style="background:'+col+'">'+esc(dk==='unsorted'?'Unsorted':dm[0])+(m.confidence?' \u00b7 '+Math.round(m.confidence)+'%':'')+'</span></div>';
-  h+='<div class="mw2-rhead"><span class="mw2-av" style="background:'+col+'">'+esc(mailInitials(m.from))+'</span><div class="mw2-rwho"><div class="mw2-rfrom">'+esc(m.from||'Unknown')+' <span class="mw2-remail">'+esc(m.fromEmail||'')+'</span></div><div class="mw2-rmeta">'+esc(when)+(m.why?' \u00b7 <span class="mw2-why">'+esc(m.why)+'</span>':'')+'</div></div></div>';
-  h+='<div class="mw2-rbody">'+(m.body?esc(mailCleanBody(m.body)):'<span class="mw2-nobody">No stored text for this mail \u2014 open it in Gmail for the full content.</span>')+'</div>';
+  h+='<div class="mw2-rsub">'+esc(m.subject||'(no subject)')+' <span class="mw2-tag" style="color:'+col+';border:1.5px solid '+col+';background:#fff">'+esc(dk==='unsorted'?'Unsorted':dm[0])+(m.confidence?' \u00b7 '+Math.round(m.confidence)+'%':'')+'</span></div>';
+  h+='<div class="mw2-rhead"><span class="mw2-av" style="background:'+acol+'">'+esc(mailInitials(m.from))+'</span><div class="mw2-rwho"><div class="mw2-rfrom">'+esc(m.from||'Unknown')+' <span class="mw2-remail">'+esc(m.fromEmail||'')+'</span></div><div class="mw2-rmeta">'+esc(when)+(m.why?' \u00b7 <span class="mw2-why">'+esc(m.why)+'</span>':'')+'</div></div></div>';
+  h+=mailBodyHtml(m);
   h+='<div class="mw2-racts">';
   if(m.gmailUrl) h+='<a class="mw2-btn p" href="'+esc(m.gmailUrl)+'" target="_blank" rel="noopener noreferrer">Open in Gmail \u2197</a>';
   h+='<button class="mw2-btn g" data-action="mail-handled" data-id="'+esc(m.id)+'">'+(m.handled?'\u2713 Handled':'Mark handled')+'</button>';
@@ -8246,7 +8269,7 @@ function mailsStyle(){ return '<style>'
 +'.mw2-remail{color:var(--text-muted,#6b7280);font-weight:400;font-size:.8rem}'
 +'.mw2-rmeta{color:var(--text-muted,#6b7280);font-size:.78rem;margin-top:2px}'
 +'.mw2-why{background:var(--bg-soft,#f4f5f8);border-radius:14px;padding:1px 8px}'
-+'.mw2-rbody{white-space:pre-wrap;line-height:1.6;font-size:.92rem;color:var(--text,#2a2f3a);border-top:1px solid var(--border,#eceef3);padding-top:14px;word-break:break-word}'
++'.mw2-rbody{white-space:pre-wrap;line-height:1.6;font-size:.92rem;color:var(--text,#2a2f3a);border-top:1px solid var(--border,#eceef3);padding-top:14px;word-break:break-word}'+'.mw2-frame{width:100%;height:70vh;min-height:320px;max-height:680px;border:0;background:#fff;border-radius:10px;margin-top:6px}'+'.mw2-imgbar{display:flex;align-items:center;gap:10px;background:#fffbe6;border:1px solid #f3e4a1;color:#7a5c00;border-radius:8px;padding:7px 11px;margin:8px 0 2px;font-size:.82rem}'+'.mw2-imgbtn{margin-left:auto;border:1px solid #e3cf7a;background:#fff;border-radius:7px;padding:4px 10px;font-weight:700;cursor:pointer;color:#7a5c00}'
 +'.mw2-nobody{color:var(--text-muted,#889)}'
 +'.mw2-racts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;align-items:center}'
 +'.mw2-btn{border:1px solid var(--border,#eceef3);background:var(--bg-card,#fff);border-radius:9px;padding:8px 13px;font-weight:700;font-size:.82rem;cursor:pointer;color:var(--text,#1a1b22);text-decoration:none;display:inline-flex;align-items:center}'
@@ -10776,6 +10799,7 @@ document.addEventListener('click', function(e){
     case 'mail-enable-all': mailsEnableToggle(el.getAttribute('data-on')); break;
     case 'mail-sched-add': mailSchedAdd(); break;
     case 'mail-sched-rm': mailSchedRemove(el.getAttribute('data-t')); break;
+    case 'mail-showimg': mailShowImages(el.getAttribute('data-id')); break;
     case 'maint-toggle': maintToggle(el.getAttribute('data-on')); break;
     case 'maint-save-msg': maintSaveMsg(); break;
     case 'stask-filter': App._stFilter=el.getAttribute('data-f'); renderTaskTeams(); break;
