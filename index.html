@@ -8208,7 +8208,7 @@ function mailReadingView(m){
   h+='<div class="mw2-rhead"><span class="mw2-av" style="background:'+acol+'">'+esc(mailInitials(m.from))+'</span><div class="mw2-rwho"><div class="mw2-rfrom">'+esc(m.from||'Unknown')+' <span class="mw2-remail">'+esc(m.fromEmail||'')+'</span></div><div class="mw2-rmeta">'+esc(when)+(m.why?' \u00b7 <span class="mw2-why">'+esc(m.why)+'</span>':'')+'</div></div></div>';
   h+=mailBodyHtml(m);
   h+='<div class="mw2-racts">';
-  if(m.gmailUrl) h+='<a class="mw2-btn p" href="'+esc(m.gmailUrl)+'" target="_blank" rel="noopener noreferrer">Open in Gmail \u2197</a>';
+  if(m.gmailUrl) h+='<a class="mw2-btn p" href="'+esc(m.gmailUrl)+'" target="ediary_gmail" rel="noopener noreferrer">Open in Gmail \u2197</a>';
   h+='<button class="mw2-btn g" data-action="mail-handled" data-id="'+esc(m.id)+'">'+(m.handled?'\u2713 Handled':'Mark handled')+'</button>';
   h+='<span class="mw2-move"><select class="mw-sel" data-id="'+esc(m.id)+'"><option value="">Move to\u2026</option><option value="gi">General Insurance</option><option value="life">Life Insurance</option><option value="inv">Investments</option><option value="claims">Claims</option></select><button class="mw2-btn" data-action="mail-assign" data-id="'+esc(m.id)+'">Move</button></span>';
   h+='<button class="mw2-btn" data-action="mail-createtask" data-id="'+esc(m.id)+'">\uff0b Create task</button>';
