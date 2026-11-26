@@ -3572,7 +3572,7 @@ var App = {
   auth:null,          // {url, key, userId, name, role}
   identity:null,      // derived {employeeId, employeeName, role}
   defaultLoop:[], _loopedTasks:[], _loopedLeads:[], _deletedTasks:[], _deletedOwn:[], _deletedAsg:[], _tteamStaff:null, _stRange:'all', _stFilter:'all', _stFrom:'', _stTo:'',
-  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'', _mailOpen:null, _mailSchedule:null, _mailSchedSeeded:false, _mailImg:{},
+  _mails:[], _mailbox:'all', _mailTab:'all', _mailRange:'today', _mailHandled:'unhandled', _mailboxes:[], _mailSync:null, _mailsEnabled:false, _maintenance:false, _maintenanceMsg:'', _mailOpen:null, _mailSchedule:null, _mailSchedSeeded:false, _mailImg:{}, _mailSearch:'', _mailRules:null,
   _leads:[], _leadView:null, _nlPick:null, _nlIgnoring:{}, _bizTab:'tasks', _bizLeads:null, _bizBusy:false, _bizDrill:null,
   departments:[], categoryMaster:[], leadProcesses:null, prefs:{theme:'clarity',collapsed:{}},
   view:'dashboard', dept:null, cat:null, tab:'pending', listFilter:'pending', tasks:[],
@@ -8150,7 +8150,7 @@ function mailDeptMeta(){ return { gi:['General Insurance','#0f9d58'], life:['Lif
 function mailInitials(n){ n=String(n||'?').trim(); var p=n.split(/\s+/); return ((p[0]||'?').charAt(0)+(p[1]?p[1].charAt(0):'')).toUpperCase(); }
 function mailRangeBounds(r){ var now=new Date(); var sod=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(); if(r==='today') return {s:sod,e:sod+86400000}; if(r==='week'){ var wd=(now.getDay()+6)%7; var mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-wd).getTime(); return {s:mon,e:mon+7*86400000}; } return null; }
 function mailMatchesHandled(m){ var v=App._mailHandled||'unhandled'; if(v==='all') return true; var h=!!m.handled; return v==='handled'?h:!h; }
-function mailFiltered(){ var box=App._mailbox||'all'; var bounds=mailRangeBounds(App._mailRange||'today'); return (App._mails||[]).filter(function(m){ if(box!=='all' && String(m.mailbox||'')!==String(box)) return false; if(bounds){ var t=new Date(m.date||0).getTime(); if(!(t>=bounds.s && t<bounds.e)) return false; } if(!mailMatchesHandled(m)) return false; return true; }); }
+function mailFiltered(){ var box=App._mailbox||'all'; var q=(App._mailSearch||'').trim().toLowerCase(); var searching=q.length>0; var bounds=searching?null:mailRangeBounds(App._mailRange||'today'); return (App._mails||[]).filter(function(m){ if(box!=='all' && String(m.mailbox||'')!==String(box)) return false; if(bounds){ var t=new Date(m.date||0).getTime(); if(!(t>=bounds.s && t<bounds.e)) return false; } if(!mailMatchesHandled(m)) return false; if(searching){ var hay=((m.from||'')+' '+(m.fromEmail||'')+' '+(m.subject||'')+' '+(m.preview||'')+' '+(m.body||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; } return true; }); }
 function mailTime(d){ try{ var dt=new Date(d); if(isNaN(dt.getTime())) return ''; var now=new Date(); if(dt.getTime()>now.getTime()) dt=now; if(dt.toDateString()===now.toDateString()) return dt.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); return dt.toLocaleDateString([], {day:'numeric',month:'short'}); }catch(e){ return ''; } }
 function mailReadMap(){ try{ return JSON.parse(localStorage.getItem('edMailRead')||'{}')||{}; }catch(e){ return {}; } }
 function mailMarkRead(id){ try{ var m=mailReadMap(); m[String(id)]=1; localStorage.setItem('edMailRead',JSON.stringify(m)); }catch(e){} }
@@ -8208,7 +8208,7 @@ function mailReadingView(m){
   h+='<div class="mw2-rhead"><span class="mw2-av" style="background:'+acol+'">'+esc(mailInitials(m.from))+'</span><div class="mw2-rwho"><div class="mw2-rfrom">'+esc(m.from||'Unknown')+' <span class="mw2-remail">'+esc(m.fromEmail||'')+'</span></div><div class="mw2-rmeta">'+esc(when)+(m.why?' \u00b7 <span class="mw2-why">'+esc(m.why)+'</span>':'')+'</div></div></div>';
   h+=mailBodyHtml(m);
   h+='<div class="mw2-racts">';
-  if(m.gmailUrl) h+='<a class="mw2-btn p" href="'+esc(m.gmailUrl)+'" target="ediary_gmail" rel="noopener noreferrer">Open in Gmail \u2197</a>';
+  if(m.gmailUrl) h+='<a class="mw2-btn p" href="'+esc(m.gmailUrl)+'" target="'+('ediary_gmail_'+esc(m.mailbox||'x'))+'" rel="noopener noreferrer">Open in Gmail \u2197</a>';
   h+='<button class="mw2-btn g" data-action="mail-handled" data-id="'+esc(m.id)+'">'+(m.handled?'\u2713 Handled':'Mark handled')+'</button>';
   h+='<span class="mw2-move"><select class="mw-sel" data-id="'+esc(m.id)+'"><option value="">Move to\u2026</option><option value="gi">General Insurance</option><option value="life">Life Insurance</option><option value="inv">Investments</option><option value="claims">Claims</option></select><button class="mw2-btn" data-action="mail-assign" data-id="'+esc(m.id)+'">Move</button></span>';
   h+='<button class="mw2-btn" data-action="mail-createtask" data-id="'+esc(m.id)+'">\uff0b Create task</button>';
@@ -8278,7 +8278,7 @@ function mailsStyle(){ return '<style>'
 +'.mw2-move{display:inline-flex;gap:6px;align-items:center}'
 +'.mw-sel{border:1px solid var(--border,#eceef3);border-radius:8px;padding:7px 10px;font:inherit;font-weight:600;color:var(--text,#14151a);background:var(--bg-card,#fff)}'
 +'</style>'; }
-function startMailsListener(){ try{ if(FBLive._mailsOn) return; if(!window.firebase||!firebase.firestore) return; FBLive._mailsOn=true; firebase.firestore().collection('mails').onSnapshot(function(qs){ var a=[]; qs.forEach(function(d){ var m=d.data(); if(!m.id) m.id=d.id; a.push(m); }); App._mails=a; if(App.view==='mails'){ try{ renderMails(); }catch(e){} } }, function(){}); }catch(e){} }
+function startMailsListener(){ try{ if(FBLive._mailsOn) return; if(!window.firebase||!firebase.firestore) return; FBLive._mailsOn=true; firebase.firestore().collection('mails').onSnapshot(function(qs){ var a=[]; var boxes={}; qs.forEach(function(d){ var m=d.data(); if(!m.id) m.id=d.id; a.push(m); if(m.mailbox){ boxes[String(m.mailbox)]=(m.mailboxName||m.mailbox); } }); App._mails=a; var bl=Object.keys(boxes).map(function(k){ return {id:k, name:boxes[k]}; }); bl.sort(function(x,y){ return String(x.id).localeCompare(String(y.id)); }); App._mailboxes=bl; if(App._mailbox!=='all' && !boxes[App._mailbox]) App._mailbox='all'; if(App.view==='mails'){ try{ renderMails(); }catch(e){} } }, function(){}); }catch(e){} }
 function applyMaintenance(){
   var bar=document.getElementById('maint-banner'); if(!bar) return;
   if(App._maintenance===true){
@@ -8328,19 +8328,24 @@ function renderMails(){
   [['today','Today'],['week','This week'],['all','All time']].forEach(function(r){ h+='<button class="mw2-chip'+((App._mailRange||'today')===r[0]?' on':'')+'" data-action="mail-range" data-r="'+r[0]+'">'+r[1]+'</button>'; });
   if(App.identity && typeof isBoss==='function' && isBoss()){ h+='<span style="margin-left:auto"></span><button class="mw2-chip" data-action="mail-clear" style="color:#b91c1c;border-color:#f3c0c0">\ud83d\uddd1 Clear all</button>'; }
   h+='</div>';
-  if(!all.length){ h+='<div class="empty" style="padding:30px"><div class="empty-ico">\ud83d\udCeD</div><div class="empty-t">Mail sync isn\u2019t connected yet</div><div class="empty-s">Once your Gmail is linked, sorted mail lands here.</div></div>'; }
-  else if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">\u2705</div><div class="empty-t">Nothing here</div><div class="empty-s">No mail in this view.</div></div>'; }
-  else { h+='<div class="mw2-list">'; list.forEach(function(m){ h+=mailRow(m); }); h+='</div>'; }
+  h+='<div style="padding:8px 14px 2px"><input id="mw2-search" style="width:100%;padding:9px 12px;border:1px solid var(--border,#e9ebf0);border-radius:10px;font-size:.9rem;outline:none;background:var(--card,#fff);color:inherit" placeholder="Search sender, subject or text\u2026" value="'+esc(App._mailSearch||'')+'" oninput="mailSearchInput(this.value)"></div>';
+  h+='<div id="mw2-listwrap">'+mailListHtml()+'</div>';
   h+='</div></div>';
   document.getElementById('content').innerHTML=h;
 }
+function mailListHtml(){ var all=(App._mails||[]); var list=mailFiltered().filter(function(m){ var tab=App._mailTab||'all'; return tab==='all'?true:(String(m.dept||'unsorted')===tab); }); list.sort(function(a,b){ return new Date(b.date||0)-new Date(a.date||0); }); if(!all.length) return '<div class="empty" style="padding:30px"><div class="empty-ico">\ud83d\udced</div><div class="empty-t">Mail sync isn\u2019t connected yet</div><div class="empty-s">Once your Gmail is linked, sorted mail lands here.</div></div>'; var _sq=(App._mailSearch||'').trim(); if(!list.length) return '<div class="empty" style="padding:26px"><div class="empty-ico">'+(_sq?'\ud83d\udd0d':'\u2705')+'</div><div class="empty-t">'+(_sq?'No matches':'Nothing here')+'</div><div class="empty-s">'+(_sq?('No mail matches \u201c'+esc(_sq)+'\u201d in this view.'):'No mail in this view.')+'</div></div>'; var h='<div class="mw2-list">'; list.forEach(function(m){ h+=mailRow(m); }); h+='</div>'; return h; }
+function mailSearchInput(v){ App._mailSearch=v; var el=document.getElementById('mw2-listwrap'); if(el) el.innerHTML=mailListHtml(); }
+function mailSubjTokens(subject){ var s=String(subject||'').toLowerCase().replace(/https?:\/\/\S+/g,' ').replace(/[^a-z\s]/g,' '); var stop={the:1,your:1,you:1,for:1,and:1,with:1,from:1,this:1,that:1,mail:1,update:1,important:1,please:1,dear:1,regarding:1,our:1,are:1,was:1,has:1,have:1,will:1,new:1,fwd:1,ref:1,here:1,been:1,about:1}; var out=[],seen={}; s.split(/\s+/).forEach(function(w){ if(w.length>=4 && !stop[w] && !seen[w]){ seen[w]=1; out.push(w); } }); return out.slice(0,8); }
+function mailGenericDomain(d){ d=String(d||'').toLowerCase(); return ['gmail.com','googlemail.com','yahoo.com','yahoo.in','yahoo.co.in','outlook.com','hotmail.com','live.com','rediffmail.com','ymail.com','icloud.com','proton.me','protonmail.com'].indexOf(d)>=0; }
+function mailRulesLoad(){ try{ if(!(window.firebase&&firebase.firestore)){ toast('Not connected.','error'); return; } firebase.firestore().collection('mailRules').get().then(function(qs){ var a=[]; qs.forEach(function(d){ var r=d.data()||{}; r.id=d.id; a.push(r); }); a.sort(function(x,y){ return String(y.at||'').localeCompare(String(x.at||'')); }); App._mailRules=a; if(App.view==='settings') renderSettings(); }).catch(function(e){ toast('Could not load rules.','error'); }); }catch(e){} }
+function mailRuleDel(id){ try{ if(!confirm('Remove this learned rule? Future mail will sort by the normal rules again.')) return; firebase.firestore().collection('mailRules').doc(String(id)).delete().then(function(){ App._mailRules=(App._mailRules||[]).filter(function(r){ return String(r.id)!==String(id); }); if(App.view==='settings') renderSettings(); toast('Rule removed.','success'); }).catch(function(e){ toast('Could not remove.','error'); }); }catch(e){} }
 function mailBox(id){ App._mailbox=id; renderMails(); }
 function mailTab(t){ App._mailTab=t; renderMails(); }
 function mailRange(r){ App._mailRange=r; renderMails(); }
 function mailHFilter(v){ App._mailHandled=v; renderMails(); }
 function mailToggleHandled(id){ var m=(App._mails||[]).find(function(x){ return String(x.id)===String(id); }); if(!m) return; var nv=!m.handled; m.handled=nv; renderMails(); try{ if(window.firebase&&firebase.firestore) firebase.firestore().collection('mails').doc(String(id)).set({handled:nv, handledBy:(App.identity&&App.identity.employeeName)||'', handledAt:nowISO()},{merge:true}); }catch(e){} }
 function mailAssign(id){ var sel=document.querySelector('.mw-sel[data-id="'+id+'"]'); var dept=sel?sel.value:''; if(!dept){ toast('Pick a department first.','error'); return; } var m=(App._mails||[]).find(function(x){ return String(x.id)===String(id); }); if(m){ m.dept=dept; m.why=''; } App._mailOpen=null; renderMails();
-  try{ if(window.firebase&&firebase.firestore){ firebase.firestore().collection('mails').doc(String(id)).set({dept:dept, sortedBy:(App.identity&&App.identity.employeeName)||'', sortedAt:nowISO()},{merge:true}); if(m){ var key=String(m.fromEmail||'').toLowerCase(); if(key) firebase.firestore().collection('mailRules').doc(key.replace(/[^a-z0-9@._-]/g,'_')).set({ match:key, dept:dept, by:(App.identity&&App.identity.employeeName)||'', at:nowISO() },{merge:true}); } } }catch(e){}
+  try{ if(window.firebase&&firebase.firestore){ var _fdb=firebase.firestore(); _fdb.collection('mails').doc(String(id)).set({dept:dept, sortedBy:(App.identity&&App.identity.employeeName)||'', sortedAt:nowISO()},{merge:true}); if(m){ var _who=(App.identity&&App.identity.employeeName)||''; var _at=nowISO(); var _email=String(m.fromEmail||'').toLowerCase(); if(_email){ _fdb.collection('mailRules').doc(('s_'+_email).replace(/[^a-z0-9@._-]/g,'_')).set({type:'sender',match:_email,dept:dept,by:_who,at:_at},{merge:true}); var _dom=_email.split('@')[1]||''; if(_dom && !mailGenericDomain(_dom)) _fdb.collection('mailRules').doc(('d_'+_dom).replace(/[^a-z0-9._-]/g,'_')).set({type:'domain',match:_dom,dept:dept,by:_who,at:_at},{merge:true}); } var _tk=mailSubjTokens(m.subject); if(_tk.length>=2){ var _sig=('j_'+_tk.slice(0,6).join('-')).slice(0,100).replace(/[^a-z0-9_-]/g,'_'); _fdb.collection('mailRules').doc(_sig).set({type:'subject',match:_tk.join(' '),tokens:_tk,dept:dept,by:_who,at:_at},{merge:true}); } } } }catch(e){}
   toast('Routed \u2014 the tool will remember this sender.','success'); }
 function renderMyTasks(){
   App.view='mytasks'; buildSidebar();
@@ -8636,6 +8641,11 @@ function renderSettings(){
     h+='</div>';
     h+='<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap"><input type="time" id="mailsched-add" class="f-input" style="max-width:150px"><button class="btn btn-ghost btn-sm" data-action="mail-sched-add">+ Add time</button></div>';
     h+='</div></div>';
+    h+='</div>';
+    h+='<div class="set-sec"><h3>🧠 Learned mail rules</h3><div class="set-desc">Every time someone uses “Move to…” on a mail, the tool remembers it — by sender, by domain, and by subject wording — and applies it for everyone. Review them here and remove any that sort wrongly.</div>';
+    h+='<div class="set-field"><div><div class="set-k">Rules the tool has learned</div><div class="set-sub">'+((App._mailRules&&App._mailRules.length)?(App._mailRules.length+' learned rule'+(App._mailRules.length===1?'':'s')):'Tap Load to view.')+'</div></div><button class="btn btn-ghost btn-sm" data-action="mail-rules-load">'+((App._mailRules==null)?'Load':'Refresh')+'</button></div>';
+    if(App._mailRules && App._mailRules.length){ h+='<div style="margin-top:4px;max-height:320px;overflow:auto;border:1px solid var(--border,#e9ebf0);border-radius:10px">'; App._mailRules.forEach(function(r){ var dm=mailDeptMeta()[r.dept]||mailDeptMeta().unsorted; var tp=(r.type==='domain'?'Domain':(r.type==='subject'?'Subject':'Sender')); h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid var(--border,#f1f2f6)"><span style="font-size:.66rem;font-weight:800;color:#64748b;width:58px;flex:0 0 auto">'+tp+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.match||'')+'">'+esc(r.match||'')+'</span><span style="font-size:.68rem;font-weight:800;color:#fff;background:'+dm[1]+';border-radius:12px;padding:2px 9px;flex:0 0 auto">'+esc(dm[0])+'</span><b data-action="mail-rule-del" data-id="'+esc(r.id)+'" title="Remove" style="cursor:pointer;color:#b91c1c;flex:0 0 auto;padding:0 4px">✕</b></div>'; }); h+='</div>'; }
+    else if(App._mailRules && !App._mailRules.length){ h+='<div class="set-sub" style="margin-top:6px">No learned rules yet. They appear here as staff use “Move to…”.</div>'; }
     h+='</div>';
     h+='<div class="set-sec"><h3>📚 Reckoner</h3><div class="set-desc">The product-knowledge desk. It stays hidden for everyone until it is turned on. Turn it on for yourself here; turn it on for staff from their profile in Teams.</div>';
     h+='<div class="set-field"><div><div class="set-k">Show the Reckoner for me</div><div class="set-sub">'+(_rkMe?'On — it shows in your sidebar.':'Off — hidden from your sidebar.')+'</div></div><button class="btn btn-sm '+(_rkMe?'btn-success':'btn-ghost')+'" data-action="toggle-my-reckoner" data-on="'+(_rkMe?'0':'1')+'">'+(_rkMe?'✓ On · tap to turn off':'Turn on')+'</button></div></div>';
@@ -10792,6 +10802,8 @@ document.addEventListener('click', function(e){
     case 'mail-hfilter': mailHFilter(el.getAttribute('data-h')); break;
     case 'mail-handled': mailToggleHandled(el.getAttribute('data-id')); break;
     case 'mail-assign': mailAssign(el.getAttribute('data-id')); break;
+    case 'mail-rules-load': mailRulesLoad(); break;
+    case 'mail-rule-del': mailRuleDel(el.getAttribute('data-id')); break;
     case 'mail-open': mailOpen(el.getAttribute('data-id')); break;
     case 'mail-back': mailBack(); break;
     case 'mail-createtask': mailCreateTask(el.getAttribute('data-id')); break;
