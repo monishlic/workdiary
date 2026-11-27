@@ -8086,6 +8086,48 @@ function myTaskRow(t){
   if(t.reassignedFromName) meta.push('↪ from '+esc(t.reassignedFromName));
   return '<div class="mt-row mt-'+st+'" data-action="open-task" data-id="'+esc(t.taskId)+'"><div class="mt-main"><div class="mt-top">'+prioTag(t.priority)+'<span class="mt-client">'+esc(t.title||t.clientName)+'</span><span class="mt-state mt-'+st+'">'+lbl+'</span></div><div class="mt-meta">'+meta.join(' <span class="mt-sep">·</span> ')+'</div></div></div>';
 }
+function tvOwner(t){ var byOther = t.assignedById && String(t.assignedById)!==String(App.identity.employeeId); return byOther ? esc(t.assignedByName||'') : 'Self'; }
+function myTaskCardNew(t){
+  var st=myTaskState(t); var lbl={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}[st];
+  return '<div class="tvc p-'+esc(t.priority||'medium')+(st==='done'?' done':'')+'" data-action="open-task" data-id="'+esc(t.taskId)+'">'+
+    '<div class="tvc-top">'+prioTag(t.priority)+'<span class="tvc-ttl">'+esc(t.title||t.clientName)+'</span><span class="tv-st '+st+'">'+lbl+'</span></div>'+
+    '<div class="tvc-meta"><span class="tvc-seg">👤 '+tvOwner(t)+'</span><span class="tvc-seg">📅 '+esc(t.dueDate?fmtDateTime(t.dueDate):'No due date')+'</span></div>'+
+    '<div class="tvc-foot"><span class="tvc-dept">'+esc(t.department)+' › '+esc(t.category)+'</span></div></div>';
+}
+function myTaskTRow(t){
+  var st=myTaskState(t); var lbl={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}[st];
+  return '<tr data-action="open-task" data-id="'+esc(t.taskId)+'"><td style="font-weight:650">'+esc(t.title||t.clientName)+'</td>'+
+    '<td>'+prioTag(t.priority)+'</td><td style="color:#5a5f6b">'+tvOwner(t)+'</td>'+
+    '<td style="color:#8a8f9c">'+esc(t.dueDate?fmtDateTime(t.dueDate):'—')+'</td>'+
+    '<td style="color:#5a5f6b">'+esc(t.department)+' › '+esc(t.category)+'</td>'+
+    '<td><span class="tv-st '+st+'">'+lbl+'</span></td></tr>';
+}
+function setTaskLayout(v){ App._taskLayout=v; try{ localStorage.setItem('edTaskLayout',v); }catch(e){} renderMyTasks(); }
+function tvStyle(){ return '<style>'+
+  '.tv-toolbar{display:flex;justify-content:flex-end;margin:4px 0 12px}'+
+  '.tv-toggle{display:inline-flex;background:#eceef3;border-radius:9px;padding:3px}'+
+  '.tv-tg{height:28px;padding:0 12px;border:none;background:transparent;border-radius:7px;font-size:12.5px;font-weight:650;color:#5a5f6b;cursor:pointer}'+
+  '.tv-tg.on{background:#fff;color:#1b1d26;box-shadow:0 1px 3px rgba(20,20,40,.1)}'+
+  '.tv-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px}'+
+  '.tvc{background:#fff;border:1px solid #e8eaf0;border-radius:12px;padding:13px 15px;position:relative;overflow:hidden;cursor:pointer;transition:.12s}'+
+  '.tvc:hover{box-shadow:0 8px 22px rgba(20,20,40,.08);transform:translateY(-1px)}'+
+  '.tvc.done{opacity:.72}'+
+  '.tvc:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#c7ccd4}'+
+  '.tvc.p-high:before{background:#e5484d}.tvc.p-medium:before{background:#f2a60d}.tvc.p-low:before{background:#2fa968}'+
+  '.tvc .tvc-top{display:flex;align-items:center;gap:9px;margin-bottom:10px}'+
+  '.tvc .tvc-ttl{font-weight:700;font-size:14.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+  '.tvc .tvc-meta{display:flex;align-items:center;font-size:12px;color:#5a5f6b;flex-wrap:wrap}'+
+  '.tvc .tvc-seg{display:flex;align-items:center;gap:5px;padding-right:10px;margin-right:10px;border-right:1px solid #eceef3}'+
+  '.tvc .tvc-seg:last-child{border-right:none;margin-right:0;padding-right:0}'+
+  '.tvc .tvc-foot{margin-top:10px;padding-top:10px;border-top:1px solid #f1f2f6}'+
+  '.tvc .tvc-dept{font-size:11.5px;color:#5a5f6b;background:#f4f5f8;border-radius:6px;padding:3px 9px;font-weight:600;display:inline-block}'+
+  '.tv-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8eaf0;border-radius:12px;overflow:hidden}'+
+  '.tv-table thead th{text-align:left;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:#9398a4;font-weight:700;padding:9px 13px;background:#fafbfc;border-bottom:1px solid #e8eaf0}'+
+  '.tv-table tbody td{padding:10px 13px;border-bottom:1px solid #f1f2f6;font-size:13px;vertical-align:middle}'+
+  '.tv-table tbody tr{cursor:pointer}.tv-table tbody tr:hover{background:#f6f8fc}'+
+  '.tv-st{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap}'+
+  '.tv-st.overdue{background:#fdecee;color:#e5484d}.tv-st.pending{background:#fff4e0;color:#c9820a}.tv-st.inprog{background:#eef1ff;color:#3b5bff}.tv-st.done{background:#e8f6ee;color:#2fa968}'+
+  '</style>'; }
 /* Anchor date a task falls on for range filtering: completed→done date, else due, else created. */
 function mtAnchor(t){ if(t.status==='Completed') return t.completedTimestamp||t.createdTimestamp; return t.dueDate||t.createdTimestamp; }
 function mtRangeBounds(range){
@@ -8397,7 +8439,7 @@ function renderMyTasks(){
   ranged.forEach(function(t){ counts[myTaskState(t)]++; });
   var list = f==='all'? ranged : ranged.filter(function(t){ return myTaskState(t)===f; });
 
-  var h='<div class="cat-head"><div class="cat-title">✅ My Tasks</div><div class="cat-sub">Everything on your plate — and what you gave to others</div></div>';
+  var h=tvStyle()+'<div class="cat-head"><div class="cat-title">✅ My Tasks</div><div class="cat-sub">Everything on your plate — and what you gave to others</div></div>';
   h+=mtModeBar('mine');
   // Date-range row (above the type tabs)
   h+='<div class="mt-range"><span class="mt-range-lbl">Range</span>';
@@ -8414,19 +8456,27 @@ function renderMyTasks(){
     h+='<button class="mt-chip mt-chip-'+c[0]+(f===c[0]?' on':'')+'" data-action="mytask-filter" data-f="'+c[0]+'">'+c[1]+'<span class="mt-c">'+counts[c[0]]+'</span></button>';
   });
   h+='</div>';
+  if(!App._taskLayout){ try{ App._taskLayout=localStorage.getItem('edTaskLayout')||'cards'; }catch(e){ App._taskLayout='cards'; } }
+  var LAY=App._taskLayout;
+  h+='<div class="tv-toolbar"><div class="tv-toggle">'+
+     '<button class="tv-tg'+(LAY==='table'?' on':'')+'" data-action="task-layout" data-v="table">▦ Table</button>'+
+     '<button class="tv-tg'+(LAY==='cards'?' on':'')+'" data-action="task-layout" data-v="cards">▭ Cards</button>'+
+     '<button class="tv-tg'+(LAY==='classic'?' on':'')+'" data-action="task-layout" data-v="classic">☰ Classic</button>'+
+     '</div></div>';
+  var _tvGroup=function(items){
+    if(LAY==='table'){ var x='<table class="tv-table"><thead><tr><th>Task</th><th>Priority</th><th>Owner</th><th>Due</th><th>Department</th><th>Status</th></tr></thead><tbody>'; items.forEach(function(t){ x+=myTaskTRow(t); }); return x+'</tbody></table>'; }
+    var cls=(LAY==='cards')?'tv-cards':'mt-list'; var x='<div class="'+cls+'">'; items.forEach(function(t){ x+=(LAY==='cards')?myTaskCardNew(t):myTaskRow(t); }); return x+'</div>';
+  };
   if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🎉</div><div class="empty-t">Nothing here</div><div class="empty-s">No tasks match this range &amp; filter.</div></div>'; }
   else if(f==='all'){
-    // Grouped by type so the view "focuses on the types of task"
     var glabel={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'};
     ['overdue','pending','inprog','done'].forEach(function(st){
       var g=list.filter(function(t){ return myTaskState(t)===st; });
       if(!g.length) return;
-      h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div><div class="mt-list">';
-      g.forEach(function(t){ h+=myTaskRow(t); });
-      h+='</div>';
+      h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div>'+_tvGroup(g);
     });
   } else {
-    h+='<div class="mt-list">'; list.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>';
+    h+=_tvGroup(list);
   }
   document.getElementById('content').innerHTML=h;
 }
@@ -9282,7 +9332,7 @@ function renderAssignedByMe(){
     App._sharedCache={}; tasks.forEach(function(t){ App._sharedCache[t.uid]=t; });
     var pend=tasks.filter(function(t){return t.status!=='Completed';});
     var done=tasks.filter(function(t){return t.status==='Completed';});
-    var h='<div class="cat-head"><div class="cat-title">✅ My Tasks</div><div class="cat-sub">Everything on your plate — and what you gave to others</div></div>';
+    var h=tvStyle()+'<div class="cat-head"><div class="cat-title">✅ My Tasks</div><div class="cat-sub">Everything on your plate — and what you gave to others</div></div>';
     h+=mtModeBar('assigned');
     h+='<div class="cat-actions" style="margin-bottom:14px"><button class="add-btn" data-action="open-assign">'+plusIco()+'Assign a Task</button></div>';
     h+='<div class="sec-title">Outstanding ('+pend.length+')</div><div class="task-list mt-grid">';
@@ -10876,6 +10926,7 @@ document.addEventListener('click', function(e){
     case 'dept-del': deptDelete(el.getAttribute('data-name')); break;
     case 'merge-mf': nlMergeMF(); break;
     case 'mytask-filter': myTaskFilter(el.getAttribute('data-f')); break;
+    case 'task-layout': setTaskLayout(el.getAttribute('data-v')); break;
     case 'mytask-range': myTaskRange(el.getAttribute('data-r')); break;
     case 'mytask-custom-apply': myTaskCustomApply(); break;
     case 'staff-filter': staffTaskFilter(el.getAttribute('data-f')); break;
