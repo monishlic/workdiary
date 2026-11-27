@@ -4595,22 +4595,61 @@ function nlExportDo(kind){
 }
 function nlRenderBoard(){
   App.view='leads'; App._leadView=App._leadView||{tab:'all',sub:'board'};
-  nlSweepIgnored();
+  nlSweepIgnored(); try{ closeLeadDrawer(); }catch(e){}
   var all=(App._leads||[]).slice();
   var cnt={all:all.length,new:0,acknowledged:0,inprocess:0,ignored:0,executed:0};
   all.forEach(function(l){ var e=nlEffective(l); cnt[e]=(cnt[e]||0)+1; });
   var tab=App._leadView.tab||'all';
-  var h='<div class="cat-head"><div class="cat-title">New Leads</div><div class="cat-sub">Hand a lead to another department and track it end to end.</div></div>';
+  var h=tvStyle()+nlvExtra()+'<div class="cat-head"><div class="cat-title">New Leads</div><div class="cat-sub">Hand a lead to another department and track it end to end.</div></div>';
   h+='<div class="nl-adminbtns"><button class="nl-admbtn nl-primary" data-action="newlead">＋ Assign a lead</button><button class="nl-admbtn" data-action="nl-abm">📤 Assigned by me</button><button class="nl-admbtn" data-action="nl-processes">⚙ Processes</button>'+(isBoss()?'<button class="nl-admbtn" data-action="nl-biz">📊 Business Dashboard</button><button class="nl-admbtn" data-action="nl-teams">👥 Teams</button>':'')+'<button class="nl-admbtn" data-action="nl-export-html">⬇ HTML</button><button class="nl-admbtn" data-action="nl-export-xls">⬇ Excel</button></div>';
   h+='<div class="nl-dash">'+nlTile('all','All',cnt.all,tab)+nlTile('new','New',cnt.new,tab)+nlTile('ignored','Ignored',cnt.ignored,tab)+nlTile('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTile('inprocess','In Process',cnt.inprocess,tab)+nlTile('executed','Closed',cnt.executed,tab)+'</div>';
   h+='<div class="nl-tabbar">'+nlTab('all','All',cnt.all,tab)+nlTab('new','New',cnt.new,tab)+nlTab('ignored','Ignored',cnt.ignored,tab)+nlTab('acknowledged','Acknowledged',cnt.acknowledged,tab)+nlTab('inprocess','In Process',cnt.inprocess,tab)+nlTab('executed','Closed',cnt.executed,tab)+nlTab('inloop','In loop',(App._loopedLeads||[]).length,tab)+'</div>';
   var list = tab==='inloop' ? (App._loopedLeads||[]).slice() : all.filter(function(l){ return tab==='all' || nlEffective(l)===tab; });
   list.sort(function(a,b){ return nlParse(b.updatedAt||b.assignedAt)-nlParse(a.updatedAt||a.assignedAt); });
+  h+=nlToolbar();
   if(!list.length) h+='<div class="nl-empty">No leads here yet. Use <b>＋ Assign a lead</b> or the NL button.</div>';
   else if(tab==='executed'){ h+=nlClosedSplit(list); }
-  else list.forEach(function(l){ h+=nlCard(l,false); });
+  else h+=nlRenderList(list);
   document.getElementById('content').innerHTML=h;
 }
+function nlLay(){ if(!App._leadLayout){ try{ App._leadLayout=localStorage.getItem('edLeadLayout')||'cards'; }catch(e){ App._leadLayout='cards'; } } return App._leadLayout; }
+function setLeadLayout(v){ App._leadLayout=v; try{ localStorage.setItem('edLeadLayout',v); }catch(e){} if(App.view==='leads') refreshView(); }
+function nlToolbar(){ var L=nlLay(); return '<div class="tv-toolbar"><div class="tv-toggle">'+
+  '<button class="tv-tg'+(L==='table'?' on':'')+'" data-action="lead-layout" data-v="table">\u25a6 Table</button>'+
+  '<button class="tv-tg'+(L==='cards'?' on':'')+'" data-action="lead-layout" data-v="cards">\u25ad Cards</button>'+
+  '<button class="tv-tg'+(L==='classic'?' on':'')+'" data-action="lead-layout" data-v="classic">\u2630 Classic</button></div></div>'; }
+function nlWithTxt(l){ var a=(l.assignees||[]); return a.map(function(x){return x.name;}).slice(0,2).join(', ')+(a.length>2?' +'+(a.length-2):''); }
+function nlLeadCardNew(l){ var eff=nlEffective(l); var sti=nlStInfo(l,eff); var pr=(l.priority||'medium'); var rail=(pr==='urgent'?'high':pr); var prLabel=({urgent:'\uD83D\uDD34 Urgent',medium:'\uD83D\uDFE0 Medium',low:'\uD83D\uDFE2 Low'})[pr]||'\uD83D\uDFE0 Medium';
+  return '<div class="tvc p-'+rail+'" data-action="open-lead-drawer" data-lead="'+esc(l.id)+'"><div class="tvc-top"><span class="tvc-ttl">'+esc(l.clientName||'\u2014')+'</span><span class="nl-st '+sti.cls+'">'+sti.label+'</span></div><div class="tvc-meta"><span class="tvc-seg">'+esc(l.department||'')+' \u203a '+esc(l.category||'')+'</span><span class="tvc-seg">'+prLabel+'</span></div><div class="tvc-foot"><span class="tvc-dept">\uD83D\uDC64 with '+esc(nlWithTxt(l)||'\u2014')+'</span></div></div>'; }
+function nlLeadRow(l){ var eff=nlEffective(l); var sti=nlStInfo(l,eff); var prLabel=({urgent:'Urgent',medium:'Medium',low:'Low'})[(l.priority||'medium')]||'Medium';
+  return '<tr data-action="open-lead-drawer" data-lead="'+esc(l.id)+'"><td style="font-weight:650">'+esc(l.clientName||'\u2014')+'</td><td style="color:#5a5f6b">'+esc(l.department||'')+' \u203a '+esc(l.category||'')+'</td><td>'+prLabel+'</td><td style="color:#5a5f6b">'+esc(nlWithTxt(l)||'\u2014')+'</td><td><span class="nl-st '+sti.cls+'">'+sti.label+'</span></td></tr>'; }
+function nlTable(items){ var r=''; items.forEach(function(l){ r+=nlLeadRow(l); }); return '<table class="tv-table"><colgroup><col style="width:24%"><col style="width:28%"><col style="width:12%"><col style="width:18%"><col style="width:18%"></colgroup><thead><tr><th>Client</th><th>Department</th><th>Priority</th><th>With</th><th>Status</th></tr></thead><tbody>'+r+'</tbody></table>'; }
+function nlRenderList(list){ var L=nlLay(); if(L==='classic') return list.map(function(l){return nlCard(l,false);}).join(''); if(L==='table') return nlTable(list); return '<div class="tv-cards">'+list.map(nlLeadCardNew).join('')+'</div>'; }
+function nlvExtra(){ return '<style>'+
+ '#lead-drawer-root .lv-backdrop{position:fixed;inset:0;background:rgba(20,22,35,.38);opacity:0;pointer-events:none;transition:.2s;z-index:60}'+
+ '#lead-drawer-root.show .lv-backdrop{opacity:1;pointer-events:auto}'+
+ '.lv-drawer{position:fixed;top:0;right:0;height:100vh;width:460px;max-width:95vw;background:#fff;box-shadow:-18px 0 50px rgba(20,20,40,.2);transform:translateX(100%);transition:.26s cubic-bezier(.4,0,.2,1);z-index:61;display:flex;flex-direction:column}'+
+ '#lead-drawer-root.show .lv-drawer{transform:translateX(0)}'+
+ '.lv-head{display:flex;align-items:flex-start;gap:11px;padding:16px 20px;border-bottom:1px solid #e8eaf0}'+
+ '.lv-cl{font-size:19px;font-weight:800}.lv-mob{color:#8a8f9c;font-size:12.5px;margin-top:2px}'+
+ '.lv-x{width:30px;height:30px;border-radius:8px;border:1px solid #e8eaf0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;font-size:16px;flex:0 0 auto}'+
+ '.lv-body{padding:18px 20px;overflow:auto;flex:1}'+
+ '.lv-sec{font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:#9398a4;font-weight:700;margin:14px 0 9px}'+
+ '.lv-fields{display:grid;grid-template-columns:100px 1fr;gap:10px 14px;font-size:13px}'+
+ '.lv-k{color:#8a8f9c;font-weight:600}'+
+ '.lv-box{background:#fafbfc;border:1px solid #e8eaf0;border-radius:10px;padding:11px 12px;font-size:13px;line-height:1.5;color:#4a4f57;white-space:pre-wrap}'+
+ '.lv-foot{display:flex;gap:7px;padding:13px 20px;border-top:1px solid #e8eaf0;flex-wrap:wrap}'+
+ '</style>'; }
+function openLeadDrawer(id){ var l=(App._leads||[]).concat(App._loopedLeads||[]).filter(function(x){return String(x.id)===String(id);})[0]; if(!l){ toast('Lead not found.','error'); return; }
+  var eff=nlEffective(l); var sti=nlStInfo(l,eff); var pr=(l.priority||'medium'); var prLabel=({urgent:'\uD83D\uDD34 Urgent',medium:'\uD83D\uDFE0 Medium',low:'\uD83D\uDFE2 Low'})[pr]||'\uD83D\uDFE0 Medium';
+  var a=(l.assignees||[]); var withTxt=a.map(function(x){return x.name;}).slice(0,3).join(', ');
+  var desc=l.description?('<div class="lv-sec">Description</div><div class="lv-box">'+esc(l.description)+'</div>'):'';
+  var body='<div class="lv-head"><div><div class="lv-cl">'+esc(l.clientName||'\u2014')+'</div>'+(l.mobile?'<div class="lv-mob">\uD83D\uDCF1 '+esc(l.mobile)+'</div>':'')+'</div><span class="nl-st '+sti.cls+'" style="margin-left:auto">'+sti.label+'</span><div class="lv-x" data-action="close-lead-drawer">\u2715</div></div>'+
+   '<div class="lv-body"><div class="lv-sec">Details</div><div class="lv-fields"><div class="lv-k">Department</div><div>'+esc(l.department||'')+' \u203a '+esc(l.category||'')+'</div><div class="lv-k">Priority</div><div>'+prLabel+'</div><div class="lv-k">With</div><div>'+esc(withTxt||'\u2014')+'</div></div>'+desc+nlReminderLine(l)+nlLatestRemark(l)+'</div>'+
+   '<div class="lv-foot">'+nlActions(l,eff,false)+'</div>';
+  var root=document.getElementById('lead-drawer-root'); if(!root){ root=document.createElement('div'); root.id='lead-drawer-root'; root.innerHTML='<div class="lv-backdrop" data-action="close-lead-drawer"></div><div class="lv-drawer" id="lead-drawer"></div>'; document.body.appendChild(root); }
+  document.getElementById('lead-drawer').innerHTML=body; requestAnimationFrame(function(){ document.getElementById('lead-drawer-root').classList.add('show'); }); }
+function closeLeadDrawer(){ var r=document.getElementById('lead-drawer-root'); if(r) r.classList.remove('show'); }
 function nlActions(l,eff,admin){
   var id=esc(l.id);
   function b(act,label,cls){ return '<button class="btn nl-b '+(cls||'')+'" data-action="'+act+'" data-lead="'+id+'">'+label+'</button>'; }
@@ -4635,7 +4674,7 @@ function nlClosedSplit(list){
   list.forEach(function(l){ (nlOutcome(l)==='neg'?neg:pos).push(l); });
   var bar='<div class="nl-ctabs"><button class="nl-ctab pos'+(sub==='pos'?' on':'')+'" data-action="nl-closetab" data-ct="pos">✅ Positive <b>'+pos.length+'</b></button><button class="nl-ctab neg'+(sub==='neg'?' on':'')+'" data-action="nl-closetab" data-ct="neg">❌ Negative <b>'+neg.length+'</b></button></div>';
   var sel=(sub==='neg')?neg:pos;
-  var body=sel.length ? sel.map(function(l){return nlCard(l,false);}).join('') : '<div class="nl-empty">No '+(sub==='neg'?'negative':'positive')+' closes yet.</div>';
+  var body=sel.length ? nlRenderList(sel) : '<div class="nl-empty">No '+(sub==='neg'?'negative':'positive')+' closes yet.</div>';
   return bar+body;
 }
 function nlStampSVG(oc){
@@ -8102,7 +8141,20 @@ function myTaskTRow(t){
     '<td style="color:#5a5f6b">'+esc(t.department)+' › '+esc(t.category)+'</td>'+
     '<td><span class="tv-st '+st+'">'+lbl+'</span></td></tr>';
 }
-function setTaskLayout(v){ App._taskLayout=v; try{ localStorage.setItem('edTaskLayout',v); }catch(e){} renderMyTasks(); }
+function setTaskLayout(v){ App._taskLayout=v; try{ localStorage.setItem('edTaskLayout',v); }catch(e){} var vw=App.view; if(vw==='assigned') renderAssignedByMe(); else if(vw==='looped') renderLooped(); else if(vw==='teamtasks') renderTaskTeams(); else renderMyTasks(); }
+function tvLay(){ if(!App._taskLayout){ try{ App._taskLayout=localStorage.getItem('edTaskLayout')||'cards'; }catch(e){ App._taskLayout='cards'; } } return App._taskLayout; }
+function tvToolbar(){ var L=tvLay(); return '<div class="tv-toolbar"><div class="tv-toggle">'+
+  '<button class="tv-tg'+(L==='table'?' on':'')+'" data-action="task-layout" data-v="table">\u25a6 Table</button>'+
+  '<button class="tv-tg'+(L==='cards'?' on':'')+'" data-action="task-layout" data-v="cards">\u25ad Cards</button>'+
+  '<button class="tv-tg'+(L==='classic'?' on':'')+'" data-action="task-layout" data-v="classic">\u2630 Classic</button></div></div>'; }
+function tvTableWrap(inner){ return '<table class="tv-table"><colgroup><col style="width:26%"><col style="width:9%"><col style="width:12%"><col style="width:16%"><col style="width:25%"><col style="width:12%"></colgroup><thead><tr><th>Task</th><th>Priority</th><th>Owner</th><th>Due</th><th>Department</th><th>Status</th></tr></thead><tbody>'+inner+'</tbody></table>'; }
+function tvCardG(t,action,who){ var st=myTaskState(t); var lbl={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}[st]; var idAttr=(action==='open-shared')?('data-uid="'+esc(t.uid)+'"'):('data-id="'+esc(t.taskId)+'"'); return '<div class="tvc p-'+esc(t.priority||'medium')+(st==='done'?' done':'')+'" data-action="'+action+'" '+idAttr+'><div class="tvc-top">'+prioTag(t.priority)+'<span class="tvc-ttl">'+esc(t.title||t.clientName||'Task')+'</span><span class="tv-st '+st+'">'+lbl+'</span></div><div class="tvc-meta"><span class="tvc-seg">\uD83D\uDC64 '+esc(who)+'</span><span class="tvc-seg">\uD83D\uDCC5 '+esc(t.dueDate?fmtDateTime(t.dueDate):'No due date')+'</span></div><div class="tvc-foot"><span class="tvc-dept">'+esc(t.department)+' \u203a '+esc(t.category)+'</span></div></div>'; }
+function tvTRowG(t,action,who){ var st=myTaskState(t); var lbl={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}[st]; var idAttr=(action==='open-shared')?('data-uid="'+esc(t.uid)+'"'):('data-id="'+esc(t.taskId)+'"'); return '<tr data-action="'+action+'" '+idAttr+'><td style="font-weight:650">'+esc(t.title||t.clientName||'Task')+'</td><td>'+prioTag(t.priority)+'</td><td style="color:#5a5f6b">'+esc(who)+'</td><td style="color:#8a8f9c">'+esc(t.dueDate?fmtDateTime(t.dueDate):'\u2014')+'</td><td style="color:#5a5f6b">'+esc(t.department)+' \u203a '+esc(t.category)+'</td><td><span class="tv-st '+st+'">'+lbl+'</span></td></tr>'; }
+function tvStatusBody(list,f,action,whoFn,classicFn){ var L=tvLay(); var gl={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}; var ord=['overdue','pending','inprog','done'];
+  if(L==='table'){ var r=''; if(f==='all'){ ord.forEach(function(st){ var g=list.filter(function(t){return myTaskState(t)===st;}); if(!g.length)return; r+='<tr class="tv-grp tv-grp-'+st+'"><td colspan="6">'+gl[st]+' <span style="opacity:.65">('+g.length+')</span></td></tr>'; g.forEach(function(t){ r+=tvTRowG(t,action,whoFn(t)); }); }); } else { list.forEach(function(t){ r+=tvTRowG(t,action,whoFn(t)); }); } return tvTableWrap(r); }
+  if(L==='classic'){ var x=''; if(f==='all'){ ord.forEach(function(st){ var g=list.filter(function(t){return myTaskState(t)===st;}); if(!g.length)return; x+='<div class="mt-group-h mt-gh-'+st+'">'+gl[st]+' <span style="opacity:.7">('+g.length+')</span></div><div class="mt-list">'; g.forEach(function(t){ x+=classicFn(t); }); x+='</div>'; }); } else { x+='<div class="mt-list">'; list.forEach(function(t){ x+=classicFn(t); }); x+='</div>'; } return x; }
+  var c=''; if(f==='all'){ ord.forEach(function(st){ var g=list.filter(function(t){return myTaskState(t)===st;}); if(!g.length)return; c+='<div class="mt-group-h mt-gh-'+st+'">'+gl[st]+' <span style="opacity:.7">('+g.length+')</span></div><div class="tv-cards">'; g.forEach(function(t){ c+=tvCardG(t,action,whoFn(t)); }); c+='</div>'; }); } else { c+='<div class="tv-cards">'; list.forEach(function(t){ c+=tvCardG(t,action,whoFn(t)); }); c+='</div>'; } return c; }
+function tvFlatBody(list,action,whoFn,classicFn){ var L=tvLay(); if(L==='table'){ var r=''; list.forEach(function(t){ r+=tvTRowG(t,action,whoFn(t)); }); return tvTableWrap(r); } if(L==='classic'){ var x='<div class="mt-list">'; list.forEach(function(t){ x+=classicFn(t); }); return x+'</div>'; } var c='<div class="tv-cards">'; list.forEach(function(t){ c+=tvCardG(t,action,whoFn(t)); }); return c+'</div>'; }
 function tvStyle(){ return '<style>'+
   '.tv-toolbar{display:flex;justify-content:flex-end;margin:4px 0 12px}'+
   '.tv-toggle{display:inline-flex;background:#eceef3;border-radius:9px;padding:3px}'+
@@ -8121,7 +8173,10 @@ function tvStyle(){ return '<style>'+
   '.tvc .tvc-seg:last-child{border-right:none;margin-right:0;padding-right:0}'+
   '.tvc .tvc-foot{margin-top:10px;padding-top:10px;border-top:1px solid #f1f2f6}'+
   '.tvc .tvc-dept{font-size:11.5px;color:#5a5f6b;background:#f4f5f8;border-radius:6px;padding:3px 9px;font-weight:600;display:inline-block}'+
-  '.tv-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8eaf0;border-radius:12px;overflow:hidden}'+
+  '.tv-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8eaf0;border-radius:12px;overflow:hidden;table-layout:fixed}'+
+  '.tv-table td,.tv-table th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+  '.tv-grp td{background:#f3f4f8;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;padding:7px 13px;color:#e5484d}'+
+  '.tv-grp-pending td{color:#c9820a}.tv-grp-inprog td{color:#3b5bff}.tv-grp-done td{color:#2fa968}'+
   '.tv-table thead th{text-align:left;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:#9398a4;font-weight:700;padding:9px 13px;background:#fafbfc;border-bottom:1px solid #e8eaf0}'+
   '.tv-table tbody td{padding:10px 13px;border-bottom:1px solid #f1f2f6;font-size:13px;vertical-align:middle}'+
   '.tv-table tbody tr{cursor:pointer}.tv-table tbody tr:hover{background:#f6f8fc}'+
@@ -8169,10 +8224,11 @@ function renderLooped(){
   App.view='looped'; buildSidebar();
   var list=(App._loopedTasks||[]).slice();
   list.sort(function(a,b){ var ac=a.status==='Completed', bc=b.status==='Completed'; if(ac!==bc) return ac?1:-1; if(!ac){ var ad=a.dueDate?new Date(a.dueDate).getTime():Infinity, bd=b.dueDate?new Date(b.dueDate).getTime():Infinity; if(ad!==bd) return ad-bd; } return new Date(b.lastUpdatedTimestamp||b.createdTimestamp||0)-new Date(a.lastUpdatedTimestamp||a.createdTimestamp||0); });
-  var h='<div class="cat-head"><div class="cat-title">👁 In loop</div><div class="cat-sub">Tasks you are looped into across the team</div></div>';
+  var h=tvStyle()+'<div class="cat-head"><div class="cat-title">👁 In loop</div><div class="cat-sub">Tasks you are looped into across the team</div></div>';
   h+=mtModeBar('looped');
+  h+=tvToolbar();
   if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">👁</div><div class="empty-t">Nothing in your loop yet</div><div class="empty-s">Tasks where you are added to the loop will appear here.</div></div>'; }
-  else { h+='<div class="mt-list">'; list.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }
+  else { h+=tvFlatBody(list, 'open-task', function(t){ return 'by '+(t.assignedByName||t.ownerName||'\u2014'); }, myTaskRow); }
   document.getElementById('content').innerHTML=h;
 }
 function rebuildDeleted(){ var own=App._deletedOwn||[]; var seen={}; var out=own.slice(); own.forEach(function(t){ if(t&&t.uid) seen[t.uid]=1; }); (App._deletedAsg||[]).forEach(function(t){ if(t&&t.uid&&!seen[t.uid]) out.push(t); }); App._deletedTasks=out; if(App.view==='deleted') _rerenderSoon('deleted', renderDeleted, 300); }
@@ -8199,7 +8255,7 @@ function renderTaskTeams(){
     var counts={all:ranged.length,overdue:0,pending:0,inprog:0,done:0};
     ranged.forEach(function(t){ counts[myTaskState(t)]++; });
     var list = f==='all'? ranged : ranged.filter(function(t){ return myTaskState(t)===f; });
-    var h='<div class="cat-head"><div class="cat-title">👥 '+esc(nm)+' · Tasks</div><div class="cat-sub">Every task on '+esc(nm)+'’s plate</div></div>';
+    var h=tvStyle()+'<div class="cat-head"><div class="cat-title">👥 '+esc(nm)+' · Tasks</div><div class="cat-sub">Every task on '+esc(nm)+'’s plate</div></div>';
     h+='<div class="nl-actions-row"><button class="nl-back" data-action="task-teams-back">← Back to Teams</button></div>';
     h+='<div class="mt-range"><span class="mt-range-lbl">Range</span>';
     [['today','Today'],['yesterday','Yesterday'],['week','This week'],['month','This month'],['lastmonth','Last month'],['all','All time'],['custom','Custom…']].forEach(function(c){ h+='<button class="mt-rchip'+(range===c[0]?' on':'')+'" data-action="stask-range" data-r="'+c[0]+'">'+c[1]+'</button>'; });
@@ -8208,9 +8264,9 @@ function renderTaskTeams(){
     h+='<div class="mt-filters">';
     [['all','All'],['overdue','Overdue'],['pending','Pending'],['inprog','In Progress'],['done','Completed']].forEach(function(c){ h+='<button class="mt-chip mt-chip-'+c[0]+(f===c[0]?' on':'')+'" data-action="stask-filter" data-f="'+c[0]+'">'+c[1]+'<span class="mt-c">'+counts[c[0]]+'</span></button>'; });
     h+='</div>';
+    h+=tvToolbar();
     if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🎉</div><div class="empty-t">Nothing here</div><div class="empty-s">No tasks match this range &amp; filter.</div></div>'; }
-    else if(f==='all'){ var glabel={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'}; ['overdue','pending','inprog','done'].forEach(function(st){ var g=list.filter(function(t){ return myTaskState(t)===st; }); if(!g.length) return; h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div><div class="mt-list">'; g.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }); }
-    else { h+='<div class="mt-list">'; list.forEach(function(t){ h+=myTaskRow(t); }); h+='</div>'; }
+    else { h+=tvStatusBody(list, f, 'open-task', tvOwner, myTaskRow); }
     document.getElementById('content').innerHTML=h; return;
   }
   var mem=(App.members||[]);
@@ -8463,20 +8519,19 @@ function renderMyTasks(){
      '<button class="tv-tg'+(LAY==='cards'?' on':'')+'" data-action="task-layout" data-v="cards">▭ Cards</button>'+
      '<button class="tv-tg'+(LAY==='classic'?' on':'')+'" data-action="task-layout" data-v="classic">☰ Classic</button>'+
      '</div></div>';
-  var _tvGroup=function(items){
-    if(LAY==='table'){ var x='<table class="tv-table"><thead><tr><th>Task</th><th>Priority</th><th>Owner</th><th>Due</th><th>Department</th><th>Status</th></tr></thead><tbody>'; items.forEach(function(t){ x+=myTaskTRow(t); }); return x+'</tbody></table>'; }
-    var cls=(LAY==='cards')?'tv-cards':'mt-list'; var x='<div class="'+cls+'">'; items.forEach(function(t){ x+=(LAY==='cards')?myTaskCardNew(t):myTaskRow(t); }); return x+'</div>';
-  };
+  var glabel={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'};
+  var _tvCardGroup=function(items){ var cls=(LAY==='cards')?'tv-cards':'mt-list'; var x='<div class="'+cls+'">'; items.forEach(function(t){ x+=(LAY==='cards')?myTaskCardNew(t):myTaskRow(t); }); return x+'</div>'; };
+  var _tvTable=function(items,grouped){ var x='<table class="tv-table"><colgroup><col style="width:26%"><col style="width:9%"><col style="width:12%"><col style="width:16%"><col style="width:25%"><col style="width:12%"></colgroup><thead><tr><th>Task</th><th>Priority</th><th>Owner</th><th>Due</th><th>Department</th><th>Status</th></tr></thead><tbody>'; if(grouped){ ['overdue','pending','inprog','done'].forEach(function(st){ var g=items.filter(function(t){ return myTaskState(t)===st; }); if(!g.length) return; x+='<tr class="tv-grp tv-grp-'+st+'"><td colspan="6">'+glabel[st]+' <span style="opacity:.65">('+g.length+')</span></td></tr>'; g.forEach(function(t){ x+=myTaskTRow(t); }); }); } else { items.forEach(function(t){ x+=myTaskTRow(t); }); } return x+'</tbody></table>'; };
   if(!list.length){ h+='<div class="empty" style="padding:26px"><div class="empty-ico">🎉</div><div class="empty-t">Nothing here</div><div class="empty-s">No tasks match this range &amp; filter.</div></div>'; }
+  else if(LAY==='table'){ h+=_tvTable(list, f==='all'); }
   else if(f==='all'){
-    var glabel={overdue:'Overdue',pending:'Pending',inprog:'In Progress',done:'Completed'};
     ['overdue','pending','inprog','done'].forEach(function(st){
       var g=list.filter(function(t){ return myTaskState(t)===st; });
       if(!g.length) return;
-      h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div>'+_tvGroup(g);
+      h+='<div class="mt-group-h mt-gh-'+st+'">'+glabel[st]+' <span style="opacity:.7">('+g.length+')</span></div>'+_tvCardGroup(g);
     });
   } else {
-    h+=_tvGroup(list);
+    h+=_tvCardGroup(list);
   }
   document.getElementById('content').innerHTML=h;
 }
@@ -9335,11 +9390,10 @@ function renderAssignedByMe(){
     var h=tvStyle()+'<div class="cat-head"><div class="cat-title">✅ My Tasks</div><div class="cat-sub">Everything on your plate — and what you gave to others</div></div>';
     h+=mtModeBar('assigned');
     h+='<div class="cat-actions" style="margin-bottom:14px"><button class="add-btn" data-action="open-assign">'+plusIco()+'Assign a Task</button></div>';
-    h+='<div class="sec-title">Outstanding ('+pend.length+')</div><div class="task-list mt-grid">';
-    if(!pend.length) h+='<div class="empty" style="padding:24px"><div class="empty-t">Nothing outstanding 🎉</div></div>'; else pend.forEach(function(t){ h+=sharedCard(t); });
-    h+='</div><div style="height:20px"></div><div class="sec-title">Completed ('+done.length+')</div><div class="task-list mt-grid">';
-    if(!done.length) h+='<div class="empty" style="padding:24px"><div class="empty-t">None completed yet</div></div>'; else done.forEach(function(t){ h+=sharedCard(t); });
-    h+='</div>';
+    h+=tvToolbar();
+    var _awho=function(t){ return 'To '+(t.ownerName||'\u2014'); };
+    var _asec=function(items,label){ var L=tvLay(); if(!items.length) return '<div class="mt-group-h">'+label+' (0)</div><div class="empty" style="padding:18px"><div class="empty-t">Nothing here</div></div>'; if(L==='classic'){ var x='<div class="sec-title">'+label+' ('+items.length+')</div><div class="task-list mt-grid">'; items.forEach(function(t){ x+=sharedCard(t); }); return x+'</div>'; } if(L==='table'){ var r=''; items.forEach(function(t){ r+=tvTRowG(t,'open-shared',_awho(t)); }); return '<div class="mt-group-h">'+label+' ('+items.length+')</div>'+tvTableWrap(r); } var c='<div class="mt-group-h">'+label+' ('+items.length+')</div><div class="tv-cards">'; items.forEach(function(t){ c+=tvCardG(t,'open-shared',_awho(t)); }); return c+'</div>'; };
+    h+=_asec(pend,'Outstanding')+'<div style="height:14px"></div>'+_asec(done,'Completed');
     if(App.view==='assigned') document.getElementById('content').innerHTML=h;
   };
   // Instant paint from the last-known list, then refresh in the background.
@@ -10927,6 +10981,9 @@ document.addEventListener('click', function(e){
     case 'merge-mf': nlMergeMF(); break;
     case 'mytask-filter': myTaskFilter(el.getAttribute('data-f')); break;
     case 'task-layout': setTaskLayout(el.getAttribute('data-v')); break;
+    case 'lead-layout': setLeadLayout(el.getAttribute('data-v')); break;
+    case 'open-lead-drawer': openLeadDrawer(el.getAttribute('data-lead')); break;
+    case 'close-lead-drawer': closeLeadDrawer(); break;
     case 'mytask-range': myTaskRange(el.getAttribute('data-r')); break;
     case 'mytask-custom-apply': myTaskCustomApply(); break;
     case 'staff-filter': staffTaskFilter(el.getAttribute('data-f')); break;
