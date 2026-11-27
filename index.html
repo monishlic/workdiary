@@ -5214,7 +5214,7 @@ var Push = {
       if(prev && prev!==token){ ref.set({ fcmTokens: firebase.firestore.FieldValue.arrayRemove(prev) }, {merge:true}); }
     }catch(e){}
   },
-  _foreground:function(payload){ var n=(payload&&payload.notification)||{}; toast('🔔 '+(n.title||'New notification')+(n.body?(' — '+n.body):''),'info'); try{ if(typeof playNotifSound==='function') playNotifSound(); }catch(e){} if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
+  _foreground:function(payload){ var n=(payload&&payload.notification)||{}; var dd=(payload&&payload.data)||{}; var _ti=n.title||dd.title||'New notification'; var _bo=n.body||dd.body||''; toast('🔔 '+_ti+(_bo?(' — '+_bo):''),'info'); try{ if(typeof playNotifSound==='function') playNotifSound(); }catch(e){} if(typeof loadNotifs==='function'){ try{ loadNotifs(); }catch(e){} } },
   /* On logout: drop THIS device's token from the current user so the next
      person who logs in here doesn't keep getting the previous user's alerts. */
   unregister:function(){
@@ -9852,6 +9852,7 @@ function requestNotifPermission(){
   }catch(e){}
 }
 var _edAudioCtx=null, _edLastBeep=0;
+(function(){ try{ var _p=function(){ try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC){ if(!_edAudioCtx) _edAudioCtx=new AC(); if(_edAudioCtx.state==='suspended'){ try{ _edAudioCtx.resume(); }catch(e){} } } }catch(e){} }; window.addEventListener('pointerdown',_p,{passive:true}); window.addEventListener('keydown',_p); window.addEventListener('click',_p,{passive:true}); }catch(e){} })();
 function edSoundOn(){ try{ return localStorage.getItem('edNotifSound')!=='off'; }catch(e){ return true; } }
 function playNotifSound(){
   try{
