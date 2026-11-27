@@ -4213,6 +4213,14 @@ var FBLive = {
     db.collection('notes').where('ownerId','==',uid).onSnapshot(function(qs){
       if(slateIsBusy()) return;
       var server=[]; qs.forEach(function(d){ var n=d.data(); n.sid=n.id; n.done=(n.done===true); server.push(n); });
+      // SAFEGUARD: an empty server snapshot must NEVER wipe notes we already hold locally. If the
+      // server shows zero notes but this device still has synced notes, RE-UPLOAD them instead of
+      // erasing (prevents the blank-Slate data-loss bug).
+      if(server.length===0 && (App.slateNotes||[]).some(function(n){ return n.sid; })){
+        (App.slateNotes||[]).forEach(function(n){ if(n.sid){ n.sid=null; n._pending=(n._pending||0)+1; } });
+        try{ Slate.saveLocal(); }catch(e){} try{ Slate.flushUnsynced(); }catch(e){}
+        if(App.view==='slate' && !App._slateView){ try{ paintSlate(); }catch(e){} } return;
+      }
       var stexts={}; server.forEach(function(n){ stexts[(n.text||'').trim()]=true; });
       var localBySid={}; (App.slateNotes||[]).forEach(function(n){ if(n.sid) localBySid[n.sid]=n; });
       var merged=[]; server.forEach(function(sv){ var loc=localBySid[sv.sid]; if(loc&&loc._pending>0) merged.push(loc); else merged.push(sv); });
