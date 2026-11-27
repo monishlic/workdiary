@@ -3945,7 +3945,7 @@ function init(){
     App.auth=r[0]||null;
     if(App.auth && App.auth.url!=='firebase'){ App.auth=null; }   // old Sheets session → force a clean Firebase login with the new key
     App.templates=r[6]||[];
-    App.slateNotes=r[7]||[];
+    App.slateNotes=r[7]||[]; try{ setTimeout(function(){ try{ Slate.autoRecover(); }catch(e){} }, 6000); }catch(e){}
     App.departments=r[1]||DEFAULT_DEPARTMENTS.map(function(d){return {department:d.department,categories:d.categories.slice()};});
     App.prefs=r[2]||{theme:'clarity',collapsed:{}};
     if(!App.prefs.collapsed) App.prefs.collapsed={};
@@ -6681,7 +6681,13 @@ function boardMove(taskId,target){
 var Slate = {
   colors:['#fff3b0','#ffd6e7','#c9f2d8','#e0d9ff','#ffe1c4','#c9e8ff','#ffd9cf','#d9f0ff'],
   pick:function(){ return Slate.colors[Math.floor(Math.random()*Slate.colors.length)]; },
-  saveLocal:function(){ return Store.put('kv','slateNotes', App.slateNotes||[]); },
+  saveLocal:function(){ var _r=Store.put('kv','slateNotes', App.slateNotes||[]); try{ Slate.snap(); }catch(e){} try{ Slate.cloudBackupSoon(); }catch(e){} return _r; },
+  _strip:function(n){ return { id:n.id, sid:n.sid||'', text:String(n.text||''), color:n.color||'', x:Number(n.x)||0, y:Number(n.y)||0, done:(n.done===true), created:n.created||'', remindAt:n.remindAt||'', taskRef:n.taskRef||'' }; },
+  snap:function(){ try{ var notes=(App.slateNotes||[]).filter(function(n){ return (n.text||'').trim(); }); if(!notes.length) return; var clean=notes.map(Slate._strip); var sig=clean.length+'|'+clean.map(function(n){ return (n.sid||n.id)+':'+(n.text||'').length; }).join(','); Store.get('kv','slateSnaps').then(function(arr){ arr=Array.isArray(arr)?arr:[]; if(arr.length && arr[arr.length-1]._sig===sig) return; arr.push({ at:nowISO(), count:clean.length, _sig:sig, notes:clean }); while(arr.length>15) arr.shift(); Store.put('kv','slateSnaps', arr); }); }catch(e){} },
+  cloudBackupSoon:function(){ try{ clearTimeout(Slate._cbT); }catch(e){} Slate._cbT=setTimeout(function(){ try{ Slate.cloudBackup(); }catch(e){} }, 4000); },
+  cloudBackup:function(){ try{ if(!Sync.online()||!App.identity||!window.firebase||!firebase.firestore) return; var notes=(App.slateNotes||[]).filter(function(n){ return (n.text||'').trim(); }); if(!notes.length) return; var uid=String(App.identity.employeeId); firebase.firestore().collection('backups').doc('slate_'+uid).set({ ownerId:uid, at:nowISO(), count:notes.length, notes:notes.map(Slate._strip) }); }catch(e){} },
+  restoreSnapNotes:function(notes){ if(!Array.isArray(notes)||!notes.length) return 0; if(!App.slateNotes) App.slateNotes=[]; var have={}; (App.slateNotes||[]).forEach(function(n){ have[(n.text||'').trim()]=true; }); var added=0; notes.forEach(function(o){ var t=(o.text||'').trim(); if(!t||have[t]) return; var n={ id:'nl-'+Date.now().toString(36)+Math.floor(Math.random()*1e4), sid:'', text:o.text, color:o.color||Slate.pick(), x:Number(o.x)||(40+added*8), y:Number(o.y)||(40+added*8), done:(o.done===true), created:o.created||nowISO(), remindAt:'', taskRef:'' }; App.slateNotes.push(n); have[t]=true; added++; }); if(added){ Slate.saveLocal(); try{ Slate.flushUnsynced(); }catch(e){} } return added; },
+  autoRecover:function(){ try{ if((App.slateNotes||[]).some(function(n){ return (n.text||'').trim(); })) return; Store.get('kv','slateSnaps').then(function(arr){ if(Array.isArray(arr)&&arr.length){ var k=Slate.restoreSnapNotes((arr[arr.length-1].notes)||[]); if(k){ toast('Recovered '+k+' note(s) from your last local backup.','success'); if(App.view==='slate'&&!App._slateView) renderSlate(); return; } } try{ if(window.firebase&&firebase.firestore&&App.identity){ firebase.firestore().collection('backups').doc('slate_'+String(App.identity.employeeId)).get().then(function(d){ if(d.exists){ var k2=Slate.restoreSnapNotes((d.data()||{}).notes||[]); if(k2){ toast('Recovered '+k2+' note(s) from your cloud backup.','success'); if(App.view==='slate'&&!App._slateView) renderSlate(); } } }).catch(function(){}); } }catch(e){} }); }catch(e){} },
   _tomb:{},   // sid -> time deleted here, so a live pull won't resurrect it before the server catches up
   // Send a note change and shield it from the live poll until the server has caught up.
   _push:function(n,payload){
@@ -6709,6 +6715,12 @@ var Slate = {
         });
         var stexts={}; server.forEach(function(n){ stexts[(n.text||'').trim()]=true; });
         var unsynced=(App.slateNotes||[]).filter(function(n){ if(n.sid) return false; if(n._eph && stexts[(n.text||'').trim()]) return false; return true; });
+        if((res.notes||[]).length===0 && (App.slateNotes||[]).some(function(n){ return n.sid; })){   // SAFEGUARD: empty server must never wipe — re-upload instead
+          (App.slateNotes||[]).forEach(function(n){ if(n.sid){ n.sid=''; n._pending=0; } });
+          Slate.saveLocal(); try{ Slate.flushUnsynced(); }catch(e){}
+          if(App.view==='slate' && !App._slateView && !slateIsBusy()) paintSlate();
+          return;
+        }
         App.slateNotes=server.concat(unsynced);
         Slate.saveLocal();
         if(App.view==='slate' && !App._slateView && !slateIsBusy()) paintSlate();
@@ -6797,6 +6809,17 @@ function slateTouch(){
   }, 1650);
 }
 function noteAge(created){ var t=new Date(created).getTime(); if(!t) return ''; var m=(Date.now()-t)/60000; if(m<1) return 'just now'; if(m<60) return Math.round(m)+'m ago'; var h=m/60; if(h<24) return Math.round(h)+'h ago'; var d=h/24; if(d<7) return Math.round(d)+'d ago'; return fmtDate(created); }
+function slateRestoreOpen(){
+  Store.get('kv','slateSnaps').then(function(arr){ arr=Array.isArray(arr)?arr:[]; App._slateSnaps=arr; var rows='';
+    for(var i=arr.length-1;i>=0;i--){ var s=arr[i]; rows+='<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-bottom:1px solid var(--border,#eee)"><span style="flex:1;font-size:.86rem">'+esc(fmtDateTime(s.at))+' \u00b7 '+s.count+' note(s)</span><button class="btn btn-sm" data-action="slate-restore-snap" data-i="'+i+'">Restore</button></div>'; }
+    if(!rows) rows='<div style="padding:12px;color:var(--muted)">No local snapshots yet. Your notes are also backed up to the cloud automatically.</div>';
+    var html='<div data-action="slate-restore-close" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center"><div style="background:var(--card,#fff);border-radius:14px;max-width:460px;width:92%;max-height:80vh;overflow:auto;padding:16px">'+'<div style="font-weight:800;font-size:1.05rem;margin-bottom:4px">\u27f2 Restore notes</div><div style="color:var(--muted);font-size:.84rem;margin-bottom:12px">Bring notes back from a backup. Restored notes are added to your board; duplicates are skipped.</div><div style="border:1px solid var(--border,#eee);border-radius:10px;overflow:hidden">'+rows+'</div><div style="margin-top:12px;display:flex;gap:8px;align-items:center"><button class="btn btn-sm" data-action="slate-restore-cloud">\u2601 Restore from cloud</button><button class="btn btn-ghost btn-sm" data-action="slate-restore-close" style="margin-left:auto">Close</button></div></div></div>';
+    var d=document.createElement('div'); d.id='slate-restore-modal'; d.innerHTML=html; document.body.appendChild(d);
+  });
+}
+function slateRestoreClose(){ var d=document.getElementById('slate-restore-modal'); if(d) d.remove(); }
+function slateRestoreSnap(i){ var arr=App._slateSnaps||[]; var s=arr[Number(i)]; if(!s) return; var k=Slate.restoreSnapNotes(s.notes||[]); slateRestoreClose(); toast(k?('Restored '+k+' note(s).'):'Those notes are already on your board.', k?'success':'info'); if(App.view==='slate') renderSlate(); }
+function slateRestoreCloud(){ try{ if(!(window.firebase&&firebase.firestore&&App.identity)){ toast('Not connected.','error'); return; } firebase.firestore().collection('backups').doc('slate_'+String(App.identity.employeeId)).get().then(function(d){ if(!d.exists){ toast('No cloud backup found yet.','info'); return; } var k=Slate.restoreSnapNotes((d.data()||{}).notes||[]); slateRestoreClose(); toast(k?('Restored '+k+' note(s) from cloud.'):'Those notes are already on your board.', k?'success':'info'); if(App.view==='slate') renderSlate(); }).catch(function(){ toast('Could not read cloud backup.','error'); }); }catch(e){} }
 function renderSlate(){
   App.view='slate';
   if(!App._slateResizeHooked){ App._slateResizeHooked=true; }
@@ -6815,6 +6838,7 @@ function renderSlate(){
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-select-toggle" title="Select notes to complete or delete">☑ Select</button>';
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-tidy" title="Auto-arrange">✨ Tidy</button>';
     h+='<button class="btn btn-ghost btn-sm" data-action="slate-archive" title="Archived notes">🗄 Archive<span id="arch-count">'+(archived.length?' ('+archived.length+')':'')+'</span></button>';
+    h+='<button class="btn btn-ghost btn-sm" data-action="slate-restore" title="Restore notes from a backup">⟲ Restore</button>';
     h+='<button class="add-btn" data-action="slate-new">'+plusIco()+'New note</button>';
     h+='</div></div>';
   }
@@ -10720,6 +10744,10 @@ document.addEventListener('click', function(e){
     case 'slate-sel-complete': slateSelComplete(); break;
     case 'slate-sel-delete': slateSelDelete(); break;
     case 'slate-archive': openArchive(); break;
+    case 'slate-restore': slateRestoreOpen(); break;
+    case 'slate-restore-close': slateRestoreClose(); break;
+    case 'slate-restore-snap': slateRestoreSnap(el.getAttribute('data-i')); break;
+    case 'slate-restore-cloud': slateRestoreCloud(); break;
     case 'close-arch': closeArch(); break;
     case 'slate-restore': slateRestore(el.getAttribute('data-id')); break;
     case 'slate-del': slateDelPermanent(el.getAttribute('data-id')); break;
